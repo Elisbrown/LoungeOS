@@ -1,0 +1,789 @@
+
+{
+  "appDescription": "The complete management solution for your lounge.",
+  "languages": {
+    "en": "English",
+    "fr": "Français"
+  },
+  "login": {
+    "title": "Login",
+    "description": "Enter your email below to login to your account",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "forgotPassword": "Forgot your password?",
+    "button": "Login",
+    "hidePassword": "Hide password",
+    "showPassword": "Show password",
+    "welcomeBack": "Welcome back, {{name}}!",
+    "loginSuccess": "Login Successful",
+    "loginFailed": "Login Failed",
+    "invalidCredentials": "Invalid email or password.",
+    "demoLoginsTitle": "Demo Logins (Password: password)"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "pos": "POS",
+    "orders": "Orders",
+    "kitchen": "Kitchen",
+    "bar": "Bar",
+    "tables": "Tables",
+    "floorPlan": "Floor Management",
+    "inventory": "Inventory",
+    "suppliers": "Suppliers",
+    "categories": "Categories",
+    "staff": "Staff",
+    "reports": "Reports",
+    "settings": "Settings",
+    "support": "Support",
+    "knowledgeBase": "Knowledge Base",
+    "credits": "Credits",
+    "meals": "Meals",
+    "backup": "Backup & Restore",
+    "configuration": "Configuration",
+    "activity": "Activity Log",
+    "accounting": "Accounting",
+    "accountingDashboard": "Acc. Dashboard",
+    "journals": "Journals",
+    "financialReports": "Financial Reports"
+  },
+  "userNav": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Log out"
+  },
+  "header": {
+    "searchPlaceholder": "Search..."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalRevenue": "Total Revenue",
+    "fromLastMonth": "{{change}} from last month",
+    "orders": "Orders",
+    "avgSale": "Avg. Sale",
+    "activeTables": "Active Tables",
+    "sinceLastHour": "{{change}} since last hour",
+    "recentSales": "Recent Sales",
+    "topSellingProducts": "Top Selling Products",
+    "recentActivity": "Recent Activity",
+    "recentActivityDesc": "A summary of the latest activities in the system.",
+    "totalSpending": "Total Spending",
+    "completedOrders": "Completed Orders",
+    "canceledOrders": "Canceled Orders"
+  },
+  "pos": {
+    "title": "Point of Sale",
+    "selectTable": "Select Table",
+    "selectTablePlaceholder": "Select a table",
+    "currentOrder": "Current Order",
+    "noItems": "No items in the order yet.",
+    "getStarted": "Select products to get started.",
+    "total": "Total",
+    "placeOrder": "Place Order",
+    "chargeOrder": "Charge Order",
+    "accessDeniedTitle": "Access Denied",
+    "accessDeniedDescription": "You do not have permission to access the POS.",
+    "completePaymentTitle": "Complete Payment",
+    "completePaymentDesc": "Select a payment method to finalize the order.",
+    "paymentMethod": "Payment Method",
+    "cash": "Cash",
+    "card": "Card",
+    "mobile": "Mobile",
+    "amountPaid": "Amount Paid",
+    "change": "Change",
+    "reference": "Reference",
+    "referencePlaceholder": "Enter transaction reference",
+    "confirmPayment": "Confirm Payment"
+  },
+  "orders": {
+    "title": "Order Management",
+    "allOrders": "All Orders",
+    "allOrdersDesc": "View, manage, and process all orders.",
+    "searchPlaceholder": "Search by Order ID or Table Name...",
+    "orderId": "Order ID",
+    "table": "Table",
+    "total": "Total",
+    "lastUpdated": "Last Updated",
+    "viewDetails": "View Details",
+    "noOrdersFound": "No orders found.",
+    "orderDetailsTitle": "Order Details: {{orderId}}",
+    "orderDetailsDesc": "Table: {{table}} - Last updated: {{time}}",
+    "splitOrder": "Split Order",
+    "mergeOrder": "Merge Order",
+    "splitOrderTitle": "Split Order",
+    "splitOrderDesc": "Select items to move to a new order.",
+    "createNewOrder": "Create New Order from Selection",
+    "mergeOrderTitle": "Merge Order",
+    "mergeOrderDesc": "Merge order {{orderId}} ({{table}}) into another existing order.",
+    "mergeWith": "Merge with order",
+    "selectOrderPlaceholder": "Select an order",
+    "statuses": {
+      "all": "All Statuses",
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "ready": "Ready",
+      "completed": "Completed",
+      "canceled": "Canceled"
+    },
+    "actions": {
+      "restore": "Restore Order"
+    }
+  },
+  "kitchen": {
+    "title": "Kitchen Display",
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "ready": "Ready",
+    "noPending": "No pending food orders.",
+    "noInProgress": "No food in progress.",
+    "noReady": "No food ready for pickup.",
+    "startCooking": "Start Cooking",
+    "markAsReady": "Mark as Ready",
+    "awaitingPayment": "Awaiting Payment"
+  },
+  "bar": {
+    "title": "Bar Display",
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "ready": "Ready",
+    "noPending": "No pending drink orders.",
+    "noInProgress": "No drinks in progress.",
+    "noReady": "No drinks ready for pickup.",
+    "startPreparing": "Start Preparing",
+    "markAsReady": "Mark as Ready",
+    "awaitingPayment": "Awaiting Payment"
+  },
+  "tables": {
+    "title": "Table Management",
+    "layoutTitle": "Table Layout",
+    "layoutDescription": "View and manage the status of your establishment's tables.",
+    "manageFloors": "Manage Floors",
+    "addTable": "Add Table",
+    "guestCount": "{{count}} Guests",
+    "reserve": "Reserve",
+    "makeAvailable": "Make Available",
+    "statuses": {
+      "available": "Available",
+      "occupied": "Occupied",
+      "reserved": "Reserved"
+    }
+  },
+  "floors": {
+    "title": "Floor Management",
+    "viewTitle": "Service Areas",
+    "viewDescription": "Manage your floors and assign tables and staff.",
+    "assignedTables": "Assigned Tables",
+    "noTablesAssigned": "No tables assigned.",
+    "assignTablePlaceholder": "Assign a table",
+    "assignedStaff": "Assigned Staff",
+    "noStaffAssigned": "No staff assigned.",
+    "assignStaffPlaceholder": "Assign staff"
+  },
+  "inventory": {
+    "title": "Inventory Management",
+    "ingredientsTitle": "Ingredients / Raw Materials",
+    "ingredientsDesc": "Manage the raw materials and sellable stock items.",
+    "searchPlaceholder": "Search ingredients by name or SKU...",
+    "allStatuses": "All Statuses",
+    "addProduct": "Add Ingredient",
+    "fileActions": "File Actions",
+    "csvActions": "CSV Actions",
+    "importCSV": "Import from CSV",
+    "downloadTemplate": "Download Template",
+    "exportCSV": "Export as CSV",
+    "product": "Ingredient",
+    "sku": "SKU",
+    "category": "Category",
+    "stock": "Stock",
+    "status": "Status",
+    "actions": "Actions",
+    "instock": "In Stock",
+    "lowstock": "Low Stock",
+    "outofstock": "Out of Stock"
+  },
+  "meals": {
+    "title": "Meals",
+    "description": "Manage sellable meals and their availability.",
+    "addMeal": "Add Meal",
+    "editMeal": "Edit Meal",
+    "addMealDesc": "Enter the details for the new meal.",
+    "editMealDesc": "Update the details for this meal.",
+    "meal": "Meal",
+    "mealName": "Meal Name",
+    "price": "Price",
+    "quantity": "Quantity",
+    "quantityAvailable": "Quantity Available",
+    "selectCategory": "Select a category"
+  },
+  "suppliers": {
+    "title": "Supplier Management",
+    "description": "Manage your product suppliers and their contact information.",
+    "addSupplier": "Add Supplier",
+    "addSupplierDesc": "Enter the details for the new supplier below.",
+    "editSupplier": "Edit Supplier",
+    "editSupplierDesc": "Update the supplier details below.",
+    "supplierName": "Supplier Name",
+    "contactPerson": "Contact Person",
+    "phone": "Phone",
+    "email": "Email"
+  },
+  "categories": {
+    "title": "Category Management",
+    "description": "Group your products into categories for better organization.",
+    "addCategory": "Add Category",
+    "addCategoryDesc": "Enter the name for the new product category below.",
+    "editCategory": "Edit Category",
+    "editCategoryDesc": "Update the name of the category below.",
+    "categoryName": "Category Name",
+    "productCount": "Number of Products",
+    "isFoodLabel": "This is a food category",
+    "isFoodDesc": "Check this if the category is for edible items (e.g., Snacks, Mains). Uncheck for drinks."
+  },
+  "staff": {
+    "title": "Staff Management",
+    "description": "Manage your team and their roles.",
+    "addStaff": "Add Staff Member",
+    "addStaffDesc": "Enter the details of the new staff member below.",
+    "editStaff": "Edit Staff Member",
+    "editStaffDesc": "Update the details for {{name}}.",
+    "name": "Name",
+    "role": "Role",
+    "phone": "Phone Number",
+    "hireDate": "Hire Date",
+    "email": "Email (Username)",
+    "assignedFloor": "Assigned Floor",
+    "status": "Status",
+    "selectRole": "Select a role",
+    "selectFloor": "Select a floor",
+    "noFloors": "No floors created yet",
+    "resetPassword": "Reset Password",
+    "searchPlaceholder": "Search by name or email...",
+    "allRoles": "All Roles",
+    "allStatuses": "All Statuses",
+    "deactivate": "Deactivate",
+    "activate": "Activate"
+  },
+  "reports": {
+    "title": "Reports & Analytics",
+    "salesReports": "Sales Reports",
+    "description": "Analyze your sales performance over specific periods.",
+    "export": "Export",
+    "pickDate": "Pick a date",
+    "salesOverTime": "Sales Over Time",
+    "salesByCategory": "Sales by Category",
+    "recentTransactions": "Recent Transactions",
+    "recentTransactionsDesc": "A list of the most recent transactions.",
+    "transactionId": "Transaction ID",
+    "date": "Date",
+    "cashier": "Cashier",
+    "amount": "Amount",
+    "staffPerformance": "Staff Performance",
+    "staffPerformanceDesc": "Sales performance by staff member.",
+    "totalSalesValue": "Total Sales Value"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "profileDesc": "Update your personal information.",
+    "name": "Name",
+    "email": "Email",
+    "updateProfile": "Update Profile",
+    "changePassword": "Change Password",
+    "changePasswordDesc": "Update your password. Make sure it's a strong one.",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "language": {
+      "title": "Language & Region",
+      "description": "Set your preferred language for the application."
+    }
+  },
+  "support": {
+    "title": "Support & Ticketing",
+    "ticketsTitle": "Support Tickets",
+    "ticketsDesc": "Create and manage support tickets for any issues.",
+    "createTicket": "Create New Ticket",
+    "lastUpdated": "Last Updated"
+  },
+  "credits": {
+    "title": "Credits",
+    "developedBy": "Developed by Sunyin Elisbrown Sigala",
+    "qualification": "Bachelors in Software Engineering"
+  },
+  "config": {
+    "title": "Configuration",
+    "tabs": {
+      "general": "General",
+      "appearance": "Appearance",
+      "receipt": "Receipt",
+      "loginScreen": "Login Screen"
+    },
+    "general": {
+      "title": "General Settings",
+      "description": "Manage platform branding and contact information.",
+      "platformName": "Platform Name",
+      "platformNameDesc": "The name displayed in the sidebar and on the login page.",
+      "platformLogo": "Platform Logo",
+      "uploadLogo": "Upload Logo",
+      "orgName": "Organization Name",
+      "contactAddress": "Contact Address",
+      "contactPhone": "Contact Phone"
+    },
+    "appearance": {
+      "title": "Appearance & Themes",
+      "description": "Customize the look and feel of the application.",
+      "activeTheme": "Active Theme",
+      "editThemes": "Edit Themes",
+      "primaryColor": "Primary Color",
+      "bgColor": "Background Color",
+      "accentColor": "Accent Color",
+      "addNewTheme": "Add New Theme",
+      "newThemeName": "New theme name...",
+      "addTheme": "Add Theme"
+    },
+    "receipt": {
+      "title": "Receipt Configuration",
+      "description": "Customize the information displayed on printed receipts.",
+      "header": "Receipt Header",
+      "headerDesc": "Text to display at the top of every receipt.",
+      "customFields": "Custom Fields",
+      "addField": "Add Field",
+      "label": "Label",
+      "value": "Value",
+      "footer": "Receipt Footer",
+      "footerDesc": "Text to display at the bottom of every receipt.",
+      "styling": "Styling",
+      "showWaiter": "Show Waiter Name on Receipt",
+      "fontFamily": "Font Family",
+      "fontMono": "Monospace (Default)",
+      "fontSans": "Sans-serif",
+      "fontSerif": "Serif",
+      "lineSpacing": "Line Spacing",
+      "preview": "Receipt Preview"
+    },
+    "loginScreen": {
+      "title": "Login Screen Background",
+      "description": "Manage the images that appear in the background of the login page.",
+      "images": "Carousel Images",
+      "imagesDesc": "These images will play in a loop. Recommended size: 1920x1080.",
+      "addImage": "Add Image"
+    }
+  },
+  "accounting": {
+    "dashboard": {
+      "title": "Accounting Dashboard",
+      "netProfit": "Net Profit",
+      "totalRevenue": "Total Revenue",
+      "totalExpenses": "Total Expenses",
+      "profitMargin": "Profit Margin",
+      "revenueVsExpenses": "Revenue vs Expenses",
+      "quickActions": "Quick Actions",
+      "quickActionsDesc": "Jump to key accounting sections."
+    },
+    "journals": {
+      "title": "Financial Journals",
+      "sales": "Sales Journal",
+      "salesDesc": "A log of all completed sales transactions.",
+      "expenses": "Expenses Journal",
+      "expensesDesc": "Log and track all business expenses.",
+      "generalLedger": "General Ledger",
+      "generalLedgerDesc": "The master set of accounts for the business."
+    },
+    "reports": {
+      "title": "Financial Reports",
+      "generate": "Generate Report",
+      "pnl": "Profit & Loss Statement",
+      "pnlDesc": "Summarizes revenues, costs, and expenses.",
+      "balanceSheet": "Balance Sheet",
+      "balanceSheetDesc": "Reports assets, liabilities, and equity.",
+      "cashFlow": "Cash Flow Statement",
+      "cashFlowDesc": "Tracks the movement of cash in and out."
+    }
+  },
+  "search": {
+    "searchPlaceholder": "Search pages, products...",
+    "noResults": "No results found.",
+    "pages": "Pages",
+    "products": "Products"
+  },
+  "kb": {
+    "title": "Knowledge Base",
+    "mainHeader": "How can we help you?",
+    "mainSubheader": "Find answers to your questions and learn how to use the system.",
+    "searchPlaceholder": "Search for articles...",
+    "noResults": "No articles found.",
+    "tryDifferentSearch": "Try searching with different keywords.",
+    "gettingStarted": {
+      "title": "Getting Started",
+      "overview": {
+        "title": "Application Overview",
+        "content": "LoungeOS is a comprehensive management solution designed for your lounge, restaurant, or bar. It includes modules for Point of Sale (POS), Inventory Management, Staff Management, Reporting, Accounting and more. This knowledge base will guide you through its features."
+      },
+      "roles": {
+        "title": "Understanding User Roles",
+        "content": "The system has several user roles, each with specific permissions:\n- Super Admin: Full access to everything. Ideal for initial setup and system configuration.\n- Manager: Access to most daily operations, including staff and inventory management, reports, accounting and all operational views.\n- Accountant: Focused on financial management. Has full access to the accounting module and can view reports and operational data.\n- Stock Manager: A specialized role to manage inventory, suppliers, and view meals.\n- Chef: Access to the kitchen display to manage food orders.\n- Waiter: Takes orders and manages tables on their assigned floor via the Tables and POS views.\n- Cashier: Processes payments via the POS interface and can view the bar display.\n- Bartender: Manages drink orders via the bar display."
+      },
+      "firstLogin": {
+        "title": "First Time Login",
+        "content": "When a new staff member is created, an initial password ('password' for seeded users, or automatically generated for others) is set. Upon their first login, they will be required to set a new, private password to secure their account."
+      }
+    },
+    "pos": {
+      "title": "Point of Sale & Order Management",
+      "takingOrders": {
+        "title": "How to Take an Order",
+        "content": "1. Go to the 'Tables' view from the sidebar.\n2. Click on an 'Available' (green) table. This will take you to the POS page.\n3. In the POS, add items to the order by clicking on them in the product grid.\n4. Adjust quantities in the 'Current Order' panel on the right.\n5. Click 'Place Order' to send it to the kitchen and/or bar. The order will be split automatically between the two displays based on the item's category (food or drink)."
+      },
+      "managingOrders": {
+        "title": "How to View or Modify an Existing Order",
+        "content": "1. From the 'Tables' view, click on an 'Occupied' (red) table.\n2. The POS page will load with the active order for that table.\n3. You can add more items and click 'Place Order' again to update it.\n4. Alternatively, Managers can go to the 'Orders' page to see a list of all orders and click 'View Details' to modify items or quantities."
+      },
+      "processingPayments": {
+        "title": "How to Process a Payment",
+        "content": "1. In the POS view for an active order, click 'Charge Order'.\n2. Select the payment method (Cash, Card, Mobile).\n3. If cash, enter the amount tendered to calculate the change.\n4. Click 'Confirm Payment' to complete the transaction.\n5. The system will then give you the option to print a receipt. The table's status will automatically be set back to 'Available'."
+      },
+      "splitMerge": {
+        "title": "How to Split or Merge Orders",
+        "content": "For complex situations, managers can split or merge orders:\n1. Go to the 'Orders' page and open the details for an active order.\n2. To Split: Click 'Split Order', select the items to move, and a new order will be created with them.\n3. To Merge: Click 'Merge Order' and select another active order to combine it with. The items will be moved, and the original order will be removed."
+      }
+    },
+    "kitchenBar": {
+      "title": "Kitchen & Bar Displays",
+      "kds": {
+        "title": "Using the Kitchen Display System (KDS)",
+        "content": "The KDS ('Kitchen' in the sidebar) shows all incoming food orders.\n- New orders appear in the 'Pending' column.\n- Drag an order to the 'In Progress' column to start working on it, or click 'Start Cooking'.\n- Once done, drag it to 'Ready' or click 'Mark as Ready'. A notification sound will play, and the order will move to the 'Ready' column until it's paid for at the POS."
+      },
+      "bds": {
+        "title": "Using the Bar Display System (BDS)",
+        "content": "The BDS ('Bar' in the sidebar) works exactly like the KDS but only for drink items.\n- Drag orders between columns ('Pending' -> 'In Progress' -> 'Ready') to update their status.\n- This allows bartenders to manage their queue independently of the kitchen."
+      },
+      "cancelOrder": {
+        "title": "Cancelling an Order from KDS/BDS",
+        "content": "If an order needs to be cancelled, simply drag the order card to the 'Drag here to Cancel' zone that appears at the bottom of the screen. You will be asked to confirm the cancellation."
+      }
+    },
+    "inventory": {
+      "title": "Inventory & Product Management",
+      "managingMeals": {
+        "title": "How to Manage Meals",
+        "content": "1. Go to the 'Meals' page.\n2. Here you can add, edit, or delete the finished products you sell (e.g., 'Beef Burger').\n3. Set the name, price, category, and available quantity. The quantity is important; if it's zero, the item cannot be sold.\n4. You can also upload a picture for the POS grid."
+      },
+      "managingIngredients": {
+        "title": "How to Manage Ingredients",
+        "content": "1. Go to the 'Inventory' page.\n2. This section is for raw materials (e.g., 'Tomatoes', 'Flour').\n3. Track stock levels here. The system will alert you when stock is low (below 10 units) or out."
+      },
+      "csv": {
+        "title": "Importing & Exporting via CSV",
+        "content": "On both the 'Meals' and 'Inventory' pages, you can use the 'File Actions' button to manage products in bulk.\n- 'Download Template' gives you a correctly formatted CSV file.\n- Fill it out and use 'Import from CSV' to add many items at once."
+      }
+    },
+    "management": {
+      "title": "Admin & Management",
+      "floorsTables": {
+        "title": "How to Manage Floors and Tables",
+        "content": "1. To create or delete service areas (e.g., 'VIP Lounge', 'Terrace'), go to the 'Floor Management' page and click 'Manage Floors'.\n2. To add new tables, go to the 'Tables' page and click 'Add Table'. You must assign each new table to a floor.\n3. To assign existing tables or staff to a floor, go to 'Floor Management' and use the dropdowns on each floor's card."
+      },
+      "staff": {
+        "title": "How to Manage Staff",
+        "content": "1. Go to the 'Staff' page.\n2. Click 'Add Staff Member' to create a new user account. Assign a role (like Manager, Waiter, or Accountant) and, if necessary, a floor.\n3. The new user will be forced to change their password on first login.\n4. Use the action menu on any staff member to edit details, reset their password, activate/deactivate their account, or delete their account."
+      },
+      "categories": {
+        "title": "How to Manage Categories",
+        "content": "Go to the 'Categories' page to create or delete categories for your meals. This helps organize the POS grid for faster order taking. When creating a category, be sure to check 'This is a food category' if it's for edible items, as this controls whether orders are sent to the kitchen or the bar."
+      }
+    },
+    "accounting": {
+      "title": "Accounting Module",
+      "overview": {
+        "title": "Accounting Overview",
+        "content": "The Accounting module is designed for Managers, Super Admins, and Accountants to track the financial health of the business. It provides high-level summaries and detailed transactional records."
+      },
+      "dashboard": {
+        "title": "Using the Accounting Dashboard",
+        "content": "The main accounting dashboard gives you a snapshot of your finances, including Net Profit, Total Revenue, and Total Expenses. The Revenue vs Expenses chart helps you visualize performance over time. Use the Quick Actions to jump to detailed journals or reports."
+      },
+      "journals": {
+        "title": "Understanding Financial Journals",
+        "content": "Journals are detailed logs of all financial transactions.\n- Sales Journal: Automatically populated with every completed order, showing revenue generated.\n- Expenses Journal: Manually log all business costs here, such as rent, salaries, or supplier payments.\n- General Ledger: A master log combining all sales and expenses, providing a complete financial history."
+      }
+    },
+    "system": {
+      "title": "System & Maintenance",
+      "configuration": {
+        "title": "How to Configure the System",
+        "content": "The 'Configuration' page is where Super Admins and Managers can customize the application:\n- General: Change the platform name, logo, and organization details.\n- Appearance: Create new visual themes and switch between them.\n- Receipt: Customize the layout and content of printed receipts and invoices.\n- Login Screen: Change the background images that appear on the login page carousel."
+      },
+      "backup": {
+        "title": "Backup & Restore",
+        "content": "The 'Backup & Restore' page is crucial for data safety.\n- 'Manual Backup': Click to download a complete, encrypted snapshot of all your application data (orders, staff, products, etc.). Store this file securely.\n- 'Restore from Backup': If needed, you can upload a backup file here to restore the system to a previous state. WARNING: This overwrites all current data."
+      },
+      "activityLog": {
+        "title": "Viewing the Activity Log",
+        "content": "The 'Activity Log' page provides an audit trail of important actions taken in the system, such as user logins, staff creation/deletion, and data imports. This is useful for security and monitoring."
+      }
+    },
+    "ticketing": {
+      "title": "Support Ticketing",
+      "creating": {
+        "title": "How to Create a Support Ticket",
+        "content": "1. Go to the 'Support' page from the sidebar.\n2. Click 'Create New Ticket'.\n3. Fill in the form with a clear title, a detailed description, and set the priority and category.\n4. Click 'Submit Ticket'. Your ticket will be visible to you and to management."
+      },
+      "managing": {
+        "title": "How to Manage Tickets (for Managers)",
+        "content": "As a Manager or Super Admin, you can view all tickets on the Support page. Click on any ticket to open the details view, where you can:\n- Change the ticket's status (e.g., from 'Open' to 'In Progress').\n- Assign the ticket to a specific staff member for resolution.\n- Add comments to communicate with the ticket creator and document progress."
+      }
+    }
+  },
+  "onboarding": {
+    "dashboard": {
+      "steps": {
+        "1": {
+          "title": "Welcome to the Dashboard!",
+          "description": "This is your main overview of the lounge's performance.\n\nHere you can see key metrics like revenue, orders, and top-selling products at a glance."
+        },
+        "2": {
+          "title": "Key Performance Indicators (KPIs)",
+          "description": "These cards at the top show your most important metrics in real-time. Keep an eye on them to monitor your business health."
+        },
+        "3": {
+          "title": "Navigation",
+          "description": "Use the sidebar on the left to navigate to different sections of the application, such as the Point of Sale (POS), Inventory, or Staff Management."
+        }
+      }
+    },
+    "tables": {
+      "steps": {
+        "1": {
+          "title": "Table Management View",
+          "description": "This is the central hub for waiters and cashiers.\n\nEach card represents a table in your establishment, color-coded by its status."
+        },
+        "2": {
+          "title": "Taking an Order",
+          "description": "To start a new order, simply click on an 'Available' (green) table. This will take you to the Point of Sale page with that table pre-selected."
+        },
+        "3": {
+          "title": "Managing an Existing Order",
+          "description": "To add items or check on an existing order, click on an 'Occupied' (red) table. This will load the table's current order in the POS."
+        },
+        "4": {
+          "title": "Managing Layout (Admins)",
+          "description": "If you are a Manager or Admin, you can use the buttons at the top right to add new tables or manage your service areas (Floors)."
+        }
+      }
+    },
+    "pos": {
+      "steps": {
+        "1": {
+          "title": "Point of Sale (POS)",
+          "description": "This is where you'll build customer orders. The selected table is shown at the top right."
+        },
+        "2": {
+          "title": "Adding Products",
+          "description": "Click on any product from the grid on the left to add it to the 'Current Order' summary on the right. You can switch categories using the tabs at the top."
+        },
+        "3": {
+          "title": "Placing & Charging",
+          "description": "Once the order is complete, use the buttons at the bottom right:\n- 'Place Order' sends the items to the kitchen/bar.\n- 'Charge Order' opens the payment dialog to finalize the bill."
+        }
+      }
+    },
+    "staff": {
+      "steps": {
+        "1": {
+          "title": "Staff Management",
+          "description": "This page allows you to manage all user accounts for your team."
+        },
+        "2": {
+          "title": "Adding Staff",
+          "description": "Click the 'Add Staff Member' button to create a new user. You'll need to provide their name, email, and assign a role.\n\nTheir initial password will be set automatically, and they will be required to change it on their first login."
+        },
+        "3": {
+          "title": "Managing Staff",
+          "description": "Use the actions menu (the three dots) on each row to edit a user's details, reset their password, or remove their account from the system."
+        }
+      }
+    }
+  },
+  "pagination": {
+    "rowsPerPage": "Rows per page:",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "dialogs": {
+    "accessDenied": "Access Denied",
+    "permissionDenied": "You do not have the necessary permissions to view this page.",
+    "contactAdmin": "Please contact an administrator if you believe this is an error.",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "saveChanges": "Save Changes",
+    "areYouSure": "Are you absolutely sure?",
+    "restoreWarning": "This will permanently overwrite all current data in the application with the data from the backup file. This action cannot be undone.",
+    "confirmDeleteTitle": "Are you sure?",
+    "confirmDeleteDesc": "This action cannot be undone. This will permanently delete the item.",
+    "deleteCategoryTitle": "Delete Category",
+    "deleteCategoryDesc": "Are you sure you want to delete the \"{{name}}\" category? This action cannot be undone.",
+    "deleteSupplierTitle": "Delete Supplier",
+    "deleteSupplierDesc": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "deleteStaffTitle": "Delete Staff Member",
+    "deleteStaffDesc": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+    "deleteMealTitle": "Delete Meal",
+    "deleteMealDesc": "Are you sure you want to delete the \"{{name}}\" meal? This also removes it from the POS.",
+    "cancelOrderTitle": "Cancel Order",
+    "cancelOrderDesc": "Are you sure you want to cancel order {{orderId}} for table {{table}}? This cannot be undone.",
+    "restoreOrderTitle": "Restore Order",
+    "restoreOrderDesc": "Are you sure you want to restore this canceled order? This is only possible within 24 hours of cancellation."
+  },
+  "toasts": {
+    "profileUpdated": "Profile Updated",
+    "profileUpdatedDesc": "Your profile information has been successfully updated.",
+    "passwordUpdated": "Password Updated",
+    "passwordUpdatedDesc": "Your password has been changed successfully.",
+    "passwordResetSuccess": "Password Reset",
+    "passwordResetSuccessDesc": "{{name}}'s password has been reset. They will be prompted to change it on next login.",
+    "permissionDenied": "Permission Denied",
+    "placeOrderDenied": "You do not have the required role to place orders.",
+    "paymentDenied": "You do not have the required role to process payments.",
+    "error": "Error",
+    "selectTableError": "Please select a table.",
+    "orderReady": "Order Ready!",
+    "drinksReadyDesc": "Drinks for {{table}} are ready for pickup.",
+    "foodReadyDesc": "Order for {{table}} is ready for pickup.",
+    "paymentSuccess": "Payment Successful",
+    "paymentSuccessDesc": "Order charged successfully. Printing receipt...",
+    "tableAssigned": "Table Assigned",
+    "tableAssignedDesc": "{{tableName}} assigned to {{floorName}}.",
+    "tableUnassigned": "Table Unassigned",
+    "tableUnassignedDesc": "{{tableName}} is now unassigned.",
+    "staffAssigned": "Staff Assigned",
+    "staffAssignedDesc": "{{staffName}} assigned to {{floorName}}.",
+    "staffUnassigned": "Staff Unassigned",
+    "staffUnassignedDesc": "{{staffName}} is now unassigned.",
+    "floorAddError": "Floor name cannot be empty.",
+    "floorExistsError": "This floor already exists.",
+    "floorAdded": "Success",
+    "floorAddedDesc": "Floor \"{{name}}\" has been added.",
+    "floorDeleted": "Success",
+    "floorDeletedDesc": "Floor \"{{name}}\" has been deleted.",
+    "categoryAdded": "Category Added",
+    "categoryAddedDesc": "The \"{{name}}\" category has been created.",
+    "categoryUpdated": "Category Updated",
+    "categoryUpdatedDesc": "The \"{{name}}\" category has been updated.",
+    "categoryDeleted": "Category Deleted",
+    "categoryDeletedDesc": "The category has been successfully deleted.",
+    "csvError": "CSV Error",
+    "csvEmpty": "CSV file is empty or has only headers.",
+    "csvHeaders": "CSV headers are incorrect. Please use the template.",
+    "importSuccess": "Import Successful",
+    "importSuccessDesc": "{{count}} products imported.",
+    "importFailed": "Import Failed",
+    "importFailedDesc": "Could not parse the CSV file. Please check the format.",
+    "productAdded": "Ingredient Added",
+    "productAddedDesc": "{{name}} has been added to the inventory.",
+    "staffAdded": "Staff Added",
+    "staffAddedDesc": "{{name}} has been added to the team. Their default password is '12345678'.",
+    "staffUpdated": "Staff Updated",
+    "staffUpdatedDesc": "Details for {{name}} have been updated.",
+    "staffDeleteForbidden": "Action Forbidden",
+    "staffDeleteForbiddenDesc": "The Super Admin account cannot be deleted.",
+    "staffDeleted": "Staff Deleted",
+    "staffDeletedDesc": "{{name}} has been removed from the team.",
+    "supplierAdded": "Supplier Added",
+    "supplierAddedDesc": "Supplier \"{{name}}\" has been added.",
+    "supplierUpdated": "Supplier Updated",
+    "supplierUpdatedDesc": "Details for \"{{name}}\" have been updated.",
+    "supplierDeleted": "Supplier Deleted",
+    "supplierDeletedDesc": "The supplier has been removed.",
+    "tableAdded": "Table Added",
+    "tableAddedDesc": "Table \"{{name}}\" has been added.",
+    "ticketCreated": "Ticket Created",
+    "ticketCreatedDesc": "Your ticket \"{{title}}\" has been submitted.",
+    "ticketUpdated": "Ticket Updated",
+    "ticketUpdatedDesc": "Ticket #{{id}} has been updated.",
+    "commentAdded": "Comment Added",
+    "commentAddedDesc": "Your comment has been added to ticket #{{id}}.",
+    "lowStockAlert": "Low Stock Alert",
+    "lowStockAlertDesc": "{{productName}} is running low ({{count}} left).",
+    "mealAdded": "Meal Added",
+    "mealAddedDesc": "{{name}} has been created and is now available on the POS.",
+    "mealUpdated": "Meal Updated",
+    "mealUpdatedDesc": "Details for {{name}} have been updated.",
+    "mealDeleted": "Meal Deleted",
+    "mealDeletedDesc": "The meal has been successfully deleted.",
+    "orderUpdated": "Order Updated",
+    "orderUpdatedDesc": "Order #{{orderId}} has been successfully updated.",
+    "orderSplit": "Order Split",
+    "orderSplitDesc": "A new order (#{{newOrderId}}) has been created from the selection.",
+    "orderMerged": "Orders Merged",
+    "orderMergedDesc": "Order #{{fromId}} has been merged into #{{toId}}.",
+    "settingsSaved": "Settings Saved",
+    "generalSettingsDesc": "General settings have been updated.",
+    "receiptSettingsDesc": "Receipt settings have been updated.",
+    "logoUpdated": "Logo Updated",
+    "logoUpdatedDesc": "Your platform logo has been changed.",
+    "invalidName": "Invalid Name",
+    "themeNameEmpty": "Theme name cannot be empty.",
+    "themeAdded": "Theme Added",
+    "themeAddedDesc": "Theme \"{{name}}\" has been created.",
+    "backupSuccess": "Backup Successful",
+    "backupSuccessDesc": "Your data has been downloaded.",
+    "backupFailed": "Backup Failed",
+    "backupFailedDesc": "Could not generate backup file.",
+    "invalidFile": "Invalid File",
+    "invalidFileDesc": "Please select a valid JSON backup file.",
+    "restoreFailed": "Restore Failed",
+    "restoreFailedDesc": "The selected file is not a valid backup.",
+    "orderCanceled": "Order Canceled",
+    "orderCanceledDesc": "Order #{{orderId}} has been canceled.",
+    "orderRestored": "Order Restored",
+    "orderRestoredDesc": "Canceled order #{{orderId}} has been restored to 'Pending'.",
+    "restoreNotAllowed": "Restore Not Allowed",
+    "restoreNotAllowedDesc": "This order was canceled more than 24 hours ago and cannot be restored.",
+    "tableReserved": "Table Reserved",
+    "tableReservedDesc": "Table {{name}} has been marked as reserved.",
+    "tableAvailable": "Table Available",
+    "tableAvailableDesc": "Table {{name}} is now available."
+  },
+  "activity": {
+    "title": "Activity Log",
+    "description": "An audit trail of all major activities in the system.",
+    "user": "User",
+    "action": "Action",
+    "details": "Details",
+    "timestamp": "Timestamp",
+    "noLogs": "No activity logs found."
+  },
+  "backup": {
+    "title": "Backup & Restore",
+    "systemStatus": "System Status",
+    "systemHealth": "Overall system health and backup status.",
+    "storage": "Storage Used",
+    "lastBackup": "Last Backup",
+    "never": "Never",
+    "manualBackup": "Manual Backup",
+    "manualBackupDesc": "Download a complete snapshot of your application data. Keep this file in a safe place.",
+    "downloadNow": "Download Backup Now",
+    "restore": "Restore from Backup",
+    "restoreDesc": "Restore the application state from a backup file. This will overwrite all current data.",
+    "uploadAndRestore": "Upload & Restore",
+    "autoBackup": "Automatic Backups",
+    "autoBackupDesc": "Configure the frequency of automatic system backups.",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "disabled": "Disabled",
+    "autoBackupNote": "Note: This is a simulation. A real cron job on a server would be required for this to function.",
+    "history": "Backup History",
+    "historyDesc": "The last 5 backups are retained.",
+    "noHistory": "No backup history."
+  },
+  "passwordReset": {
+    "title": "Set New Password",
+    "description": "Because this is your first login or your password was reset, you must set a new password.",
+    "submitButton": "Set Password & Login"
+  },
+  "forgotPassword": {
+    "title": "Forgot Password?",
+    "description": "Please contact your system administrator or manager to request a password reset.",
+    "backToLogin": "Back to Login"
+  }
+}

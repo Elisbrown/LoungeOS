@@ -1,0 +1,789 @@
+
+{
+  "appDescription": "La solution de gestion complète pour votre salon.",
+  "languages": {
+    "en": "English",
+    "fr": "Français"
+  },
+  "login": {
+    "title": "Connexion",
+    "description": "Entrez votre email ci-dessous pour vous connecter à votre compte",
+    "emailLabel": "Email",
+    "passwordLabel": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "button": "Se connecter",
+    "hidePassword": "Masquer le mot de passe",
+    "showPassword": "Afficher le mot de passe",
+    "welcomeBack": "Bon retour, {{name}} !",
+    "loginSuccess": "Connexion réussie",
+    "loginFailed": "Échec de la connexion",
+    "invalidCredentials": "Email ou mot de passe invalide.",
+    "demoLoginsTitle": "Comptes de Démo (Mot de passe : password)"
+  },
+  "sidebar": {
+    "dashboard": "Tableau de bord",
+    "pos": "Point de Vente",
+    "orders": "Commandes",
+    "kitchen": "Cuisine",
+    "bar": "Bar",
+    "tables": "Tables",
+    "floorPlan": "Plan de Salle",
+    "inventory": "Inventaire",
+    "suppliers": "Fournisseurs",
+    "categories": "Catégories",
+    "staff": "Personnel",
+    "reports": "Rapports",
+    "settings": "Paramètres",
+    "support": "Support",
+    "knowledgeBase": "Base de Connaissances",
+    "credits": "Crédits",
+    "meals": "Plats",
+    "backup": "Sauvegarde & Restauration",
+    "configuration": "Configuration",
+    "activity": "Journal d'Activité",
+    "accounting": "Comptabilité",
+    "accountingDashboard": "Tableau de bord Compta",
+    "journals": "Journaux",
+    "financialReports": "Rapports Financiers"
+  },
+  "userNav": {
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "logout": "Déconnexion"
+  },
+  "header": {
+    "searchPlaceholder": "Rechercher..."
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "totalRevenue": "Revenu Total",
+    "fromLastMonth": "{{change}} depuis le mois dernier",
+    "orders": "Commandes",
+    "avgSale": "Vente Moy.",
+    "activeTables": "Tables Actives",
+    "sinceLastHour": "{{change}} depuis la dernière heure",
+    "recentSales": "Ventes Récentes",
+    "topSellingProducts": "Produits les Mieux Vendus",
+    "recentActivity": "Activité Récente",
+    "recentActivityDesc": "Un résumé des dernières activités dans le système.",
+    "totalSpending": "Dépenses Totales",
+    "completedOrders": "Commandes Terminées",
+    "canceledOrders": "Commandes Annulées"
+  },
+  "pos": {
+    "title": "Point de Vente",
+    "selectTable": "Sélectionner une Table",
+    "selectTablePlaceholder": "Sélectionner une table",
+    "currentOrder": "Commande Actuelle",
+    "noItems": "Aucun article dans la commande.",
+    "getStarted": "Sélectionnez des produits pour commencer.",
+    "total": "Total",
+    "placeOrder": "Passer la Commande",
+    "chargeOrder": "Encaisser",
+    "accessDeniedTitle": "Accès Refusé",
+    "accessDeniedDescription": "Vous n'avez pas la permission d'accéder au Point de Vente.",
+    "completePaymentTitle": "Finaliser le Paiement",
+    "completePaymentDesc": "Sélectionnez un mode de paiement pour finaliser la commande.",
+    "paymentMethod": "Moyen de Paiement",
+    "cash": "Espèces",
+    "card": "Carte",
+    "mobile": "Mobile",
+    "amountPaid": "Montant Payé",
+    "change": "Monnaie",
+    "reference": "Référence",
+    "referencePlaceholder": "Saisir la référence de la transaction",
+    "confirmPayment": "Confirmer le Paiement"
+  },
+  "orders": {
+    "title": "Gestion des Commandes",
+    "allOrders": "Toutes les Commandes",
+    "allOrdersDesc": "Visualisez, gérez et traitez toutes les commandes.",
+    "searchPlaceholder": "Rechercher par ID de commande ou nom de table...",
+    "orderId": "ID Commande",
+    "table": "Table",
+    "total": "Total",
+    "lastUpdated": "Dernière MAJ",
+    "viewDetails": "Voir Détails",
+    "noOrdersFound": "Aucune commande trouvée.",
+    "orderDetailsTitle": "Détails Commande : {{orderId}}",
+    "orderDetailsDesc": "Table : {{table}} - Dernière MAJ : {{time}}",
+    "splitOrder": "Diviser",
+    "mergeOrder": "Fusionner",
+    "splitOrderTitle": "Diviser la Commande",
+    "splitOrderDesc": "Sélectionnez les articles à déplacer vers une nouvelle commande.",
+    "createNewOrder": "Créer une Nouvelle Commande",
+    "mergeOrderTitle": "Fusionner la Commande",
+    "mergeOrderDesc": "Fusionner la commande {{orderId}} ({{table}}) dans une autre commande existante.",
+    "mergeWith": "Fusionner avec la commande",
+    "selectOrderPlaceholder": "Sélectionner une commande",
+    "statuses": {
+      "all": "Tous les Statuts",
+      "pending": "En Attente",
+      "in_progress": "En Cours",
+      "ready": "Prête",
+      "completed": "Terminée",
+      "canceled": "Annulée"
+    },
+    "actions": {
+      "restore": "Restaurer la Commande"
+    }
+  },
+  "kitchen": {
+    "title": "Écran de Cuisine",
+    "pending": "En Attente",
+    "inProgress": "En Préparation",
+    "ready": "Prêt",
+    "noPending": "Aucune commande de plat en attente.",
+    "noInProgress": "Aucun plat en préparation.",
+    "noReady": "Aucun plat prêt à être servi.",
+    "startCooking": "Commencer la Cuisson",
+    "markAsReady": "Marquer comme Prêt",
+    "awaitingPayment": "En attente de Paiement"
+  },
+  "bar": {
+    "title": "Écran du Bar",
+    "pending": "En Attente",
+    "inProgress": "En Préparation",
+    "ready": "Prêt",
+    "noPending": "Aucune commande de boisson en attente.",
+    "noInProgress": "Aucune boisson en préparation.",
+    "noReady": "Aucune boisson prête à être servie.",
+    "startPreparing": "Commencer la Préparation",
+    "markAsReady": "Marquer comme Prêt",
+    "awaitingPayment": "En attente de Paiement"
+  },
+  "tables": {
+    "title": "Gestion des Tables",
+    "layoutTitle": "Plan de Salle",
+    "layoutDescription": "Visualisez et gérez l'état des tables de votre établissement.",
+    "manageFloors": "Gérer les Salles",
+    "addTable": "Ajouter une Table",
+    "guestCount": "{{count}} Invités",
+    "reserve": "Réserver",
+    "makeAvailable": "Rendre Disponible",
+    "statuses": {
+      "available": "Disponible",
+      "occupied": "Occupée",
+      "reserved": "Réservée"
+    }
+  },
+  "floors": {
+    "title": "Gestion des Salles",
+    "viewTitle": "Zones de Service",
+    "viewDescription": "Gérez vos salles et assignez-y des tables et du personnel.",
+    "assignedTables": "Tables Assignées",
+    "noTablesAssigned": "Aucune table assignée.",
+    "assignTablePlaceholder": "Assigner une table",
+    "assignedStaff": "Personnel Assigné",
+    "noStaffAssigned": "Aucun personnel assigné.",
+    "assignStaffPlaceholder": "Assigner du personnel"
+  },
+  "inventory": {
+    "title": "Gestion de l'Inventaire",
+    "ingredientsTitle": "Ingrédients / Matières Premières",
+    "ingredientsDesc": "Gérez les matières premières et les articles en stock.",
+    "searchPlaceholder": "Rechercher par nom ou SKU...",
+    "allStatuses": "Tous les Statuts",
+    "addProduct": "Ajouter un Ingrédient",
+    "fileActions": "Actions Fichier",
+    "csvActions": "Actions CSV",
+    "importCSV": "Importer depuis CSV",
+    "downloadTemplate": "Télécharger le Modèle",
+    "exportCSV": "Exporter en CSV",
+    "product": "Ingrédient",
+    "sku": "SKU",
+    "category": "Catégorie",
+    "stock": "Stock",
+    "status": "Statut",
+    "actions": "Actions",
+    "instock": "En Stock",
+    "lowstock": "Stock Faible",
+    "outofstock": "En Rupture"
+  },
+  "meals": {
+    "title": "Plats",
+    "description": "Gérez les plats à vendre et leur disponibilité.",
+    "addMeal": "Ajouter un Plat",
+    "editMeal": "Modifier le Plat",
+    "addMealDesc": "Saisissez les détails du nouveau plat.",
+    "editMealDesc": "Mettez à jour les détails de ce plat.",
+    "meal": "Plat",
+    "mealName": "Nom du Plat",
+    "price": "Prix",
+    "quantity": "Quantité",
+    "quantityAvailable": "Quantité Disponible",
+    "selectCategory": "Sélectionner une catégorie"
+  },
+  "suppliers": {
+    "title": "Gestion des Fournisseurs",
+    "description": "Gérez vos fournisseurs de produits et leurs informations.",
+    "addSupplier": "Ajouter un Fournisseur",
+    "addSupplierDesc": "Saisissez les détails du nouveau fournisseur ci-dessous.",
+    "editSupplier": "Modifier le Fournisseur",
+    "editSupplierDesc": "Mettez à jour les détails du fournisseur ci-dessous.",
+    "supplierName": "Nom du Fournisseur",
+    "contactPerson": "Personne à Contacter",
+    "phone": "Téléphone",
+    "email": "Email"
+  },
+  "categories": {
+    "title": "Gestion des Catégories",
+    "description": "Organisez vos produits en catégories pour une meilleure organisation.",
+    "addCategory": "Ajouter une Catégorie",
+    "addCategoryDesc": "Saisissez le nom de la nouvelle catégorie de produits ci-dessous.",
+    "editCategory": "Modifier la Catégorie",
+    "editCategoryDesc": "Mettez à jour le nom de la catégorie ci-dessous.",
+    "categoryName": "Nom de la Catégorie",
+    "productCount": "Nombre de Produits",
+    "isFoodLabel": "Ceci est une catégorie alimentaire",
+    "isFoodDesc": "Cochez si la catégorie concerne des articles comestibles (ex: Snacks, Plats). Décochez pour les boissons."
+  },
+  "staff": {
+    "title": "Gestion du Personnel",
+    "description": "Gérez votre équipe et leurs rôles.",
+    "addStaff": "Ajouter un Membre",
+    "addStaffDesc": "Saisissez les détails du nouveau membre du personnel ci-dessous.",
+    "editStaff": "Modifier le Membre",
+    "editStaffDesc": "Mettez à jour les détails pour {{name}}.",
+    "name": "Nom",
+    "role": "Rôle",
+    "phone": "Numéro de Téléphone",
+    "hireDate": "Date d'Embauche",
+    "email": "Email (Nom d'utilisateur)",
+    "assignedFloor": "Salle Assignée",
+    "status": "Statut",
+    "selectRole": "Sélectionner un rôle",
+    "selectFloor": "Sélectionner une salle",
+    "noFloors": "Aucune salle créée pour le moment",
+    "resetPassword": "Réinitialiser Mot de Passe",
+    "searchPlaceholder": "Rechercher par nom ou email...",
+    "allRoles": "Tous les Rôles",
+    "allStatuses": "Tous les Statuts",
+    "deactivate": "Désactiver",
+    "activate": "Activer"
+  },
+  "reports": {
+    "title": "Rapports & Analyses",
+    "salesReports": "Rapports de Ventes",
+    "description": "Analysez la performance de vos ventes sur des périodes spécifiques.",
+    "export": "Exporter",
+    "pickDate": "Choisir une date",
+    "salesOverTime": "Ventes au fil du temps",
+    "salesByCategory": "Ventes par Catégorie",
+    "recentTransactions": "Transactions Récentes",
+    "recentTransactionsDesc": "Une liste des transactions les plus récentes.",
+    "transactionId": "ID Transaction",
+    "date": "Date",
+    "cashier": "Caissier",
+    "amount": "Montant",
+    "staffPerformance": "Performance du Personnel",
+    "staffPerformanceDesc": "Performance des ventes par membre du personnel.",
+    "totalSalesValue": "Valeur Totale des Ventes"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "profile": "Profil",
+    "profileDesc": "Mettez à jour vos informations personnelles.",
+    "name": "Nom",
+    "email": "Email",
+    "updateProfile": "Mettre à jour le Profil",
+    "changePassword": "Changer le Mot de passe",
+    "changePasswordDesc": "Mettez à jour votre mot de passe. Assurez-vous qu'il soit fort.",
+    "currentPassword": "Mot de passe Actuel",
+    "newPassword": "Nouveau Mot de passe",
+    "confirmPassword": "Confirmer le Nouveau Mot de passe",
+    "language": {
+      "title": "Langue & Région",
+      "description": "Définissez votre langue préférée pour l'application."
+    }
+  },
+  "support": {
+    "title": "Support & Billetterie",
+    "ticketsTitle": "Tickets de Support",
+    "ticketsDesc": "Créez et gérez les tickets de support pour tout problème.",
+    "createTicket": "Créer un Nouveau Ticket",
+    "lastUpdated": "Dernière MAJ"
+  },
+  "credits": {
+    "title": "Crédits",
+    "developedBy": "Développé par Sunyin Elisbrown Sigala",
+    "qualification": "Licence en Génie Logiciel"
+  },
+  "config": {
+    "title": "Configuration",
+    "tabs": {
+      "general": "Général",
+      "appearance": "Apparence",
+      "receipt": "Reçu",
+      "loginScreen": "Écran Connexion"
+    },
+    "general": {
+      "title": "Paramètres Généraux",
+      "description": "Gérez l'image de marque de la plateforme et les informations de contact.",
+      "platformName": "Nom de la Plateforme",
+      "platformNameDesc": "Le nom affiché dans la barre latérale et sur la page de connexion.",
+      "platformLogo": "Logo de la Plateforme",
+      "uploadLogo": "Télécharger le Logo",
+      "orgName": "Nom de l'Organisation",
+      "contactAddress": "Adresse de Contact",
+      "contactPhone": "Téléphone de Contact"
+    },
+    "appearance": {
+      "title": "Apparence & Thèmes",
+      "description": "Personnalisez l'aspect et la convivialité de l'application.",
+      "activeTheme": "Thème Actif",
+      "editThemes": "Modifier les Thèmes",
+      "primaryColor": "Couleur Principale",
+      "bgColor": "Couleur de Fond",
+      "accentColor": "Couleur d'Accentuation",
+      "addNewTheme": "Ajouter un Nouveau Thème",
+      "newThemeName": "Nom du nouveau thème...",
+      "addTheme": "Ajouter le Thème"
+    },
+    "receipt": {
+      "title": "Configuration du Reçu",
+      "description": "Personnalisez les informations affichées sur les reçus imprimés.",
+      "header": "En-tête du Reçu",
+      "headerDesc": "Texte à afficher en haut de chaque reçu.",
+      "customFields": "Champs Personnalisés",
+      "addField": "Ajouter un Champ",
+      "label": "Étiquette",
+      "value": "Valeur",
+      "footer": "Pied de page du Reçu",
+      "footerDesc": "Texte à afficher en bas de chaque reçu.",
+      "styling": "Style",
+      "showWaiter": "Afficher le Nom du Serveur sur le Reçu",
+      "fontFamily": "Police de Caractères",
+      "fontMono": "Monospace (Défaut)",
+      "fontSans": "Sans-serif",
+      "fontSerif": "Serif",
+      "lineSpacing": "Interligne",
+      "preview": "Aperçu du Reçu"
+    },
+    "loginScreen": {
+        "title": "Fond d'Écran de Connexion",
+        "description": "Gérez les images qui apparaissent en arrière-plan de la page de connexion.",
+        "images": "Images du Carrousel",
+        "imagesDesc": "Ces images défileront en boucle. Taille recommandée : 1920x1080.",
+        "addImage": "Ajouter une Image"
+    }
+  },
+  "accounting": {
+    "dashboard": {
+      "title": "Tableau de Bord Comptable",
+      "netProfit": "Bénéfice Net",
+      "totalRevenue": "Revenu Total",
+      "totalExpenses": "Dépenses Totales",
+      "profitMargin": "Marge Bénéficiaire",
+      "revenueVsExpenses": "Revenus vs Dépenses",
+      "quickActions": "Actions Rapides",
+      "quickActionsDesc": "Accédez aux sections comptables clés."
+    },
+    "journals": {
+      "title": "Journaux Financiers",
+      "sales": "Journal des Ventes",
+      "salesDesc": "Un registre de toutes les transactions de vente terminées.",
+      "expenses": "Journal des Dépenses",
+      "expensesDesc": "Enregistrez et suivez toutes les dépenses de l'entreprise.",
+      "generalLedger": "Grand Livre Général",
+      "generalLedgerDesc": "L'ensemble principal des comptes de l'entreprise."
+    },
+    "reports": {
+      "title": "Rapports Financiers",
+      "generate": "Générer le Rapport",
+      "pnl": "Compte de Résultat",
+      "pnlDesc": "Résume les revenus, coûts et dépenses.",
+      "balanceSheet": "Bilan Comptable",
+      "balanceSheetDesc": "Rapporte les actifs, passifs et capitaux propres.",
+      "cashFlow": "État des Flux de Trésorerie",
+      "cashFlowDesc": "Suit les mouvements de trésorerie entrants et sortants."
+    }
+  },
+  "search": {
+    "searchPlaceholder": "Rechercher pages, produits...",
+    "noResults": "Aucun résultat trouvé.",
+    "pages": "Pages",
+    "products": "Produits"
+  },
+  "kb": {
+    "title": "Base de Connaissances",
+    "mainHeader": "Comment pouvons-nous vous aider ?",
+    "mainSubheader": "Trouvez des réponses à vos questions et apprenez à utiliser le système.",
+    "searchPlaceholder": "Rechercher des articles...",
+    "noResults": "Aucun article trouvé.",
+    "tryDifferentSearch": "Essayez de rechercher avec des mots-clés différents.",
+    "gettingStarted": {
+      "title": "Pour Commencer",
+      "overview": {
+        "title": "Aperçu de l'Application",
+        "content": "LoungeOS est une solution de gestion complète conçue pour votre salon, restaurant ou bar. Elle inclut des modules pour le Point de Vente (PDV), la Gestion des Stocks, la Gestion du Personnel, les Rapports, la Comptabilité et plus encore. Cette base de connaissances vous guidera à travers ses fonctionnalités."
+      },
+      "roles": {
+        "title": "Comprendre les Rôles des Utilisateurs",
+        "content": "Le système a plusieurs rôles d'utilisateur, chacun avec des permissions spécifiques :\n- Super Admin : Accès complet à tout. Idéal pour la configuration initiale du système.\n- Manager : Accès à la plupart des opérations quotidiennes, y compris la gestion du personnel, des stocks, des rapports, de la comptabilité et toutes les vues opérationnelles.\n- Comptable : Axé sur la gestion financière. A un accès complet au module de comptabilité et peut consulter les rapports et les données opérationnelles.\n- Gestionnaire de Stock : Un rôle spécialisé pour gérer l'inventaire, les fournisseurs et voir les plats.\n- Chef : Accès à l'écran de la cuisine pour gérer les commandes de nourriture.\n- Serveur : Prend les commandes et gère les tables sur sa salle assignée via les vues Tables et PDV.\n- Caissier : Traite les paiements via l'interface PDV et peut voir l'écran du bar.\n- Barman : Gère les commandes de boissons via l'écran du bar."
+      },
+      "firstLogin": {
+        "title": "Première Connexion",
+        "content": "Lorsqu'un nouveau membre du personnel est créé, un mot de passe initial ('password' pour les utilisateurs de démo, ou généré automatiquement pour les autres) est défini. Lors de sa première connexion, il devra définir un nouveau mot de passe privé pour sécuriser son compte."
+      }
+    },
+    "pos": {
+      "title": "Point de Vente & Gestion des Commandes",
+      "takingOrders": {
+        "title": "Comment Prendre une Commande",
+        "content": "1. Allez à la vue 'Tables' depuis la barre latérale.\n2. Cliquez sur une table 'Disponible' (verte). Cela vous amènera à la page du PDV.\n3. Dans le PDV, ajoutez des articles à la commande en cliquant dessus dans la grille de produits.\n4. Ajustez les quantités dans le panneau 'Commande Actuelle' à droite.\n5. Cliquez sur 'Passer la Commande' pour l'envoyer à la cuisine et/ou au bar. La commande sera divisée automatiquement entre les deux écrans en fonction de la catégorie de l'article (nourriture ou boisson)."
+      },
+      "managingOrders": {
+        "title": "Comment Voir ou Modifier une Commande Existante",
+        "content": "1. Depuis la vue 'Tables', cliquez sur une table 'Occupée' (rouge).\n2. La page PDV se chargera avec la commande active pour cette table.\n3. Vous pouvez ajouter plus d'articles et cliquer à nouveau sur 'Passer la Commande' pour la mettre à jour.\n4. Alternativement, les Managers peuvent aller à la page 'Commandes' pour voir une liste de toutes les commandes et cliquer sur 'Voir Détails' pour modifier les articles ou les quantités."
+      },
+      "processingPayments": {
+        "title": "Comment Traiter un Paiement",
+        "content": "1. Dans la vue PDV d'une commande active, cliquez sur 'Encaisser'.\n2. Sélectionnez le mode de paiement (Espèces, Carte, Mobile).\n3. Si en espèces, saisissez le montant payé pour calculer la monnaie.\n4. Cliquez sur 'Confirmer le Paiement' pour finaliser la transaction.\n5. Le système vous donnera alors l'option d'imprimer un reçu. Le statut de la table sera automatiquement remis sur 'Disponible'."
+      },
+      "splitMerge": {
+        "title": "Comment Diviser ou Fusionner des Commandes",
+        "content": "Pour les situations complexes, les managers peuvent diviser ou fusionner des commandes :\n1. Allez à la page 'Commandes' et ouvrez les détails d'une commande active.\n2. Pour Diviser : Cliquez sur 'Diviser', sélectionnez les articles à déplacer, et une nouvelle commande sera créée avec eux.\n3. Pour Fusionner : Cliquez sur 'Fusionner' et sélectionnez une autre commande active avec laquelle la combiner. Les articles seront déplacés, et la commande originale sera supprimée."
+      }
+    },
+    "kitchenBar": {
+      "title": "Écrans de Cuisine & Bar",
+      "kds": {
+        "title": "Utilisation du Système d'Affichage en Cuisine (KDS)",
+        "content": "Le KDS ('Cuisine' dans la barre latérale) affiche toutes les commandes de nourriture entrantes.\n- Les nouvelles commandes apparaissent dans la colonne 'En Attente'.\n- Glissez une commande vers la colonne 'En Préparation' pour commencer à travailler dessus, ou cliquez sur 'Commencer la Cuisson'.\n- Une fois terminé, glissez-la vers 'Prêt' ou cliquez sur 'Marquer comme Prêt'. Un son de notification retentira, et la commande passera à la colonne 'Prêt' jusqu'à ce qu'elle soit payée au PDV."
+      },
+      "bds": {
+        "title": "Utilisation du Système d'Affichage au Bar (BDS)",
+        "content": "Le BDS ('Bar' dans la barre latérale) fonctionne exactement comme le KDS mais uniquement pour les boissons.\n- Glissez les commandes entre les colonnes ('En Attente' -> 'En Préparation' -> 'Prêt') pour mettre à jour leur statut.\n- Cela permet aux barmans de gérer leur file d'attente indépendamment de la cuisine."
+      },
+      "cancelOrder": {
+        "title": "Annuler une Commande depuis le KDS/BDS",
+        "content": "Si une commande doit être annulée, glissez simplement la carte de la commande vers la zone 'Glisser ici pour Annuler' qui apparaît en bas de l'écran. Il vous sera demandé de confirmer l'annulation."
+      }
+    },
+    "inventory": {
+      "title": "Inventaire & Gestion des Produits",
+      "managingMeals": {
+        "title": "Comment Gérer les Plats",
+        "content": "1. Allez à la page 'Plats'.\n2. Ici, vous pouvez ajouter, modifier ou supprimer les produits finis que vous vendez (ex: 'Burger de Bœuf').\n3. Définissez le nom, le prix, la catégorie et la quantité disponible. La quantité est importante ; si elle est à zéro, l'article ne peut pas être vendu.\n4. Vous pouvez également télécharger une image pour la grille du PDV."
+      },
+      "managingIngredients": {
+        "title": "Comment Gérer les Ingrédients",
+        "content": "1. Allez à la page 'Inventaire'.\n2. Cette section est pour les matières premières (ex: 'Tomates', 'Farine').\n3. Suivez les niveaux de stock ici. Le système vous alertera lorsque le stock est faible (en dessous de 10 unités) ou épuisé."
+      },
+      "csv": {
+        "title": "Importation & Exportation via CSV",
+        "content": "Sur les pages 'Plats' et 'Inventaire', vous pouvez utiliser le bouton 'Actions Fichier' pour gérer les produits en masse.\n- 'Télécharger le Modèle' vous donne un fichier CSV correctement formaté.\n- Remplissez-le et utilisez 'Importer depuis CSV' pour ajouter de nombreux articles en une seule fois."
+      }
+    },
+    "management": {
+      "title": "Administration & Gestion",
+      "floorsTables": {
+        "title": "Comment Gérer les Salles et les Tables",
+        "content": "1. Pour créer ou supprimer des zones de service (ex: 'Salon VIP', 'Terrasse'), allez à la page 'Plan de Salle' et cliquez sur 'Gérer les Salles'.\n2. Pour ajouter de nouvelles tables, allez à la page 'Tables' et cliquez sur 'Ajouter une Table'. Vous devez assigner chaque nouvelle table à une salle.\n3. Pour assigner des tables ou du personnel existants à une salle, allez à 'Plan de Salle' et utilisez les menus déroulants sur la carte de chaque salle."
+      },
+      "staff": {
+        "title": "Comment Gérer le Personnel",
+        "content": "1. Allez à la page 'Personnel'.\n2. Cliquez sur 'Ajouter un Membre' pour créer un nouveau compte utilisateur. Assignez un rôle (comme Manager, Serveur ou Comptable) et, si nécessaire, une salle.\n3. Le nouvel utilisateur sera obligé de changer son mot de passe lors de sa première connexion.\n4. Utilisez le menu d'actions sur chaque membre du personnel pour modifier ses détails, réinitialiser son mot de passe, activer/désactiver son compte, ou supprimer son compte."
+      },
+      "categories": {
+        "title": "Comment Gérer les Catégories",
+        "content": "Allez à la page 'Catégories' pour créer ou supprimer des catégories pour vos plats. Cela aide à organiser la grille du PDV pour une prise de commande plus rapide. Lors de la création d'une catégorie, assurez-vous de cocher 'Ceci est une catégorie alimentaire' si c'est pour des articles comestibles, car cela contrôle si les commandes sont envoyées à la cuisine ou au bar."
+      }
+    },
+    "accounting": {
+      "title": "Module de Comptabilité",
+      "overview": {
+        "title": "Aperçu de la Comptabilité",
+        "content": "Le module de Comptabilité est conçu pour les Managers, Super Admins et Comptables afin de suivre la santé financière de l'entreprise. Il fournit des résumés de haut niveau et des enregistrements transactionnels détaillés."
+      },
+      "dashboard": {
+        "title": "Utilisation du Tableau de Bord Comptable",
+        "content": "Le tableau de bord comptable principal vous donne un aperçu de vos finances, y compris le Bénéfice Net, le Revenu Total et les Dépenses Totales. Le graphique Revenus vs Dépenses vous aide à visualiser la performance au fil du temps. Utilisez les Actions Rapides pour accéder aux journaux ou rapports détaillés."
+      },
+      "journals": {
+        "title": "Comprendre les Journaux Financiers",
+        "content": "Les journaux sont des registres détaillés de toutes les transactions financières.\n- Journal des Ventes : Automatiquement peuplé avec chaque commande terminée, montrant les revenus générés.\n- Journal des Dépenses : Enregistrez manuellement tous les coûts de l'entreprise ici, tels que le loyer, les salaires ou les paiements aux fournisseurs.\n- Grand Livre Général : Un registre principal combinant toutes les ventes et dépenses, fournissant un historique financier complet."
+      }
+    },
+    "system": {
+      "title": "Système & Maintenance",
+      "configuration": {
+        "title": "Comment Configurer le Système",
+        "content": "La page 'Configuration' est l'endroit où les Super Admins et les Managers peuvent personnaliser l'application :\n- Général : Changez le nom de la plateforme, le logo et les détails de l'organisation.\n- Apparence : Créez de nouveaux thèmes visuels et basculez entre eux.\n- Reçu : Personnalisez la mise en page et le contenu des reçus et factures imprimés.\n- Écran de Connexion : Changez les images d'arrière-plan qui apparaissent sur le carrousel de la page de connexion."
+      },
+      "backup": {
+        "title": "Sauvegarde & Restauration",
+        "content": "La page 'Sauvegarde & Restauration' est cruciale pour la sécurité des données.\n- 'Sauvegarde Manuelle' : Cliquez pour télécharger un instantané complet et crypté de toutes les données de votre application (commandes, personnel, produits, etc.). Stockez ce fichier en toute sécurité.\n- 'Restaurer depuis une Sauvegarde' : Si nécessaire, vous pouvez télécharger un fichier de sauvegarde ici pour restaurer le système à un état précédent. ATTENTION : Cela écrase toutes les données actuelles."
+      },
+      "activityLog": {
+        "title": "Consulter le Journal d'Activité",
+        "content": "La page 'Journal d'Activité' fournit une piste d'audit des actions importantes effectuées dans le système, telles que les connexions des utilisateurs, la création/suppression de personnel et les importations de données. C'est utile pour la sécurité et la surveillance."
+      }
+    },
+    "ticketing": {
+      "title": "Support par Ticket",
+      "creating": {
+        "title": "Comment Créer un Ticket de Support",
+        "content": "1. Allez à la page 'Support' depuis la barre latérale.\n2. Cliquez sur 'Créer un Nouveau Ticket'.\n3. Remplissez le formulaire avec un titre clair, une description détaillée, et définissez la priorité et la catégorie.\n4. Cliquez sur 'Soumettre le Ticket'. Votre ticket sera visible par vous et par la direction."
+      },
+      "managing": {
+        "title": "Comment Gérer les Tickets (pour les Managers)",
+        "content": "En tant que Manager ou Super Admin, vous pouvez voir tous les tickets sur la page Support. Cliquez sur n'importe quel ticket pour ouvrir la vue détaillée, où vous pouvez :\n- Changer le statut du ticket (ex: de 'Ouvert' à 'En Cours').\n- Assigner le ticket à un membre du personnel spécifique pour résolution.\n- Ajouter des commentaires pour communiquer avec le créateur du ticket et documenter les progrès."
+      }
+    }
+  },
+  "onboarding": {
+    "dashboard": {
+      "steps": {
+        "1": {
+          "title": "Bienvenue au Tableau de Bord !",
+          "description": "Ceci est votre aperçu principal des performances du salon.\n\nIci, vous pouvez voir en un coup d'œil les indicateurs clés comme le chiffre d'affaires, les commandes et les produits les plus vendus."
+        },
+        "2": {
+          "title": "Indicateurs Clés de Performance (KPIs)",
+          "description": "Ces cartes en haut affichent vos métriques les plus importantes en temps réel. Gardez un œil dessus pour surveiller la santé de votre entreprise."
+        },
+        "3": {
+          "title": "Navigation",
+          "description": "Utilisez la barre latérale à gauche pour naviguer vers les différentes sections de l'application, comme le Point de Vente (PDV), l'Inventaire ou la Gestion du Personnel."
+        }
+      }
+    },
+    "tables": {
+      "steps": {
+        "1": {
+          "title": "Vue de la Gestion des Tables",
+          "description": "C'est le hub central pour les serveurs et les caissiers.\n\nChaque carte représente une table dans votre établissement, avec un code couleur selon son statut."
+        },
+        "2": {
+          "title": "Prendre une Commande",
+          "description": "Pour commencer une nouvelle commande, cliquez simplement sur une table 'Disponible' (verte). Cela vous amènera directement à la page du Point de Vente avec cette table présélectionnée."
+        },
+        "3": {
+          "title": "Gérer une Commande Existante",
+          "description": "Pour ajouter des articles ou consulter une commande existante, cliquez sur une table 'Occupée' (rouge). Cela chargera la commande active de la table dans le PDV."
+        },
+        "4": {
+          "title": "Gestion de la Disposition (Admins)",
+          "description": "Si vous êtes Manager ou Admin, vous pouvez utiliser les boutons en haut à droite pour ajouter de nouvelles tables ou gérer vos zones de service (Salles)."
+        }
+      }
+    },
+    "pos": {
+      "steps": {
+        "1": {
+          "title": "Point de Vente (PDV)",
+          "description": "C'est ici que vous allez créer les commandes des clients. La table sélectionnée est affichée en haut à droite."
+        },
+        "2": {
+          "title": "Ajouter des Produits",
+          "description": "Cliquez sur n'importe quel produit de la grille à gauche pour l'ajouter au résumé de la 'Commande Actuelle' à droite. Vous pouvez changer de catégorie en utilisant les onglets en haut."
+        },
+        "3": {
+          "title": "Passer & Encaisser la Commande",
+          "description": "Une fois la commande complète, utilisez les boutons en bas à droite :\n- 'Passer la Commande' envoie les articles à la cuisine/bar.\n- 'Encaisser' ouvre la boîte de dialogue de paiement pour finaliser la facture."
+        }
+      }
+    },
+    "staff": {
+      "steps": {
+        "1": {
+          "title": "Gestion du Personnel",
+          "description": "Cette page vous permet de gérer tous les comptes utilisateurs de votre équipe."
+        },
+        "2": {
+          "title": "Ajouter du Personnel",
+          "description": "Cliquez sur le bouton 'Ajouter un Membre' pour créer un nouvel utilisateur. Vous devrez fournir leur nom, email, et assigner un rôle.\n\nLeur mot de passe initial sera défini automatiquement, et ils devront le changer lors de leur première connexion."
+        },
+        "3": {
+          "title": "Gérer le Personnel",
+          "description": "Utilisez le menu d'actions (les trois points) sur chaque ligne pour modifier les détails d'un utilisateur, réinitialiser son mot de passe, ou supprimer son compte du système."
+        }
+      }
+    }
+  },
+  "pagination": {
+    "rowsPerPage": "Lignes par page :",
+    "previous": "Précédent",
+    "next": "Suivant"
+  },
+  "dialogs": {
+    "accessDenied": "Accès Refusé",
+    "permissionDenied": "Vous n'avez pas les autorisations nécessaires pour voir cette page.",
+    "contactAdmin": "Veuillez contacter un administrateur si vous pensez que c'est une erreur.",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "cancel": "Annuler",
+    "saveChanges": "Sauvegarder",
+    "areYouSure": "Êtes-vous absolument sûr ?",
+    "restoreWarning": "Cette action écrasera de manière permanente toutes les données actuelles de l'application avec les données du fichier de sauvegarde. Cette action est irréversible.",
+    "confirmDeleteTitle": "Êtes-vous sûr ?",
+    "confirmDeleteDesc": "Cette action est irréversible. Cela supprimera l'élément de façon permanente.",
+    "deleteCategoryTitle": "Supprimer la Catégorie",
+    "deleteCategoryDesc": "Êtes-vous sûr de vouloir supprimer la catégorie \"{{name}}\" ? Cette action est irréversible.",
+    "deleteSupplierTitle": "Supprimer le Fournisseur",
+    "deleteSupplierDesc": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ? Cette action est irréversible.",
+    "deleteStaffTitle": "Supprimer le Membre du Personnel",
+    "deleteStaffDesc": "Êtes-vous sûr de vouloir supprimer {{name}} ? Cette action est irréversible.",
+    "deleteMealTitle": "Supprimer le Plat",
+    "deleteMealDesc": "Êtes-vous sûr de vouloir supprimer le plat \"{{name}}\" ? Ceci le retirera également du point de vente.",
+    "cancelOrderTitle": "Annuler la Commande",
+    "cancelOrderDesc": "Êtes-vous sûr de vouloir annuler la commande {{orderId}} pour la table {{table}} ? Cette action est irréversible.",
+    "restoreOrderTitle": "Restaurer la Commande",
+    "restoreOrderDesc": "Êtes-vous sûr de vouloir restaurer cette commande annulée ? Ceci n'est possible que dans les 24 heures suivant l'annulation."
+  },
+  "toasts": {
+    "profileUpdated": "Profil Mis à Jour",
+    "profileUpdatedDesc": "Vos informations de profil ont été mises à jour avec succès.",
+    "passwordUpdated": "Mot de passe Mis à Jour",
+    "passwordUpdatedDesc": "Votre mot de passe a été changé avec succès.",
+    "passwordResetSuccess": "Mot de Passe Réinitialisé",
+    "passwordResetSuccessDesc": "Le mot de passe de {{name}} a été réinitialisé. Il devra le changer à sa prochaine connexion.",
+    "permissionDenied": "Permission Refusée",
+    "placeOrderDenied": "Vous n'avez pas le rôle requis pour passer des commandes.",
+    "paymentDenied": "Vous n'avez pas le rôle requis pour traiter les paiements.",
+    "error": "Erreur",
+    "selectTableError": "Veuillez sélectionner une table.",
+    "orderReady": "Commande Prête !",
+    "drinksReadyDesc": "Les boissons pour la table {{table}} sont prêtes.",
+    "foodReadyDesc": "La commande pour la table {{table}} est prête.",
+    "paymentSuccess": "Paiement Réussi",
+    "paymentSuccessDesc": "Commande encaissée. Impression du reçu...",
+    "tableAssigned": "Table Assignée",
+    "tableAssignedDesc": "La table {{tableName}} a été assignée à {{floorName}}.",
+    "tableUnassigned": "Table Désassignée",
+    "tableUnassignedDesc": "La table {{tableName}} est maintenant non assignée.",
+    "staffAssigned": "Personnel Assigné",
+    "staffAssignedDesc": "{{staffName}} a été assigné(e) à {{floorName}}.",
+    "staffUnassigned": "Personnel Désassigné",
+    "staffUnassignedDesc": "{{staffName}} est maintenant non assigné(e).",
+    "floorAddError": "Le nom de la salle ne peut pas être vide.",
+    "floorExistsError": "Cette salle existe déjà.",
+    "floorAdded": "Succès",
+    "floorAddedDesc": "La salle \"{{name}}\" a été ajoutée.",
+    "floorDeleted": "Succès",
+    "floorDeletedDesc": "La salle \"{{name}}\" a été supprimée.",
+    "categoryAdded": "Catégorie Ajoutée",
+    "categoryAddedDesc": "La catégorie \"{{name}}\" a été créée.",
+    "categoryUpdated": "Catégorie Mise à Jour",
+    "categoryUpdatedDesc": "La catégorie \"{{name}}\" a été mise à jour.",
+    "categoryDeleted": "Catégorie Supprimée",
+    "categoryDeletedDesc": "La catégorie a été supprimée avec succès.",
+    "csvError": "Erreur CSV",
+    "csvEmpty": "Le fichier CSV est vide ou ne contient que les en-têtes.",
+    "csvHeaders": "Les en-têtes du CSV sont incorrects. Veuillez utiliser le modèle.",
+    "importSuccess": "Importation Réussie",
+    "importSuccessDesc": "{{count}} produits importés.",
+    "importFailed": "Échec de l'Importation",
+    "importFailedDesc": "Impossible de lire le fichier CSV. Veuillez vérifier le format.",
+    "productAdded": "Ingrédient Ajouté",
+    "productAddedDesc": "{{name}} a été ajouté à l'inventaire.",
+    "staffAdded": "Membre Ajouté",
+    "staffAddedDesc": "{{name}} a été ajouté(e) à l'équipe. Son mot de passe par défaut est '12345678'.",
+    "staffUpdated": "Personnel Mis à Jour",
+    "staffUpdatedDesc": "Les détails pour {{name}} ont été mis à jour.",
+    "staffDeleteForbidden": "Action Interdite",
+    "staffDeleteForbiddenDesc": "Le compte Super Admin ne peut pas être supprimé.",
+    "staffDeleted": "Personnel Supprimé",
+    "staffDeletedDesc": "{{name}} a été retiré(e) de l'équipe.",
+    "supplierAdded": "Fournisseur Ajouté",
+    "supplierAddedDesc": "Le fournisseur \"{{name}}\" a été ajouté.",
+    "supplierUpdated": "Fournisseur Mis à Jour",
+    "supplierUpdatedDesc": "Les détails pour \"{{name}}\" ont été mis à jour.",
+    "supplierDeleted": "Fournisseur Supprimé",
+    "supplierDeletedDesc": "Le fournisseur a été supprimé.",
+    "tableAdded": "Table Ajoutée",
+    "tableAddedDesc": "La table \"{{name}}\" a été ajoutée.",
+    "ticketCreated": "Ticket Créé",
+    "ticketCreatedDesc": "Votre ticket \"{{title}}\" a été soumis.",
+    "ticketUpdated": "Ticket Mis à Jour",
+    "ticketUpdatedDesc": "Le ticket #{{id}} a été mis à jour.",
+    "commentAdded": "Commentaire Ajouté",
+    "commentAddedDesc": "Votre commentaire a été ajouté au ticket #{{id}}.",
+    "lowStockAlert": "Alerte de Stock Faible",
+    "lowStockAlertDesc": "Le stock de {{productName}} est faible ({{count}} restants).",
+    "mealAdded": "Plat Ajouté",
+    "mealAddedDesc": "{{name}} a été créé et est maintenant disponible sur le PDV.",
+    "mealUpdated": "Plat Mis à Jour",
+    "mealUpdatedDesc": "Les détails pour {{name}} ont été mis à jour.",
+    "mealDeleted": "Plat Supprimé",
+    "mealDeletedDesc": "Le plat a été supprimé avec succès.",
+    "orderUpdated": "Commande Mise à Jour",
+    "orderUpdatedDesc": "La commande #{{orderId}} a été mise à jour avec succès.",
+    "orderSplit": "Commande Divisée",
+    "orderSplitDesc": "Une nouvelle commande (#{{newOrderId}}) a été créée à partir de la sélection.",
+    "orderMerged": "Commandes Fusionnées",
+    "orderMergedDesc": "La commande #{{fromId}} a été fusionnée dans la #{{toId}}.",
+    "settingsSaved": "Paramètres Enregistrés",
+    "generalSettingsDesc": "Les paramètres généraux ont été mis à jour.",
+    "receiptSettingsDesc": "Les paramètres des reçus ont été mis à jour.",
+    "logoUpdated": "Logo Mis à Jour",
+    "logoUpdatedDesc": "Le logo de votre plateforme a été modifié.",
+    "invalidName": "Nom Invalide",
+    "themeNameEmpty": "Le nom du thème ne peut pas être vide.",
+    "themeAdded": "Thème Ajouté",
+    "themeAddedDesc": "Le thème \"{{name}}\" a été créé.",
+    "backupSuccess": "Sauvegarde Réussie",
+    "backupSuccessDesc": "Vos données ont été téléchargées.",
+    "backupFailed": "Échec de la Sauvegarde",
+    "backupFailedDesc": "Impossible de générer le fichier de sauvegarde.",
+    "invalidFile": "Fichier Invalide",
+    "invalidFileDesc": "Veuillez sélectionner un fichier de sauvegarde JSON valide.",
+    "restoreFailed": "Échec de la Restauration",
+    "restoreFailedDesc": "Le fichier sélectionné n'est pas une sauvegarde valide.",
+    "orderCanceled": "Commande Annulée",
+    "orderCanceledDesc": "La commande #{{orderId}} a été annulée.",
+    "orderRestored": "Commande Restaurée",
+    "orderRestoredDesc": "La commande annulée #{{orderId}} a été restaurée à l'état 'En Attente'.",
+    "restoreNotAllowed": "Restauration non Autorisée",
+    "restoreNotAllowedDesc": "Cette commande a été annulée il y a plus de 24 heures et ne peut être restaurée.",
+    "tableReserved": "Table Réservée",
+    "tableReservedDesc": "La table {{name}} a été marquée comme réservée.",
+    "tableAvailable": "Table Disponible",
+    "tableAvailableDesc": "La table {{name}} est maintenant disponible."
+  },
+  "activity": {
+    "title": "Journal d'Activité",
+    "description": "Une piste d'audit de toutes les activités majeures du système.",
+    "user": "Utilisateur",
+    "action": "Action",
+    "details": "Détails",
+    "timestamp": "Horodatage",
+    "noLogs": "Aucun journal d'activité trouvé."
+  },
+  "backup": {
+    "title": "Sauvegarde & Restauration",
+    "systemStatus": "État du Système",
+    "systemHealth": "Santé globale du système et état de la sauvegarde.",
+    "storage": "Stockage Utilisé",
+    "lastBackup": "Dernière Sauvegarde",
+    "never": "Jamais",
+    "manualBackup": "Sauvegarde Manuelle",
+    "manualBackupDesc": "Téléchargez un instantané complet de vos données. Conservez ce fichier en lieu sûr.",
+    "downloadNow": "Télécharger Maintenant",
+    "restore": "Restaurer depuis une Sauvegarde",
+    "restoreDesc": "Restaurez l'état de l'application depuis un fichier. Cela écrasera toutes les données actuelles.",
+    "uploadAndRestore": "Télécharger & Restaurer",
+    "autoBackup": "Sauvegardes Automatiques",
+    "autoBackupDesc": "Configurez la fréquence des sauvegardes automatiques.",
+    "daily": "Quotidienne",
+    "weekly": "Hebdomadaire",
+    "monthly": "Mensuelle",
+    "disabled": "Désactivé",
+    "autoBackupNote": "Note : Ceci est une simulation. Une vraie tâche cron sur un serveur serait nécessaire pour fonctionner.",
+    "history": "Historique des Sauvegardes",
+    "historyDesc": "Les 5 dernières sauvegardes sont conservées.",
+    "noHistory": "Aucun historique de sauvegarde."
+  },
+  "passwordReset": {
+    "title": "Définir un Nouveau Mot de Passe",
+    "description": "Comme c'est votre première connexion ou que votre mot de passe a été réinitialisé, vous devez définir un nouveau mot de passe.",
+    "submitButton": "Définir & Se Connecter"
+  },
+  "forgotPassword": {
+    "title": "Mot de Passe Oublié ?",
+    "description": "Veuillez contacter votre administrateur système ou votre manager pour demander une réinitialisation de mot de passe.",
+    "backToLogin": "Retour à la Connexion"
+  }
+}
