@@ -24,8 +24,14 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
     try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+        if (!id) {
+            return NextResponse.json({ message: 'ID query parameter is required' }, { status: 400 });
+        }
         const orderData = await request.json();
-        const updatedOrder = await updateOrder(orderData);
+        // The order ID from the URL is now correctly passed to the update function.
+        const updatedOrder = await updateOrder({ ...orderData, id });
         return NextResponse.json(updatedOrder);
     } catch (error: any) {
         return NextResponse.json({ message: 'Failed to update order', error: error.message }, { status: 500 });

@@ -42,7 +42,7 @@ function PosPageContent() {
     const tableFromUrl = searchParams.get('table');
     if (tableFromUrl) {
         setSelectedTable(tableFromUrl);
-        const activeOrder = orders.find(o => o.table === tableFromUrl && o.status !== "Completed");
+        const activeOrder = orders.find(o => o.table === tableFromUrl && o.status !== "Completed" && o.status !== "Canceled");
         if (activeOrder) {
             setOrderItems(activeOrder.items);
             setActiveOrderId(activeOrder.id);
@@ -104,45 +104,39 @@ function PosPageContent() {
     }
 
     if (activeOrderId) {
-        // Update existing order - for simplicity, we don't split updates.
+        // Update existing order
         const existingOrder = orders.find(o => o.id === activeOrderId);
         if (existingOrder) {
             updateOrder({ ...existingOrder, items: orderItems, timestamp: new Date() });
-            toast({ title: "Order Updated", description: `Order for ${selectedTable} has been updated.`});
+            toast({ title: t('toasts.orderUpdated'), description: t('toasts.orderUpdatedDesc', { orderId: activeOrderId })});
         }
     } else {
-        // Create new order(s)
+        // Create new order
         const foodItems = orderItems.filter(item => categories.find(c => c.name === item.category)?.isFood);
         const drinkItems = orderItems.filter(item => !categories.find(c => c.name === item.category)?.isFood);
         
-        const baseOrderId = `ORD-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-
         if (foodItems.length > 0) {
-            const foodOrder = {
-              id: drinkItems.length > 0 ? `${baseOrderId}-K` : baseOrderId,
+            addOrder({
               table: selectedTable,
               items: foodItems,
-              status: "Pending" as const,
-              timestamp: new Date(),
-            }
-            addOrder(foodOrder);
+              status: "Pending",
+            });
         }
 
         if (drinkItems.length > 0) {
-            const drinkOrder = {
-                id: foodItems.length > 0 ? `${baseOrderId}-B` : baseOrderId,
+            addOrder({
                 table: selectedTable,
                 items: drinkItems,
-                status: "Pending" as const,
-                timestamp: new Date(),
-            }
-            addOrder(drinkOrder);
+                status: "Pending",
+            });
         }
         
         updateTableStatus(selectedTable, 'Occupied');
-        toast({ title: "Order Placed", description: `New order for ${selectedTable} has been sent.`});
+        toast({ title: t('toasts.orderPlaced'), description: `New order for ${selectedTable} has been sent.`});
     }
 
+    // This part should likely happen on the backend when an order is created/paid for,
+    // but for now, we leave it on the client for simplicity of the current architecture.
     orderItems.forEach(item => {
         deductIngredientsForMeal(item.id, item.quantity)
     })
@@ -215,11 +209,11 @@ function PosPageContent() {
               <Link href="/dashboard/tables">
                   <Button variant="outline" size="sm">
                     <ArrowLeft className="mr-2 h-4 w-4"/>
-                    Back to Tables
+                    {t('tables.backToTables')}
                   </Button>
               </Link>
               <div className="text-right">
-                <Label htmlFor="table-select">{t('pos.selectTable')}</Label>
+                <Label htmlFor="table-select">{t('pos.currentTable')}</Label>
                 <h2 id="table-select" className="text-xl font-bold">{selectedTable || "..."}</h2>
               </div>
             </div>

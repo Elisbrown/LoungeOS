@@ -60,6 +60,17 @@ export default function DashboardPage() {
         setData(dashboardData);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error)
+        // Set default data on error to prevent blank screen
+        setData({
+            totalRevenue: 0,
+            totalSpending: 0,
+            totalOrders: 0,
+            completedOrders: 0,
+            canceledOrders: 0,
+            activeTables: "0 / 0",
+            topSellingProducts: [],
+            recentSales: []
+        });
       } finally {
         setLoading(false);
       }
@@ -67,52 +78,56 @@ export default function DashboardPage() {
     fetchData();
   }, [])
 
+  const completedRate = data && data.totalOrders > 0 ? (data.completedOrders / data.totalOrders * 100).toFixed(1) : "0.0";
+  const canceledRate = data && data.totalOrders > 0 ? (data.canceledOrders / data.totalOrders * 100).toFixed(1) : "0.0";
+
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <PageOnboarding page="dashboard" />
       <Header title={t('dashboard.title')} />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3 xl:grid-cols-4">
-          {loading ? (
+          {loading || !data ? (
             <>
               {[...Array(6)].map((_, i) => <KpiSkeleton key={i} />)}
             </>
-          ) : data && (
+          ) : (
             <>
               <KpiCard 
                 title={t('dashboard.totalRevenue')}
                 value={`XAF ${data.totalRevenue.toLocaleString()}`}
-                change={t('dashboard.fromLastMonth', { change: '+20.1%' })}
+                change={t('dashboard.fromLastMonth', { change: '+0.0%' })}
                 icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
               />
                <KpiCard 
                 title={t('dashboard.totalSpending')}
                 value={`XAF ${data.totalSpending.toLocaleString()}`}
-                change={t('dashboard.fromLastMonth', { change: '+15.2%' })}
+                change={t('dashboard.fromLastMonth', { change: '+0.0%' })}
                 icon={<CreditCard className="h-4 w-4 text-muted-foreground" />}
               />
               <KpiCard 
                 title={t('dashboard.totalOrders')}
                 value={data.totalOrders.toLocaleString()}
-                change={t('dashboard.fromLastMonth', { change: '+180' })}
+                change={t('dashboard.fromLastMonth', { change: '+0' })}
                 icon={<PackageSearch className="h-4 w-4 text-muted-foreground" />}
               />
                <KpiCard 
                 title={t('dashboard.completedOrders')}
                 value={data.completedOrders.toLocaleString()}
-                change={`${(data.completedOrders / data.totalOrders * 100).toFixed(1)}%`}
+                change={`${completedRate}%`}
                 icon={<CheckCircle2 className="h-4 w-4 text-muted-foreground" />}
               />
                <KpiCard 
                 title={t('dashboard.canceledOrders')}
                 value={data.canceledOrders.toLocaleString()}
-                 change={`${(data.canceledOrders / data.totalOrders * 100).toFixed(1)}%`}
+                 change={`${canceledRate}%`}
                 icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
               />
               <KpiCard 
                 title={t('dashboard.activeTables')}
                 value={data.activeTables}
-                change={t('dashboard.sinceLastHour', { change: '+2' })}
+                change={t('dashboard.sinceLastHour', { change: '+0' })}
                 icon={<Activity className="h-4 w-4 text-muted-foreground" />}
               />
             </>

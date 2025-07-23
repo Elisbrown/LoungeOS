@@ -34,16 +34,23 @@ export function useDnd(
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         
-        if (over && over.id === 'cancel' && activeOrder) {
+        setActiveId(null);
+        if (!over) {
+            return;
+        }
+
+        if (over.id === 'cancel' && activeOrder) {
             setOrderToCancel(activeOrder);
-        } else if (active && over && active.id !== over.id) {
+            return;
+        }
+        
+        if (active.id !== over.id) {
             const overContainerId = over.data.current?.sortable?.containerId || over.id;
             const validStatuses: OrderStatus[] = ['Pending', 'In Progress', 'Ready'];
             if (validStatuses.includes(overContainerId as OrderStatus)) {
                 onStatusChange(active.id as string, overContainerId as OrderStatus);
             }
         }
-        setActiveId(null);
     };
     
     return {

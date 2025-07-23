@@ -6,6 +6,7 @@ import React, { createContext, useContext, useState, ReactNode, useCallback, use
 export type StaffRole = "Super Admin" | "Manager" | "Accountant" | "Stock Manager" | "Chef" | "Waiter" | "Cashier" | "Bartender";
 
 export type StaffMember = {
+  id: string; // Add ID from DB
   name: string
   email: string
   role: StaffRole
@@ -19,8 +20,8 @@ export type StaffMember = {
 
 type StaffContextType = {
   staff: StaffMember[];
-  addStaff: (staffMember: Omit<StaffMember, 'status' | 'avatar'>) => Promise<void>;
-  updateStaff: (email: string, updatedStaff: StaffMember) => Promise<void>;
+  addStaff: (staffMember: Omit<StaffMember, 'id' | 'status' | 'avatar'>) => Promise<void>;
+  updateStaff: (email: string, updatedStaff: Partial<StaffMember>) => Promise<void>;
   deleteStaff: (email: string) => Promise<void>;
   fetchStaff: () => Promise<void>;
 };
@@ -44,7 +45,7 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
     fetchStaff();
   }, [fetchStaff])
 
-  const addStaff = useCallback(async (member: Omit<StaffMember, 'status' | 'avatar'>) => {
+  const addStaff = useCallback(async (member: Omit<StaffMember, 'id' | 'status' | 'avatar'>) => {
     await fetch('/api/staff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,7 +54,7 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
     await fetchStaff();
   }, [fetchStaff]);
 
-  const updateStaff = useCallback(async (email: string, updatedMember: StaffMember) => {
+  const updateStaff = useCallback(async (email: string, updatedMember: Partial<StaffMember>) => {
     await fetch(`/api/staff?email=${encodeURIComponent(email)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

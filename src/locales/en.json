@@ -73,6 +73,7 @@
   "pos": {
     "title": "Point of Sale",
     "selectTable": "Select Table",
+    "currentTable": "Current Table",
     "selectTablePlaceholder": "Select a table",
     "currentOrder": "Current Order",
     "noItems": "No items in the order yet.",
@@ -161,6 +162,12 @@
     "guestCount": "{{count}} Guests",
     "reserve": "Reserve",
     "makeAvailable": "Make Available",
+    "backToTables": "Back to Tables",
+    "addTableDesc": "Add a new table to an existing floor.",
+    "tableName": "Table Name",
+    "capacity": "Capacity",
+    "floor": "Floor",
+    "selectFloor": "Select a floor",
     "statuses": {
       "available": "Available",
       "occupied": "Occupied",
@@ -302,7 +309,37 @@
     "ticketsTitle": "Support Tickets",
     "ticketsDesc": "Create and manage support tickets for any issues.",
     "createTicket": "Create New Ticket",
-    "lastUpdated": "Last Updated"
+    "lastUpdated": "Last Updated",
+    "priority": "Priority",
+    "priorities": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "category": "Category",
+    "categories": {
+      "it": "IT Support",
+      "maintenance": "Maintenance",
+      "inventory": "Inventory Request",
+      "hr": "HR Issue"
+    },
+    "creator": "Creator",
+    "assignee": "Assigned To",
+    "unassigned": "Unassigned",
+    "selectPriority": "Select Priority",
+    "selectCategory": "Select Category",
+    "titlePlaceholder": "e.g., The receipt printer is not working",
+    "descriptionPlaceholder": "Please provide as much detail as possible...",
+    "submitTicket": "Submit Ticket",
+    "description": "Description",
+    "statuses": {
+      "open": "Open",
+      "in_progress": "In Progress",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "noTickets": "No support tickets found."
   },
   "credits": {
     "title": "Credits",
@@ -361,11 +398,11 @@
       "preview": "Receipt Preview"
     },
     "loginScreen": {
-      "title": "Login Screen Background",
-      "description": "Manage the images that appear in the background of the login page.",
-      "images": "Carousel Images",
-      "imagesDesc": "These images will play in a loop. Recommended size: 1920x1080.",
-      "addImage": "Add Image"
+        "title": "Login Screen Background",
+        "description": "Manage the images that appear in the background of the login page.",
+        "images": "Carousel Images",
+        "imagesDesc": "These images will play in a loop. Recommended size: 1920x1080.",
+        "addImage": "Add Image"
     }
   },
   "accounting": {

@@ -33,10 +33,11 @@ function getDb(): Database.Database {
 export async function getStaff(): Promise<StaffMember[]> {
   const db = getDb();
   try {
-    const stmt = db.prepare('SELECT name, email, role, status, avatar, floor, phone, hire_date, force_password_change FROM users');
+    const stmt = db.prepare('SELECT id, name, email, role, status, avatar, floor, phone, hire_date, force_password_change FROM users');
     const rows = stmt.all() as any[];
     return rows.map(row => ({
       ...row,
+      id: String(row.id),
       hireDate: row.hire_date ? new Date(row.hire_date) : undefined
     }));
   } finally {
@@ -47,11 +48,12 @@ export async function getStaff(): Promise<StaffMember[]> {
 export async function getStaffByEmail(email: string): Promise<StaffMember | undefined> {
     const db = getDb();
     try {
-        const stmt = db.prepare('SELECT name, email, role, status, avatar, floor, phone, hire_date, force_password_change FROM users WHERE email = ?');
+        const stmt = db.prepare('SELECT id, name, email, role, status, avatar, floor, phone, hire_date, force_password_change FROM users WHERE email = ?');
         const row = stmt.get(email) as any;
         if (!row) return undefined;
         return {
             ...row,
+            id: String(row.id),
             hireDate: row.hire_date ? new Date(row.hire_date) : undefined
         };
     } finally {
@@ -77,13 +79,13 @@ export async function verifyPassword(email: string, password_to_check: string): 
     }
 }
 
-export async function addStaff(staffData: Omit<StaffMember, 'status' | 'avatar'>): Promise<StaffMember> {
+export async function addStaff(staffData: Omit<StaffMember, 'id' | 'status' | 'avatar'>): Promise<StaffMember> {
   const db = getDb();
   try {
     const password = 'password123'; // Default password, should be communicated securely
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    const newStaff: StaffMember = { 
+    const newStaff: Omit<StaffMember, 'id'> = { 
       ...staffData, 
       status: 'Active', 
       avatar: 'https://placehold.co/100x100.png',
@@ -95,31 +97,39 @@ export async function addStaff(staffData: Omit<StaffMember, 'status' | 'avatar'>
       VALUES (@name, @email, @password, @role, @status, @avatar, @floor, @phone, @hire_date, @force_password_change)
     `);
     
-    stmt.run({
+    const info = stmt.run({
       ...newStaff,
       password: hashedPassword,
       hire_date: newStaff.hireDate?.toISOString().split('T')[0]
     });
 
-    return newStaff;
+    return { ...newStaff, id: String(info.lastInsertRowid) };
   } finally {
     // No close
   }
 }
 
-export async function updateStaff(updatedStaff: StaffMember): Promise<StaffMember> {
+export async function updateStaff(email: string, updatedStaff: Partial<StaffMember>): Promise<StaffMember> {
   const db = getDb();
   try {
+    const existingStaff = await getStaffByEmail(email);
+    if (!existingStaff) {
+        throw new Error("Staff member not found");
+    }
+
+    const finalStaff = { ...existingStaff, ...updatedStaff };
+    
     const stmt = db.prepare(`
       UPDATE users 
       SET name = @name, role = @role, status = @status, avatar = @avatar, floor = @floor, phone = @phone, hire_date = @hire_date, force_password_change = @force_password_change
       WHERE email = @email
     `);
+    
     stmt.run({
-        ...updatedStaff,
-        hire_date: updatedStaff.hireDate?.toISOString().split('T')[0]
+        ...finalStaff,
+        hire_date: finalStaff.hireDate ? new Date(finalStaff.hireDate).toISOString().split('T')[0] : null
     });
-    return updatedStaff;
+    return finalStaff;
   } finally {
     // No close
   }

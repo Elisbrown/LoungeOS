@@ -80,23 +80,23 @@ export default function DashboardLayout({
             <NotificationProvider>
                 <ProductProvider>
                     <CategoryProvider>
-                    <OrderProvider>
                         <FloorProvider>
                         <TableProvider>
-                            <SupplierProvider>
-                            <TicketProvider>
-                            <OnboardingProvider>
-                                <SidebarProvider defaultOpen={isMobile ? false : true} open={open} onOpenChange={setOpen}>
-                                    <DashboardContent>
-                                        {children}
-                                    </DashboardContent>
-                                </SidebarProvider>
-                            </OnboardingProvider>
-                            </TicketProvider>
-                            </SupplierProvider>
+                            <OrderProvider>
+                                <SupplierProvider>
+                                <TicketProvider>
+                                <OnboardingProvider>
+                                    <SidebarProvider defaultOpen={isMobile ? false : true} open={open} onOpenChange={setOpen}>
+                                        <DashboardContent>
+                                            {children}
+                                        </DashboardContent>
+                                    </SidebarProvider>
+                                </OnboardingProvider>
+                                </TicketProvider>
+                                </SupplierProvider>
+                            </OrderProvider>
                         </TableProvider>
                         </FloorProvider>
-                    </OrderProvider>
                     </CategoryProvider>
                 </ProductProvider>
             </NotificationProvider>

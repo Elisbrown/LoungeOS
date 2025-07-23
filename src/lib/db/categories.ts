@@ -6,6 +6,8 @@ import { type Category } from '@/context/category-context';
 const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'loungeos.db');
 
 function getDb() {
+  // This should be the singleton instance from another db file if it exists
+  // For now, we'll assume it might create its own connection if needed.
   return new Database(dbPath, { fileMustExist: true });
 }
 

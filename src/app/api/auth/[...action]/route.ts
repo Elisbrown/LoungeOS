@@ -3,7 +3,6 @@
 import { NextResponse } from 'next/server';
 import { getStaffByEmail, verifyPassword, updatePassword as dbUpdatePassword } from '@/lib/db/staff';
 
-// Handles POST /api/auth/login
 async function handleLogin(request: Request) {
     try {
         const { email, password } = await request.json();
@@ -21,7 +20,6 @@ async function handleLogin(request: Request) {
             return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
         }
 
-        // Don't send the password hash to the client
         const { ...userWithoutPassword } = user;
         return NextResponse.json(userWithoutPassword);
 
@@ -30,7 +28,23 @@ async function handleLogin(request: Request) {
     }
 }
 
-// Handles POST /api/auth/reset-password
+async function handleVerifyPassword(request: Request) {
+    try {
+        const { email, password } = await request.json();
+        if (!email || !password) {
+            return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
+        }
+        
+        const isCorrectPassword = await verifyPassword(email, password);
+        
+        return NextResponse.json({ success: isCorrectPassword });
+
+    } catch (error: any) {
+        return NextResponse.json({ message: 'Verification failed', error: error.message, success: false }, { status: 500 });
+    }
+}
+
+
 async function handlePasswordReset(request: Request) {
     try {
         const { email, newPassword } = await request.json();
@@ -40,7 +54,6 @@ async function handlePasswordReset(request: Request) {
         
         await dbUpdatePassword(email, newPassword);
 
-        // Fetch the updated user to return it
         const updatedUser = await getStaffByEmail(email);
         if (!updatedUser) {
              return NextResponse.json({ message: 'User not found after password update' }, { status: 404 });
@@ -65,6 +78,8 @@ export async function POST(
       return handleLogin(request);
     case 'reset-password':
       return handlePasswordReset(request);
+    case 'verify-password':
+      return handleVerifyPassword(request);
     default:
       return NextResponse.json({ message: 'Not Found' }, { status: 404 });
   }

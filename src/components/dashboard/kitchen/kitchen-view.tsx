@@ -25,7 +25,7 @@ export function KitchenView() {
     return orders
       .filter(order => order.status === status && order.items.some(item => {
         const category = categories.find(c => c.name === item.category);
-        return category && category.isFood;
+        return category?.isFood; // Only include orders with at least one food item
       }))
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   };

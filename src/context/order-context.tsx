@@ -4,6 +4,8 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/use-translation';
+import { useNotifications } from './notification-context';
+import { useTables } from './table-context';
 
 export type OrderItem = {
   id: string;
@@ -41,6 +43,9 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { addNotification } = useNotifications();
+  const { updateTableStatus } = useTables();
+
 
   const fetchOrders = useCallback(async () => {
       const response = await fetch('/api/orders');
@@ -57,13 +62,23 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchOrders]);
 
   const addOrder = useCallback(async (order: Omit<Order, 'id' | 'timestamp'> & {id?: string; timestamp?: Date;}) => {
-    await fetch('/api/orders', {
+    const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(order)
     });
-    await fetchOrders();
-  }, [fetchOrders]);
+    
+    if (response.ok) {
+        addNotification({
+            title: "New Order Placed",
+            description: `A new order has been placed for table ${order.table}.`,
+            type: 'info'
+        });
+        await fetchOrders();
+    } else {
+        console.error("Failed to add order");
+    }
+  }, [fetchOrders, addNotification]);
 
   const updateOrder = useCallback(async (updatedOrder: Order) => {
     await fetch(`/api/orders?id=${updatedOrder.id}`, {
@@ -77,9 +92,12 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus) => {
     const orderToUpdate = orders.find(o => o.id === orderId);
     if(orderToUpdate) {
+        if(status === "Completed") {
+            updateTableStatus(orderToUpdate.table, "Available");
+        }
         await updateOrder({ ...orderToUpdate, status, timestamp: new Date() });
     }
-  }, [orders, updateOrder]);
+  }, [orders, updateOrder, updateTableStatus]);
   
   const deleteOrder = useCallback(async (orderId: string) => {
     await fetch(`/api/orders?id=${orderId}`, {
@@ -98,6 +116,9 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
         await fetchOrders();
         const { newOrder } = await response.json();
         toast({ title: t('toasts.orderSplit'), description: t('toasts.orderSplitDesc', { newOrderId: newOrder.id }) });
+      } else {
+        const error = await response.json();
+        toast({ variant: 'destructive', title: "Split Failed", description: error.message });
       }
   }, [fetchOrders, t, toast]);
 

@@ -1,4 +1,3 @@
-
 // src/app/api/orders/split/route.ts
 import { NextResponse } from 'next/server';
 import { splitOrder } from '@/lib/db/orders';

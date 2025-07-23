@@ -53,14 +53,14 @@ export function SplitOrderDialog({ order, open, onOpenChange }: SplitOrderDialog
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4 max-h-60 overflow-y-auto">
-          {order.items.map(item => (
-            <div key={item.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
+          {order.items.map((item, index) => (
+            <div key={`${item.id}-${index}`} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
               <Checkbox
-                id={`split-${item.id}`}
+                id={`split-${item.id}-${index}`}
                 checked={itemsToSplit.includes(item.id)}
                 onCheckedChange={() => handleToggleItem(item.id)}
               />
-              <Label htmlFor={`split-${item.id}`} className="flex-1 cursor-pointer">
+              <Label htmlFor={`split-${item.id}-${index}`} className="flex-1 cursor-pointer">
                 <div className="flex justify-between">
                     <span>{item.name} (x{item.quantity})</span>
                     <span>XAF {(item.price * item.quantity).toLocaleString()}</span>

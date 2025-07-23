@@ -25,7 +25,7 @@ export function BarView() {
     return orders
       .filter(order => order.status === status && order.items.some(item => {
         const category = categories.find(c => c.name === item.category);
-        return category && !category.isFood;
+        return category && !category.isFood; // Only include orders with at least one drink item
       }))
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   };

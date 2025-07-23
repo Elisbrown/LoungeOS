@@ -11,16 +11,7 @@ import { PaymentDialog, type PaymentDetails } from "./payment-dialog"
 import { useTranslation } from "@/hooks/use-translation"
 import { useAuth } from "@/context/auth-context"
 import { type ReceiptProps } from "./receipt"
-import { type Order } from "@/context/order-context"
-
-export type OrderItem = {
-  id: string
-  name: string
-  price: number
-  quantity: number
-  category: string
-  image: string
-}
+import { type Order, type OrderItem } from "@/context/order-context"
 
 type OrderSummaryProps = {
   items: OrderItem[]
@@ -125,7 +116,7 @@ export function OrderSummary({ items, onUpdateQuantity, onClearOrder, onPaymentS
                 variant="outline"
                 className="w-full" 
                 size="lg" 
-                disabled={isOrderEmpty || !canPlaceOrder()}
+                disabled={isOrderEmpty}
                 onClick={onPlaceOrder}
             >
               {t('pos.placeOrder')}
@@ -152,3 +143,5 @@ export function OrderSummary({ items, onUpdateQuantity, onClearOrder, onPaymentS
     </>
   )
 }
+
+export { OrderItem }

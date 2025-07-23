@@ -1,10 +1,10 @@
 "use client"
+
 // This file is updated to wrap the bar view in a DndProvider
 import { Header } from '@/components/dashboard/header'
 import { BarView } from '@/components/dashboard/bar/bar-view'
 import { DndProvider } from '@/components/dnd/dnd-provider'
 import { useTranslation } from '@/hooks/use-translation'
-import { use } from 'react'
 
 export default function BarPage() {
   const { t } = useTranslation()

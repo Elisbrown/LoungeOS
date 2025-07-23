@@ -36,7 +36,7 @@ export function OrderDetailsDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const { updateOrder } = useOrders()
+  const { updateOrder, updateOrderStatus } = useOrders()
   const [isPaymentOpen, setPaymentOpen] = useState(false)
   const [isSplitOpen, setSplitOpen] = useState(false)
   const [isMergeOpen, setMergeOpen] = useState(false)
@@ -111,9 +111,8 @@ export function OrderDetailsDialog({
   const total = editableOrder.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
   
   const handlePaymentSuccess = (paymentDetails: PaymentDetails) => {
-    if (!user) return
-    const completedOrder = { ...editableOrder, status: "Completed" as const }
-    updateOrder(completedOrder)
+    if (!user) return;
+    updateOrderStatus(editableOrder.id, "Completed")
   }
   
   const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
@@ -152,8 +151,8 @@ export function OrderDetailsDialog({
              <Separator />
 
             <div className="space-y-4">
-                {editableOrder.items.map((item) => (
-                <div key={item.id} className="flex items-center">
+                {editableOrder.items.map((item, index) => (
+                <div key={`${item.id}-${index}`} className="flex items-center">
                     <div>
                     <p className="font-medium">{item.name}</p>
                     <p className="text-sm text-muted-foreground">

@@ -73,6 +73,7 @@
   "pos": {
     "title": "Point de Vente",
     "selectTable": "Sélectionner une Table",
+    "currentTable": "Table Actuelle",
     "selectTablePlaceholder": "Sélectionner une table",
     "currentOrder": "Commande Actuelle",
     "noItems": "Aucun article dans la commande.",
@@ -161,6 +162,12 @@
     "guestCount": "{{count}} Invités",
     "reserve": "Réserver",
     "makeAvailable": "Rendre Disponible",
+    "backToTables": "Retour aux Tables",
+    "addTableDesc": "Ajoutez une nouvelle table à une salle existante.",
+    "tableName": "Nom de la Table",
+    "capacity": "Capacité",
+    "floor": "Salle",
+    "selectFloor": "Sélectionner une salle",
     "statuses": {
       "available": "Disponible",
       "occupied": "Occupée",
@@ -302,7 +309,37 @@
     "ticketsTitle": "Tickets de Support",
     "ticketsDesc": "Créez et gérez les tickets de support pour tout problème.",
     "createTicket": "Créer un Nouveau Ticket",
-    "lastUpdated": "Dernière MAJ"
+    "lastUpdated": "Dernière MAJ",
+    "priority": "Priorité",
+    "priorities": {
+      "low": "Basse",
+      "medium": "Moyenne",
+      "high": "Haute",
+      "urgent": "Urgente"
+    },
+    "category": "Catégorie",
+    "categories": {
+      "it": "Support IT",
+      "maintenance": "Maintenance",
+      "inventory": "Demande d'Inventaire",
+      "hr": "Problème RH"
+    },
+    "creator": "Créateur",
+    "assignee": "Assigné à",
+    "unassigned": "Non assigné",
+    "selectPriority": "Choisir une priorité",
+    "selectCategory": "Choisir une catégorie",
+    "titlePlaceholder": "ex: L'imprimante ne fonctionne pas",
+    "descriptionPlaceholder": "Veuillez fournir autant de détails que possible...",
+    "submitTicket": "Soumettre le Ticket",
+    "description": "Description",
+    "statuses": {
+      "open": "Ouvert",
+      "in_progress": "En cours",
+      "resolved": "Résolu",
+      "closed": "Fermé"
+    },
+    "noTickets": "Aucun ticket de support trouvé."
   },
   "credits": {
     "title": "Crédits",

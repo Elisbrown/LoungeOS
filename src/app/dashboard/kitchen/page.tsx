@@ -1,5 +1,6 @@
-// This file is updated to wrap the kitchen view in a DndProvider
 "use client"
+
+// This file is updated to wrap the kitchen view in a DndProvider
 import { Header } from '@/components/dashboard/header'
 import { KitchenView } from '@/components/dashboard/kitchen/kitchen-view'
 import { DndProvider } from '@/components/dnd/dnd-provider'

@@ -30,7 +30,7 @@ export async function PUT(request: Request) {
             return NextResponse.json({ message: 'Email query parameter is required' }, { status: 400 });
         }
         const staffData = await request.json();
-        const updatedStaffMember = await updateStaff(staffData);
+        const updatedStaffMember = await updateStaff(email, staffData);
         return NextResponse.json(updatedStaffMember);
     } catch (error: any) {
         return NextResponse.json({ message: 'Failed to update staff member', error: error.message }, { status: 500 });

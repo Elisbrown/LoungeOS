@@ -1,7 +1,7 @@
 
 "use client"
 
-import React from "react"
+import React, { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -25,9 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Edit } from "lucide-react"
 
 const profileFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email(),
   avatar: z.string().optional(),
 })
@@ -41,13 +39,11 @@ const passwordFormSchema = z.object({
     path: ["confirmPassword"],
 })
 
-
 export default function SettingsPage() {
   const { user, login } = useAuth()
   const { toast } = useToast()
   const { t } = useTranslation()
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
@@ -57,8 +53,8 @@ export default function SettingsPage() {
       avatar: user?.avatar || "",
     },
   })
-  
-  React.useEffect(() => {
+
+  useEffect(() => {
     if (user) {
         profileForm.reset({
             name: user.name,
@@ -77,48 +73,92 @@ export default function SettingsPage() {
     }
   })
 
-  function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
-    if (user) {
-        const updatedUser = { ...user, ...values };
-        login(updatedUser)
+  async function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
+    if (!user) return;
+    try {
+        const response = await fetch(`/api/staff?email=${encodeURIComponent(user.email)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...user, ...values }),
+        });
+
+        const updatedUser = await response.json();
+        if (!response.ok) throw new Error(updatedUser.message || 'Failed to update profile');
+
+        login(updatedUser); // Update auth context
         toast({
             title: t('toasts.profileUpdated'),
             description: t('toasts.profileUpdatedDesc'),
-        })
+        });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
     }
   }
 
-  function onPasswordSubmit(values: z.infer<typeof passwordFormSchema>) {
-    // In a real app, you would verify the current password here
-    console.log(values)
-    toast({
-        title: t('toasts.passwordUpdated'),
-        description: t('toasts.passwordUpdatedDesc'),
-    })
-    passwordForm.reset()
+  async function onPasswordSubmit(values: z.infer<typeof passwordFormSchema>) {
+     if (!user) return;
+    try {
+        // First, verify the current password
+        const verifyResponse = await fetch('/api/auth/verify-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email, password: values.currentPassword }),
+        });
+        const { success } = await verifyResponse.json();
+        if (!verifyResponse.ok || !success) {
+            throw new Error('Current password is incorrect.');
+        }
+
+        // If correct, proceed to update the password
+        const resetResponse = await fetch('/api/auth/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email, newPassword: values.newPassword })
+        });
+
+        const updatedUser = await resetResponse.json();
+        if (!resetResponse.ok) {
+            throw new Error(updatedUser.message || 'Failed to reset password');
+        }
+        
+        login(updatedUser);
+        toast({
+            title: t('toasts.passwordUpdated'),
+            description: t('toasts.passwordUpdatedDesc'),
+        });
+        passwordForm.reset();
+
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    }
   }
 
   const handlePictureUpload = () => {
     fileInputRef.current?.click();
   }
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        profileForm.setValue("avatar", dataUrl);
-        // In a real app, you might auto-submit or just stage the change
-        if (user) {
-            login({ ...user, avatar: dataUrl });
+    if (file && user) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'staff');
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+            const result = await response.json();
+            if (!result.success) throw new Error(result.message || 'Upload failed');
+
+            const newAvatarPath = result.path;
+            profileForm.setValue("avatar", newAvatarPath);
+            await onProfileSubmit({ ...profileForm.getValues(), avatar: newAvatarPath });
+
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: "Upload Failed", description: error.message });
         }
-        toast({
-            title: "Avatar Updated",
-            description: `Your profile picture has been updated.`,
-        });
-      };
-      reader.readAsDataURL(file);
     }
   };
 

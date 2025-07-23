@@ -120,7 +120,7 @@ export async function getOrders(): Promise<Order[]> {
 export async function addOrder(order: Omit<Order, 'id' | 'timestamp'> & { id?: string, timestamp?: Date }): Promise<Order> {
     const db = getDb();
     const transaction = db.transaction((ord) => {
-        const orderId = ord.id || `ORD-${Date.now()}`;
+        const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
         const timestamp = (ord.timestamp || new Date()).toISOString();
 
         const orderStmt = db.prepare('INSERT INTO orders (id, table_name, status, timestamp) VALUES (?, ?, ?, ?)');
@@ -128,12 +128,10 @@ export async function addOrder(order: Omit<Order, 'id' | 'timestamp'> & { id?: s
 
         const itemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
         for (const item of ord.items) {
-            // Ensure product_id is a number for the foreign key
             const productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
             if(isNaN(productId)) throw new Error(`Invalid product ID: ${item.id}`);
 
             itemStmt.run(orderId, productId, item.quantity, item.price);
-            // Also deduct stock
             db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(item.quantity, productId);
         }
         
@@ -155,7 +153,9 @@ export async function updateOrder(updatedOrder: Order): Promise<Order> {
         db.prepare('UPDATE orders SET status = ?, timestamp = ? WHERE id = ?')
           .run(order.status, order.timestamp.toISOString(), order.id);
 
-        // Delete old items and insert new ones to handle quantity changes
+        // This is a simple update. A more complex one might compare items and adjust stock.
+        // For now, we assume stock was already deducted on creation.
+        // We just update the items in the order.
         db.prepare('DELETE FROM order_items WHERE order_id = ?').run(order.id);
         
         const itemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
@@ -207,14 +207,12 @@ export async function splitOrder(orderId: string, itemsToSplit: OrderItem[]): Pr
             status: 'Pending',
             timestamp: new Date()
         };
-        addOrder(newOrderData); // This is a nested transaction which might be problematic, let's inline it
-        
-        const orderStmt = db.prepare('INSERT INTO orders (id, table_name, status, timestamp) VALUES (?, ?, ?, ?)');
-        orderStmt.run(newOrderData.id, newOrderData.table, newOrderData.status, newOrderData.timestamp.toISOString());
-        const itemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
+        const newOrderStmt = db.prepare('INSERT INTO orders (id, table_name, status, timestamp) VALUES (?, ?, ?, ?)');
+        newOrderStmt.run(newOrderData.id, newOrderData.table, newOrderData.status, newOrderData.timestamp.toISOString());
+        const newItemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
         for (const item of newOrderData.items) {
             const productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
-            itemStmt.run(newOrderData.id, productId, item.quantity, item.price);
+            newItemStmt.run(newOrderData.id, productId, item.quantity, item.price);
         }
 
 
@@ -222,7 +220,8 @@ export async function splitOrder(orderId: string, itemsToSplit: OrderItem[]): Pr
         originalOrder.items = remainingItems;
         if (remainingItems.length === 0) {
             // If no items left, delete original order
-            deleteOrder(originalOrder.id);
+            db.prepare('DELETE FROM order_items WHERE order_id = ?').run(originalOrder.id);
+            db.prepare('DELETE FROM orders WHERE id = ?').run(originalOrder.id);
         } else {
             updateOrder(originalOrder);
         }
