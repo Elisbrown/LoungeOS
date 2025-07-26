@@ -2,7 +2,7 @@
 "use client"
 
 import { useRouter } from 'next/navigation'
-import { Users, MoreVertical, Layers, CalendarClock } from "lucide-react"
+import { Users, MoreVertical, Layers, CalendarClock, Trash2, Edit } from "lucide-react"
 import { useTables } from "@/context/table-context"
 import {
   Card,
@@ -14,20 +14,30 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { AddTableForm } from "./add-table-form"
 import { ManageFloorsDialog } from "./manage-floors-dialog"
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { useAuth } from "@/context/auth-context"
 import type { Table } from "@/context/table-context"
 import { useToast } from '@/hooks/use-toast'
 import { useTranslation } from '@/hooks/use-translation'
+import { useState } from 'react'
 
 
 export function TablesView() {
-  const { tables, addTable, updateTable, updateTableStatus } = useTables()
+  const { tables, addTable, updateTable, updateTableStatus, deleteTable } = useTables()
   const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
   const { t } = useTranslation()
+  const [deletingTable, setDeletingTable] = useState<Table | null>(null)
 
   const canManage = user?.role === "Manager" || user?.role === "Super Admin"
 
@@ -69,6 +79,16 @@ export function TablesView() {
      toast({ title: t('toasts.tableAvailable'), description: t('toasts.tableAvailableDesc', { name: table.name })});
   }
 
+  const handleDeleteTable = (table: Table) => {
+    deleteTable(table.id);
+    toast({ 
+      title: t('toasts.tableDeleted'), 
+      description: t('toasts.tableDeletedDesc', { name: table.name }),
+      variant: "destructive"
+    });
+    setDeletingTable(null);
+  }
+
   return (
     <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -81,6 +101,12 @@ export function TablesView() {
             <div className="flex items-center gap-2">
               {canManage && <ManageFloorsDialog />}
               {canManage && <AddTableForm onAddTable={addTable} />}
+              {canManage && (
+                <Button variant="outline" size="sm" className="gap-1">
+                  <Layers className="h-4 w-4" />
+                  {t('tables.manageTables')}
+                </Button>
+              )}
             </div>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -92,7 +118,34 @@ export function TablesView() {
             >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-medium">{table.name}</CardTitle>
-                <Badge variant={getStatusVariant(table.status)} className="w-fit">{t(`tables.statuses.${table.status.toLowerCase()}`)}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={getStatusVariant(table.status)} className="w-fit">{t(`tables.statuses.${table.status.toLowerCase()}`)}</Badge>
+                  {canManage && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>{t('tables.tableActions')}</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          {t('dialogs.edit')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-destructive"
+                          onSelect={() => setDeletingTable(table)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {t('dialogs.delete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
             </CardHeader>
             <CardContent className="flex-grow flex flex-col gap-2">
                 <div className="flex items-center text-sm text-muted-foreground">
@@ -120,6 +173,14 @@ export function TablesView() {
             </Card>
         ))}
         </div>
+
+        <DeleteConfirmationDialog
+          open={!!deletingTable}
+          onOpenChange={(isOpen) => !isOpen && setDeletingTable(null)}
+          onConfirm={() => deletingTable && handleDeleteTable(deletingTable)}
+          title={t('dialogs.deleteTableTitle')}
+          description={t('dialogs.deleteTableDesc', { name: deletingTable?.name })}
+        />
     </div>
   )
 }

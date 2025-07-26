@@ -46,7 +46,7 @@ export const OrderCard = React.forwardRef<HTMLDivElement, { order: Order; onUpda
   ({ order, onUpdateStatus, t, isDragging, style, ...props }, ref) => {
     
   return (
-    <Card ref={ref} style={style} className={cn("flex flex-col mb-4 touch-none", isDragging && "opacity-50 z-50")} {...props}>
+    <Card ref={ref} style={style} className={cn("flex flex-col mb-4 touch-none cursor-grab active:cursor-grabbing", isDragging && "opacity-50 z-50")} {...props}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-medium">{order.table}</CardTitle>
@@ -125,10 +125,20 @@ export function DroppableColumn({ id, title, orders, onUpdateStatus, t }: { id: 
     <div className="space-y-4">
       <h2 className="text-xl font-bold font-headline">{title} ({orders.length})</h2>
       <SortableContext id={id} items={orders.map(o => o.id)}>
-        <div ref={setNodeRef} className={cn("space-y-4 rounded-lg border bg-card p-4 h-[calc(100vh-16rem)] overflow-y-auto", isOver && "bg-accent")}>
+        <div 
+          ref={setNodeRef} 
+          className={cn(
+            "space-y-4 rounded-lg border bg-card p-4 h-[calc(100vh-16rem)] overflow-y-auto transition-colors", 
+            isOver && "bg-accent/50 border-primary"
+          )}
+        >
           {orders.length > 0 ? orders.map((order) => (
             <SortableOrderCard key={order.id} order={order} onUpdateStatus={onUpdateStatus} t={t} />
-          )) : <p className="text-muted-foreground text-center pt-10">{t('kitchen.noPending')}</p>}
+          )) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-muted-foreground text-center">{t('kitchen.noPending')}</p>
+            </div>
+          )}
         </div>
       </SortableContext>
     </div>

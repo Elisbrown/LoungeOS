@@ -60,6 +60,8 @@ const salesChartConfig = {
 export function ReportsView() {
   const { t } = useTranslation()
   const [staffPerformance, setStaffPerformance] = React.useState<any[]>([])
+  const [isGenerating, setIsGenerating] = React.useState(false)
+  const [dateRange, setDateRange] = React.useState<{ from: Date; to: Date } | undefined>()
 
   React.useEffect(() => {
     async function fetchData() {
@@ -69,6 +71,42 @@ export function ReportsView() {
     }
     fetchData()
   }, [])
+
+  const handleGenerateReport = async () => {
+    setIsGenerating(true)
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // In a real app, this would call the API with the date range
+      // const reportData = await fetch('/api/reports/generate', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ dateRange })
+      // })
+      
+      // For now, just show a success message
+      console.log('Report generated for date range:', dateRange)
+    } catch (error) {
+      console.error('Failed to generate report:', error)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleExportReport = () => {
+    // Export functionality
+    const csvContent = "data:text/csv;charset=utf-8,Date,Sales\n" + 
+      salesOverTimeData.map(row => `${row.date},${row.sales}`).join('\n')
+    
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `sales_report_${new Date().toISOString()}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
 
   return (
@@ -81,8 +119,32 @@ export function ReportsView() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-            <DateRangePicker />
-            <Button variant="outline" size="sm" className="gap-1">
+            <DateRangePicker onDateRangeChange={setDateRange} />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1"
+              onClick={handleGenerateReport}
+              disabled={isGenerating}
+            >
+                {isGenerating ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    {t('reports.generating')}
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    {t('reports.generateReport')}
+                  </>
+                )}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1"
+              onClick={handleExportReport}
+            >
                 <Download className="h-4 w-4" />
                 {t('reports.export')}
             </Button>

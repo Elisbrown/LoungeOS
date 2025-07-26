@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useDnd } from '@/hooks/use-dnd';
-import { DndContext, DragOverlay } from '@dnd-kit/core';
+import { DragOverlay } from '@dnd-kit/core';
 import { useOrders, type Order, type OrderStatus } from "@/context/order-context"
 import { useCategories } from "@/context/category-context"
 import { useToast } from "@/hooks/use-toast"
@@ -67,28 +67,25 @@ export function BarView() {
     }
   };
 
-  const { sensors, activeId, activeOrder, handleDragStart, handleDragEnd } = useDnd(
+  const { activeId, activeOrder, handleDragStart, handleDragEnd } = useDnd(
     allDrinkOrders, 
     handleUpdateStatus,
     setOrderToCancel
   );
 
-
   return (
     <>
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="flex-1 space-y-4">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <DroppableColumn id="Pending" title={t('bar.pending')} orders={orderData['Pending']} onUpdateStatus={handleUpdateStatus} t={t} />
-            <DroppableColumn id="In Progress" title={t('bar.inProgress')} orders={orderData['In Progress']} onUpdateStatus={handleUpdateStatus} t={t} />
-            <DroppableColumn id="Ready" title={t('bar.ready')} orders={orderData['Ready']} onUpdateStatus={handleUpdateStatus} t={t} />
-          </div>
-          <CancelDropZone activeId={activeId} />
+      <div className="flex-1 space-y-4">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <DroppableColumn id="Pending" title={t('bar.pending')} orders={orderData['Pending']} onUpdateStatus={handleUpdateStatus} t={t} />
+          <DroppableColumn id="In Progress" title={t('bar.inProgress')} orders={orderData['In Progress']} onUpdateStatus={handleUpdateStatus} t={t} />
+          <DroppableColumn id="Ready" title={t('bar.ready')} orders={orderData['Ready']} onUpdateStatus={handleUpdateStatus} t={t} />
         </div>
-        <DragOverlay>
-            {activeOrder ? <OrderCard order={activeOrder} isDragging /> : null}
-        </DragOverlay>
-      </DndContext>
+        <CancelDropZone activeId={activeId} />
+      </div>
+      <DragOverlay>
+          {activeOrder ? <OrderCard order={activeOrder} isDragging /> : null}
+      </DragOverlay>
        <DeleteConfirmationDialog
         open={!!orderToCancel}
         onOpenChange={(isOpen) => !isOpen && setOrderToCancel(null)}

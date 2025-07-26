@@ -255,6 +255,19 @@ export function MealsTable() {
                         ))}
                     </SelectContent>
                 </Select>
+                <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                        setSearchTerm("")
+                        setCategoryFilter("All")
+                        setStatusFilter("All")
+                        setCurrentPage(1)
+                    }}
+                    disabled={searchTerm === "" && categoryFilter === "All" && statusFilter === "All"}
+                >
+                    {t('inventory.clearFilters')}
+                </Button>
             </div>
         </CardHeader>
         <CardContent>

@@ -267,6 +267,19 @@ export function StaffTable() {
                     ))}
                 </SelectContent>
             </Select>
+            <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                    setSearchTerm("")
+                    setRoleFilter("All")
+                    setStatusFilter("All")
+                    setCurrentPage(1)
+                }}
+                disabled={searchTerm === "" && roleFilter === "All" && statusFilter === "All"}
+            >
+                {t('staff.clearFilters')}
+            </Button>
         </div>
       </CardHeader>
       <CardContent>

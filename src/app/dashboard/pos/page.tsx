@@ -16,12 +16,13 @@ import { useCategories } from '@/context/category-context'
 import { useTables } from '@/context/table-context'
 import { TableProvider } from '@/context/table-context'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Lock, ArrowLeft } from 'lucide-react'
+import { Lock, ArrowLeft, Table as TableIcon } from 'lucide-react'
 import { useTranslation } from '@/hooks/use-translation'
 import type { PaymentDetails } from '@/components/dashboard/pos/payment-dialog'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { PageOnboarding } from '@/components/dashboard/onboarding/page-onboarding'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 function PosPageContent() {
   const router = useRouter()
@@ -35,7 +36,7 @@ function PosPageContent() {
   const { user } = useAuth()
   const { toast } = useToast()
   const { deductIngredientsForMeal } = useProducts()
-  const { updateTableStatus } = useTables();
+  const { updateTableStatus, tables } = useTables();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -50,12 +51,24 @@ function PosPageContent() {
             setOrderItems([]);
             setActiveOrderId(null);
         }
-    } else {
-        // If no table is specified, redirect back to tables view
-        router.push('/dashboard/tables');
     }
-  }, [searchParams, orders, router]);
+  }, [searchParams, orders]);
 
+  const availableTables = useMemo(() => {
+    return tables.filter(table => table.status === 'Available' || table.status === 'Occupied');
+  }, [tables]);
+
+  const handleTableSelect = (tableId: string) => {
+    setSelectedTable(tableId);
+    const activeOrder = orders.find(o => o.table === tableId && o.status !== "Completed" && o.status !== "Canceled");
+    if (activeOrder) {
+        setOrderItems(activeOrder.items);
+        setActiveOrderId(activeOrder.id);
+    } else {
+        setOrderItems([]);
+        setActiveOrderId(null);
+    }
+  };
 
   const handleProductClick = (product: Meal) => {
     setOrderItems((prevItems) => {
@@ -141,7 +154,7 @@ function PosPageContent() {
         deductIngredientsForMeal(item.id, item.quantity)
     })
 
-    router.push('/dashboard/tables');
+    // Don't redirect, stay on POS page
   }
 
   const handlePaymentSuccess = (paymentDetails: PaymentDetails) => {
@@ -163,7 +176,7 @@ function PosPageContent() {
     updateTableStatus(selectedTable, "Available");
     
     handleClearOrder()
-    router.push('/dashboard/tables');
+    setActiveOrderId(null);
   }
 
   
@@ -194,6 +207,50 @@ function PosPageContent() {
       );
   }
 
+  // Show table selection if no table is selected
+  if (!selectedTable) {
+    return (
+      <div className="flex h-screen w-full flex-col">
+        <PageOnboarding page="pos" />
+        <Header title={t('pos.title')} />
+        <main className="flex flex-1 flex-col items-center justify-center p-4 md:p-8">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TableIcon className="h-5 w-5" />
+                {t('pos.selectTable')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="table-select">{t('pos.selectTableLabel')}</Label>
+                <Select onValueChange={handleTableSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('pos.selectTablePlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTables.map((table) => (
+                      <SelectItem key={table.id} value={table.id}>
+                        {table.name} ({table.status})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" asChild className="flex-1">
+                  <Link href="/dashboard/tables">
+                    <ArrowLeft className="mr-2 h-4 w-4"/>
+                    {t('tables.backToTables')}
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -206,15 +263,13 @@ function PosPageContent() {
           </div>
           <div className="w-full max-w-sm border-l bg-card p-4 flex flex-col">
             <div className="mb-4 flex items-center justify-between">
-              <Link href="/dashboard/tables">
-                  <Button variant="outline" size="sm">
-                    <ArrowLeft className="mr-2 h-4 w-4"/>
-                    {t('tables.backToTables')}
-                  </Button>
-              </Link>
+              <Button variant="outline" size="sm" onClick={() => setSelectedTable('')}>
+                <ArrowLeft className="mr-2 h-4 w-4"/>
+                {t('pos.changeTable')}
+              </Button>
               <div className="text-right">
                 <Label htmlFor="table-select">{t('pos.currentTable')}</Label>
-                <h2 id="table-select" className="text-xl font-bold">{selectedTable || "..."}</h2>
+                <h2 id="table-select" className="text-xl font-bold">{selectedTable}</h2>
               </div>
             </div>
             <div className="flex-1">

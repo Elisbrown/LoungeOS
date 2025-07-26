@@ -16,6 +16,7 @@ type TableContextType = {
   addTable: (table: Omit<Table, 'status' | 'id'>) => Promise<void>;
   updateTable: (table: Table) => Promise<void>;
   updateTableStatus: (tableName: string, status: Table['status']) => Promise<void>;
+  deleteTable: (tableId: string) => Promise<void>;
   fetchTables: () => Promise<void>;
 };
 
@@ -64,8 +65,15 @@ export const TableProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [tables, updateTable]);
 
+  const deleteTable = useCallback(async (tableId: string) => {
+    await fetch(`/api/tables?id=${tableId}`, {
+        method: 'DELETE',
+    });
+    await fetchTables();
+  }, [fetchTables]);
+
   return (
-    <TableContext.Provider value={{ tables, addTable, updateTable, updateTableStatus, fetchTables }}>
+    <TableContext.Provider value={{ tables, addTable, updateTable, updateTableStatus, deleteTable, fetchTables }}>
       {children}
     </TableContext.Provider>
   );

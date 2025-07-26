@@ -1,11 +1,22 @@
 // New file: DndProvider to abstract away DND context setup
 "use client"
 
-import React, { useState, useMemo } from 'react';
-import { DndContext, type DndContextProps } from '@dnd-kit/core';
+import React from 'react';
+import { DndContext, useSensors, useSensor, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
 
 export function DndProvider({ children }: { children: React.ReactNode }) {
-    // This is a placeholder for now, but can be expanded with sensors etc.
-    const dndContextProps: DndContextProps = {};
-    return <DndContext {...dndContextProps}>{children}</DndContext>;
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 10,
+            },
+        }),
+        useSensor(KeyboardSensor)
+    );
+
+    return (
+        <DndContext sensors={sensors}>
+            {children}
+        </DndContext>
+    );
 }
