@@ -5,7 +5,6 @@ import { Header } from '@/components/dashboard/header'
 import { KitchenView } from '@/components/dashboard/kitchen/kitchen-view'
 import { DndProvider } from '@/components/dnd/dnd-provider'
 import { useTranslation } from '@/hooks/use-translation'
-import { DndContext, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core'
 import { useDnd } from '@/hooks/use-dnd'
 import { useOrders, type OrderStatus } from '@/context/order-context'
 import { useCategories } from '@/context/category-context'
@@ -16,10 +15,23 @@ import type { Order } from '@/context/order-context'
 
 function KitchenPageContent() {
   const { t } = useTranslation()
+
+  return (
+    <div className="flex min-h-screen w-full flex-col">
+      <Header title={t('kitchen.title')} />
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <KitchenView />
+      </main>
+    </div>
+  )
+}
+
+export default function KitchenPage() {
   const { orders, updateOrderStatus } = useOrders()
   const { categories } = useCategories()
   const { toast } = useToast()
   const { addNotification } = useNotifications()
+  const { t } = useTranslation()
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null)
 
   const getFoodOrders = (status: OrderStatus) => {
@@ -53,27 +65,14 @@ function KitchenPageContent() {
     }
   }
 
-  const { activeId, activeOrder, handleDragStart, handleDragEnd } = useDnd(
+  const { handleDragStart, handleDragEnd } = useDnd(
     allFoodOrders, 
     handleUpdateStatus,
     setOrderToCancel
   );
 
   return (
-    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex min-h-screen w-full flex-col">
-        <Header title={t('kitchen.title')} />
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <KitchenView />
-        </main>
-      </div>
-    </DndContext>
-  )
-}
-
-export default function KitchenPage() {
-  return (
-    <DndProvider>
+    <DndProvider onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <KitchenPageContent />
     </DndProvider>
   )

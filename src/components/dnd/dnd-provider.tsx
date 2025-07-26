@@ -2,9 +2,15 @@
 "use client"
 
 import React from 'react';
-import { DndContext, useSensors, useSensor, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
+import { DndContext, useSensors, useSensor, PointerSensor, KeyboardSensor, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
 
-export function DndProvider({ children }: { children: React.ReactNode }) {
+interface DndProviderProps {
+  children: React.ReactNode;
+  onDragStart?: (event: DragStartEvent) => void;
+  onDragEnd?: (event: DragEndEvent) => void;
+}
+
+export function DndProvider({ children, onDragStart, onDragEnd }: DndProviderProps) {
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -15,7 +21,11 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
     );
 
     return (
-        <DndContext sensors={sensors}>
+        <DndContext 
+            sensors={sensors}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+        >
             {children}
         </DndContext>
     );
