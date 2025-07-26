@@ -29,12 +29,13 @@ export type Ticket = {
     name: string
   }
   timestamp: Date
+  lastUpdated: Date
   comments: TicketComment[]
 }
 
 type TicketContextType = {
   tickets: Ticket[]
-  addTicket: (ticket: Omit<Ticket, 'id' | 'timestamp' | 'status' | 'assignee' | 'comments'>) => Promise<void>;
+  addTicket: (ticket: Omit<Ticket, 'id' | 'timestamp' | 'lastUpdated' | 'status' | 'assignee' | 'comments'>) => Promise<void>;
   updateTicket: (updatedTicket: Ticket) => Promise<void>;
   addComment: (ticketId: string, comment: TicketComment) => Promise<void>;
   fetchTickets: () => Promise<void>;
@@ -54,6 +55,7 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
         setTickets(data.map((t: any) => ({
             ...t,
             timestamp: new Date(t.timestamp),
+            lastUpdated: new Date(t.lastUpdated || t.timestamp),
             comments: t.comments.map((c: any) => ({ ...c, timestamp: new Date(c.timestamp)}))
         })));
     } else {
@@ -65,7 +67,7 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
     fetchTickets();
   }, [fetchTickets])
 
-  const addTicket = useCallback(async (ticketData: Omit<Ticket, 'id' | 'timestamp' | 'status' | 'assignee'| 'comments'>) => {
+  const addTicket = useCallback(async (ticketData: Omit<Ticket, 'id' | 'timestamp' | 'lastUpdated' | 'status' | 'assignee'| 'comments'>) => {
     await fetch('/api/tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -75,10 +77,15 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchTickets])
 
   const updateTicket = useCallback(async (updatedTicketData: Ticket) => {
+    const ticketWithUpdatedTime = {
+      ...updatedTicketData,
+      lastUpdated: new Date()
+    };
+    
     await fetch(`/api/tickets?id=${updatedTicketData.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedTicketData)
+        body: JSON.stringify(ticketWithUpdatedTime)
     });
     await fetchTickets();
     toast({

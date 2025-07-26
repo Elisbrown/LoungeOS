@@ -83,7 +83,7 @@ export function TicketsTable({ onSelectTicket }: TicketsTableProps) {
             </TableCell>
             <TableCell>{ticket.creatorName}</TableCell>
             <TableCell>{ticket.assignee?.name || t('support.unassigned')}</TableCell>
-            <TableCell>{formatDistanceToNow(ticket.timestamp, { addSuffix: true })}</TableCell>
+            <TableCell>{formatDistanceToNow(ticket.lastUpdated, { addSuffix: true })}</TableCell>
           </TableRow>
         )) : (
             <TableRow>

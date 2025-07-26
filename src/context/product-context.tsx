@@ -88,9 +88,33 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   }, [addNotification, t]);
   
   const addIngredient = useCallback(async (newIngredientData: Omit<Ingredient, 'status' | 'image'>) => {
-    // This part is not fully implemented with API routes yet, but keeping the structure.
-    console.warn("addIngredient via API not implemented");
-  }, []);
+    const getStatusForStock = (stock: number): Ingredient['status'] => {
+      if (stock <= 0) return "Out of Stock"
+      if (stock < 10) return "Low Stock"
+      return "In Stock"
+    }
+
+    const newIngredient: Ingredient = {
+      ...newIngredientData,
+      status: getStatusForStock(newIngredientData.stock),
+      image: "https://placehold.co/100x100.png"
+    };
+
+    // Check if SKU already exists
+    const existingIngredient = ingredients.find(ing => ing.sku === newIngredient.sku);
+    if (existingIngredient) {
+      throw new Error(`Ingredient with SKU ${newIngredient.sku} already exists`);
+    }
+
+    setIngredients(prev => [...prev, newIngredient]);
+    
+    // TODO: Add API call when backend is ready
+    // await fetch('/api/ingredients', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(newIngredient),
+    // });
+  }, [ingredients]);
 
   const addMeal = useCallback(async (mealData: Omit<Meal, 'id'>) => {
     await fetch('/api/products', {
