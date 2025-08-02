@@ -62,11 +62,12 @@ export function AddTicketForm({ onAddTicket, currentUser }: AddTicketFormProps) 
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     onAddTicket({
-      ...values,
-      creatorId: currentUser.email,
-      creatorName: currentUser.name,
-      priority: values.priority as TicketPriority,
-      category: values.category as TicketCategory,
+        ...values,
+        creatorId: currentUser.id,
+        creatorName: currentUser.name,
+        priority: values.priority as TicketPriority,
+        category: values.category as TicketCategory,
+        lastUpdated: new Date(),
     })
     toast({
       title: t('toasts.ticketCreated'),

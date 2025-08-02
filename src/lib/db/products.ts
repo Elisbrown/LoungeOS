@@ -90,3 +90,71 @@ export async function deleteMeal(mealId: string): Promise<{ id: string }> {
     // No close
   }
 }
+
+// New function to get unified products (food + drinks + packaging)
+export async function getUnifiedProducts(): Promise<Meal[]> {
+  const db = getDb();
+  try {
+    // Get food items from products table
+    const foodStmt = db.prepare('SELECT id, name, price, category, image, quantity FROM products');
+    const foodItems = foodStmt.all() as any[];
+    
+    // Get drink items from inventory_items table (beverages)
+    const drinkStmt = db.prepare(`
+      SELECT 
+        'inv_' || id as id, 
+        name, 
+        COALESCE(cost_per_unit * 2, 1000) as price, 
+        category, 
+        image, 
+        current_stock as quantity
+      FROM inventory_items 
+      WHERE category LIKE '%Beverage%' OR category LIKE '%Drink%' OR category LIKE '%Beer%' OR category LIKE '%Wine%'
+    `);
+    const drinkItems = drinkStmt.all() as any[];
+    
+    // Get packaging items from inventory_items table
+    const packagingStmt = db.prepare(`
+      SELECT 
+        'inv_' || id as id, 
+        name, 
+        COALESCE(cost_per_unit * 1.5, 100) as price, 
+        category, 
+        image, 
+        current_stock as quantity
+      FROM inventory_items 
+      WHERE category LIKE '%Packaging%' OR category LIKE '%Paper%' OR category LIKE '%Container%' 
+         OR category LIKE '%Bag%' OR category LIKE '%Box%' OR category LIKE '%Wrapper%' 
+         OR category LIKE '%Plastic%' OR category LIKE '%Foil%' OR category LIKE '%Straw%' 
+         OR category LIKE '%Cup%' OR category LIKE '%Plate%' OR category LIKE '%Bowl%' 
+         OR category LIKE '%Utensil%' OR category LIKE '%Napkin%' OR category LIKE '%Tissue%'
+    `);
+    const packagingItems = packagingStmt.all() as any[];
+    
+    // Combine and format all items
+    const allItems = [...foodItems, ...drinkItems, ...packagingItems].map(item => ({
+        ...item,
+        id: String(item.id), // Ensure id is a string
+        price: Number(item.price) || 0,
+        quantity: Number(item.quantity) || 0
+    }));
+    
+    return allItems;
+  } finally {
+    // No close
+  }
+}
+
+// Function to update inventory stock when drinks are sold
+export async function updateInventoryStockForSale(inventoryId: string, quantitySold: number): Promise<void> {
+  const db = getDb();
+  try {
+    // Extract the actual inventory ID (remove 'inv_' prefix)
+    const actualId = inventoryId.replace('inv_', '');
+    
+    const stmt = db.prepare('UPDATE inventory_items SET current_stock = current_stock - ? WHERE id = ?');
+    stmt.run(quantitySold, actualId);
+  } finally {
+    // No close
+  }
+}

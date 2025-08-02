@@ -6,90 +6,104 @@ import { useAuth } from './auth-context';
 import type { User } from './auth-context';
 
 export type ActivityLog = {
-    id: string;
-    user: {
+    id: number;
+    user_id: number | null;
+    action: string;
+    details: string | null;
+    timestamp: string;
+    user?: {
         name: string;
         email: string;
         avatar: string;
     };
-    action: string;
-    details: string;
-    timestamp: string; // Use ISO string for serialization
 };
 
 type ActivityLogContextType = {
     logs: ActivityLog[];
     logActivity: (action: string, details: string) => void;
     clearLogs: () => void;
+    fetchLogs: () => Promise<void>;
 };
-
-const ACTIVITY_LOG_STORAGE_KEY = 'loungeos_activity_logs';
-const MAX_LOGS = 1000; // Keep only the last 1000 logs
 
 export const ActivityLogContext = createContext<ActivityLogContextType | undefined>(undefined);
 
 export const ActivityLogProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
-    const [logs, setLogs] = useState<ActivityLog[]>(() => {
-        if (typeof window === 'undefined') {
-            return [];
-        }
-        const saved = localStorage.getItem(ACTIVITY_LOG_STORAGE_KEY);
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [logs, setLogs] = useState<ActivityLog[]>([]);
 
     const fetchLogs = useCallback(async () => {
-        // In a real app with a DB, this would fetch from an API route.
-        // For now, we'll keep it in localStorage for persistence.
+        try {
+            const response = await fetch('/api/activity-logs');
+            if (response.ok) {
+                const data = await response.json();
+                setLogs(data);
+            } else {
+                console.error('Failed to fetch activity logs');
+            }
+        } catch (error) {
+            console.error('Error fetching activity logs:', error);
+        }
     }, []);
 
     useEffect(() => {
         fetchLogs();
     }, [fetchLogs]);
 
-    // Save logs to localStorage whenever they change
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem(ACTIVITY_LOG_STORAGE_KEY, JSON.stringify(logs));
-        }
-    }, [logs]);
-
-    const logActivity = useCallback((action: string, details: string) => {
+    const logActivity = useCallback(async (action: string, details: string) => {
         if (!user) return; // Only log if a user is signed in
 
-        const newLog: ActivityLog = {
-            id: `log_${Date.now()}_${Math.random()}`,
-            user: {
-                name: user.name,
-                email: user.email,
-                avatar: user.avatar || "https://placehold.co/100x100.png"
-            },
-            action,
-            details,
-            timestamp: new Date().toISOString(),
-        };
+        try {
+            // For now, we'll log without user ID to avoid circular dependency
+            // The user information will be available in the logs through the user object
+            const response = await fetch('/api/activity-logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    userId: null, // We'll get this from the backend using email
+                    action, 
+                    details,
+                    userEmail: user.email // Pass email to backend
+                })
+            });
 
-        setLogs(prev => {
-            const newLogs = [newLog, ...prev];
-            // Keep only the last MAX_LOGS entries
-            return newLogs.slice(0, MAX_LOGS);
-        });
+            if (response.ok) {
+                // Refresh logs after adding new one
+                await fetchLogs();
+            } else {
+                console.error('Failed to log activity');
+            }
+        } catch (error) {
+            console.error('Error logging activity:', error);
+        }
+    }, [user, fetchLogs]);
 
-        // In a real app, this would be an API call
-        // fetch('/api/activity', { method: 'POST', body: JSON.stringify(newLog) });
+    const clearLogs = useCallback(async () => {
+        try {
+            const response = await fetch('/api/activity-logs', {
+                method: 'DELETE'
+            });
 
-    }, [user]);
-
-    const clearLogs = useCallback(() => {
-        setLogs([]);
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem(ACTIVITY_LOG_STORAGE_KEY);
+            if (response.ok) {
+                setLogs([]);
+            } else {
+                console.error('Failed to clear activity logs');
+            }
+        } catch (error) {
+            console.error('Error clearing activity logs:', error);
         }
     }, []);
 
     return (
-        <ActivityLogContext.Provider value={{ logs, logActivity, clearLogs }}>
+        <ActivityLogContext.Provider value={{ logs, logActivity, clearLogs, fetchLogs }}>
             {children}
         </ActivityLogContext.Provider>
     );
+};
+
+export const useActivityLog = () => {
+    const context = useContext(ActivityLogContext);
+    if (context === undefined) {
+        throw new Error('useActivityLog must be used within an ActivityLogProvider');
+    }
+    return context;
 };

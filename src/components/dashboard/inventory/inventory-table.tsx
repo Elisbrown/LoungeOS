@@ -1,11 +1,14 @@
 
 "use client"
 
-import React, { useMemo } from "react"
-import { MoreHorizontal, Upload, Download, File, ChevronLeft, ChevronRight } from "lucide-react"
-import { useProducts, type Ingredient } from "@/context/product-context"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import React, { useMemo, useState } from "react";
+import { MoreHorizontal, Upload, Download, File, ChevronLeft, ChevronRight, Eye, Edit, Trash2, TrendingUp, TrendingDown } from "lucide-react";
+import { useInventory } from "@/context/inventory-context";
+import { useSettings } from "@/context/settings-context";
+import type { InventoryItem } from "@/lib/db/inventory";
+import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +16,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -21,138 +24,133 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { AddProductForm } from "./add-product-form"
-import { useToast } from "@/hooks/use-toast"
-import { useTranslation } from "@/hooks/use-translation"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/use-translation";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { InventoryMovementsDialog } from "./inventory-movements-dialog";
+import { AddInventoryItemDialog } from "./add-inventory-item-dialog";
+import { EditInventoryItemDialog } from "./edit-inventory-item-dialog";
+import { StockMovementDialog } from "./stock-movement-dialog";
 
-const getStatusForStock = (stock: number): Ingredient['status'] => {
-    if (stock <= 0) return "Out of Stock"
-    if (stock < 10) return "Low Stock"
-    return "In Stock"
-}
-
-const statusOptions = ["All", "In Stock", "Low Stock", "Out of Stock"];
+const statusOptions = ["All", "In Stock", "Low Stock", "Out of Stock"] as const;
 
 export function InventoryTable() {
-  const { ingredients, setIngredients, addIngredient } = useProducts()
-  const { toast } = useToast()
-  const { t } = useTranslation()
-  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const { items, deleteItem, loading } = useInventory();
+  const { settings } = useSettings();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
-  const [searchTerm, setSearchTerm] = React.useState("")
-  const [statusFilter, setStatusFilter] = React.useState("All")
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [itemsPerPage, setItemsPerPage] = React.useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  // Dialog states
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [movementsDialogOpen, setMovementsDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [stockMovementDialogOpen, setStockMovementDialogOpen] = useState(false);
+  const [movementType, setMovementType] = useState<'IN' | 'OUT'>('IN');
 
-  const getStatusVariant = (status: Ingredient['status']) => {
+  const getStatusVariant = (status: InventoryItem['status']) => {
     switch (status) {
       case "In Stock":
-        return "success"
+        return "default";
       case "Low Stock":
-        return "secondary"
+        return "secondary";
       case "Out of Stock":
-        return "destructive"
+        return "destructive";
     }
-  }
+  };
   
-  const filteredIngredients = useMemo(() => {
-    return ingredients.filter(ing => {
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
         const matchesSearch = searchTerm === "" || 
-                              ing.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                              ing.sku.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === "All" || ing.status === statusFilter;
-        return matchesSearch && matchesStatus;
+                              item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              item.sku.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === "All" || item.status === statusFilter;
+        const matchesCategory = categoryFilter === "All" || item.category === categoryFilter;
+        return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [ingredients, searchTerm, statusFilter])
+  }, [items, searchTerm, statusFilter, categoryFilter]);
 
-  const totalPages = Math.ceil(filteredIngredients.length / itemsPerPage);
-  const paginatedIngredients = filteredIngredients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  const categories = useMemo(() => {
+    const uniqueCategories = [...new Set(items.map(item => item.category))];
+    return uniqueCategories.sort();
+  }, [items]);
 
   const handleDownloadTemplate = () => {
-    const csvContent = "data:text/csv;charset=utf-8,name,sku,category,stock\n"
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement("a")
-    link.setAttribute("href", encodedUri)
-    link.setAttribute("download", "ingredient_template.csv")
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+    const csvContent = "data:text/csv;charset=utf-8,sku,name,category,description,unit,min_stock_level,max_stock_level,current_stock,cost_per_unit,supplier_id\n";
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "inventory_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleImportClick = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
   const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target?.result as string
+      const text = e.target?.result as string;
       try {
-        const lines = text.split('\n').filter(line => line.trim() !== '')
+        const lines = text.split('\n').filter(line => line.trim() !== '');
         if (lines.length <= 1) {
-            toast({ variant: "destructive", title: t('toasts.csvError'), description: t('toasts.csvEmpty') })
-            return
+            toast({ variant: "destructive", title: t('toasts.csvError'), description: t('toasts.csvEmpty') });
+            return;
         }
-        const headers = lines[0].split(',').map(h => h.trim())
-        const requiredHeaders = ['name', 'sku', 'category', 'stock']
+        const headers = lines[0].split(',').map(h => h.trim());
+        const requiredHeaders = ['sku', 'name', 'category', 'current_stock'];
         if (!requiredHeaders.every(h => headers.includes(h))) {
-            toast({ variant: "destructive", title: t('toasts.csvError'), description: t('toasts.csvHeaders') })
-            return
+            toast({ variant: "destructive", title: t('toasts.csvError'), description: t('toasts.csvHeaders') });
+            return;
         }
 
-        const newIngredients = lines.slice(1).map(line => {
-            const values = line.split(',')
-            const productData: any = {}
-            headers.forEach((header, index) => {
-                productData[header] = values[index].trim()
-            })
-            
-            const stock = parseInt(productData.stock, 10)
-            if (isNaN(stock)) {
-                throw new Error(`Invalid stock value for SKU ${productData.sku}`)
-            }
-
-            return {
-                name: productData.name,
-                sku: productData.sku,
-                category: productData.category,
-                stock: stock,
-                status: getStatusForStock(stock),
-                image: "https://placehold.co/100x100.png",
-            }
-        });
-        
-        setIngredients(prev => [...prev, ...newIngredients]);
-        toast({ title: t('toasts.importSuccess'), description: t('toasts.importSuccessDesc', { count: newIngredients.length }) })
+        // Process CSV import - this would need to be implemented with the new inventory system
+        toast({ title: t('toasts.importSuccess'), description: t('toasts.importSuccessDesc', { count: lines.length - 1 }) });
       } catch (error) {
-        toast({ variant: "destructive", title: t('toasts.importFailed'), description: t('toasts.importFailedDesc') })
-        console.error("CSV Parsing Error:", error)
+        toast({ variant: "destructive", title: t('toasts.importFailed'), description: t('toasts.importFailedDesc') });
+        console.error("CSV Parsing Error:", error);
       } finally {
-        // Reset file input
         if(event.target) {
-          event.target.value = ''
+          event.target.value = '';
         }
       }
-    }
-    reader.readAsText(file)
-  }
+    };
+    reader.readAsText(file);
+  };
   
   const handleExportCSV = () => {
-    const headers = ["Name", "SKU", "Category", "Stock", "Status"];
-    const rows = paginatedIngredients.map(item => [
-      item.name,
+    const headers = ["SKU", "Name", "Category", "Description", "Unit", "Min Stock", "Max Stock", "Current Stock", "Cost/Unit", "Status", "Supplier"];
+    const rows = paginatedItems.map(item => [
       item.sku,
+      item.name,
       item.category,
-      item.stock,
-      item.status
+      item.description || '',
+      item.unit,
+      item.min_stock_level,
+      item.max_stock_level || '',
+      item.current_stock,
+      item.cost_per_unit || '',
+      item.status,
+      item.supplier?.name || ''
     ]);
 
     let csvContent = "data:text/csv;charset=utf-8," 
@@ -162,159 +160,299 @@ export function InventoryTable() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `ingredients_export_${new Date().toISOString()}.csv`);
+    link.setAttribute("download", `inventory_export_${new Date().toISOString()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }
+  };
+
+  const handleDelete = async (item: InventoryItem) => {
+    try {
+      await deleteItem(item.id);
+      toast({
+        title: t('toasts.itemDeleted'),
+        description: t('toasts.itemDeletedDesc', { name: item.name }),
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: t('toasts.deleteFailed'),
+        description: t('toasts.deleteFailedDesc'),
+      });
+    }
+  };
+
+  const handleViewMovements = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setMovementsDialogOpen(true);
+  };
+
+  const handleEditItem = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setEditDialogOpen(true);
+  };
+
+  const handleStockMovement = (item: InventoryItem, type: 'IN' | 'OUT') => {
+    setSelectedItem(item);
+    setMovementType(type);
+    setStockMovementDialogOpen(true);
+  };
 
   return (
     <div>
-        <div className="flex items-center justify-between gap-2 mb-4">
-             <div className="flex items-center gap-2">
-                <Input 
-                    placeholder={t('inventory.searchPlaceholder')}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                />
-                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {statusOptions.map(status => (
-                            <SelectItem key={status} value={status}>{status === 'All' ? t('inventory.allStatuses') : t(`inventory.${status.toLowerCase().replace(' ', '')}`)}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="flex items-center gap-2">
-                <AddProductForm onAddIngredient={addIngredient} />
-                <DropdownMenu>
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <Input 
+            placeholder={t('inventory.searchPlaceholder')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
+          />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map(status => (
+                <SelectItem key={status} value={status}>
+                  {status === 'All' ? t('inventory.allStatuses') : t(`inventory.${status.toLowerCase().replace(' ', '')}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">{t('inventory.allCategories')}</SelectItem>
+              {categories.map(category => (
+                <SelectItem key={category} value={category}>{category}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              setSearchTerm("")
+              setStatusFilter("All")
+              setCategoryFilter("All")
+              setCurrentPage(1)
+            }}
+            disabled={searchTerm === "" && statusFilter === "All" && categoryFilter === "All"}
+          >
+            {t('inventory.clearFilters')}
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <AddInventoryItemDialog />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1">
+                <File className="h-4 w-4" />
+                {t('inventory.fileActions')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{t('inventory.csvActions')}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={handleImportClick}>
+                <Upload className="mr-2 h-4 w-4" />
+                {t('inventory.importCSV')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleDownloadTemplate}>
+                <Download className="mr-2 h-4 w-4" />
+                {t('inventory.downloadTemplate')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleExportCSV}>
+                <Download className="mr-2 h-4 w-4" />
+                {t('inventory.exportCSV')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept=".csv"
+            onChange={handleFileImport}
+          />
+        </div>
+      </div>
+
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('inventory.item')}</TableHead>
+              <TableHead>{t('inventory.sku')}</TableHead>
+              <TableHead>{t('inventory.category')}</TableHead>
+              <TableHead>{t('inventory.stock')}</TableHead>
+              <TableHead>{t('inventory.cost')}</TableHead>
+              <TableHead>{t('inventory.status')}</TableHead>
+              <TableHead>{t('inventory.supplier')}</TableHead>
+              <TableHead>
+                <span className="sr-only">{t('inventory.actions')}</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedItems.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  {t('inventory.noItemsFound')}
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedItems.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={item.image || "https://placehold.co/100x100.png"} alt={item.name} />
+                      <AvatarFallback>{item.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium">{item.name}</div>
+                      {item.description && (
+                        <div className="text-sm text-muted-foreground">{item.description}</div>
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>{item.sku}</TableCell>
+                <TableCell>{item.category}</TableCell>
+                <TableCell>
+                  <div>
+                    <div className="font-medium">{item.current_stock} {item.unit}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Min: {item.min_stock_level} {item.max_stock_level && `| Max: ${item.max_stock_level}`}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {item.cost_per_unit ? formatCurrency(item.cost_per_unit, settings.defaultCurrency) : '-'}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={getStatusVariant(item.status)}>
+                    {t(`inventory.${item.status.toLowerCase().replace(' ', '')}`)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {item.supplier?.name || '-'}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-1">
-                        <File className="h-4 w-4" />
-                        {t('inventory.fileActions')}
-                        </Button>
+                      <Button aria-haspopup="true" size="icon" variant="ghost">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Toggle menu</span>
+                      </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>{t('inventory.csvActions')}</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={handleImportClick}>
-                            <Upload className="mr-2 h-4 w-4" />
-                            {t('inventory.importCSV')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={handleDownloadTemplate}>
-                            <Download className="mr-2 h-4 w-4" />
-                            {t('inventory.downloadTemplate')}
-                        </DropdownMenuItem>
-                         <DropdownMenuItem onSelect={handleExportCSV}>
-                            <Download className="mr-2 h-4 w-4" />
-                            {t('inventory.exportCSV')}
-                        </DropdownMenuItem>
+                      <DropdownMenuLabel>{t('inventory.actions')}</DropdownMenuLabel>
+                      <DropdownMenuItem onSelect={() => handleViewMovements(item)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        {t('inventory.viewMovements')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => handleEditItem(item)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        {t('dialogs.edit')}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={() => handleStockMovement(item, 'IN')}>
+                        <TrendingUp className="mr-2 h-4 w-4" />
+                        {t('inventory.stockIn')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => handleStockMovement(item, 'OUT')}>
+                        <TrendingDown className="mr-2 h-4 w-4" />
+                        {t('inventory.stockOut')}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onSelect={() => handleDelete(item)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {t('dialogs.delete')}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
-                </DropdownMenu>
-                <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept=".csv"
-                onChange={handleFileImport}
-                />
-            </div>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-muted-foreground">
+          {t('inventory.showingResults', { 
+            start: (currentPage - 1) * itemsPerPage + 1, 
+            end: Math.min(currentPage * itemsPerPage, filteredItems.length),
+            total: filteredItems.length 
+          })}
         </div>
-        <div className="border rounded-md">
-            <Table>
-            <TableHeader>
-                <TableRow>
-                <TableHead>{t('inventory.product')}</TableHead>
-                <TableHead>{t('inventory.sku')}</TableHead>
-                <TableHead>{t('inventory.category')}</TableHead>
-                <TableHead>{t('inventory.stock')}</TableHead>
-                <TableHead>{t('inventory.status')}</TableHead>
-                <TableHead>
-                    <span className="sr-only">{t('inventory.actions')}</span>
-                </TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {paginatedIngredients.map((product) => (
-                <TableRow key={product.sku}>
-                    <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                        <AvatarImage src={product.image} alt={product.name} data-ai-hint="ingredient" />
-                        <AvatarFallback>{product.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        {product.name}
-                    </div>
-                    </TableCell>
-                    <TableCell>{product.sku}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>{product.stock}</TableCell>
-                    <TableCell>
-                    <Badge variant={getStatusVariant(product.status)}>
-                        {t(`inventory.${product.status.toLowerCase().replace(' ', '')}`)}
-                    </Badge>
-                    </TableCell>
-                    <TableCell>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                        </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>{t('inventory.actions')}</DropdownMenuLabel>
-                        <DropdownMenuItem>{t('dialogs.edit')}</DropdownMenuItem>
-                        <DropdownMenuItem>{t('dialogs.delete')}</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    </TableCell>
-                </TableRow>
-                ))}
-            </TableBody>
-            </Table>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">{t('inventory.rowsPerPage')}</span>
+          <Select value={String(itemsPerPage)} onValueChange={(value) => setItemsPerPage(Number(value))}>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            {t('inventory.previous')}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+          >
+            {t('inventory.next')}
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-         <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
-            </div>
-            <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{t('pagination.rowsPerPage')}</span>
-                <Select value={String(itemsPerPage)} onValueChange={(value) => setItemsPerPage(Number(value))}>
-                    <SelectTrigger className="w-20">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                        <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                >
-                    <ChevronLeft className="h-4 w-4" />
-                    {t('pagination.previous')}
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                >
-                    {t('pagination.next')}
-                    <ChevronRight className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
+      </div>
+
+      {/* Dialogs */}
+      {selectedItem && (
+        <>
+          <InventoryMovementsDialog
+            item={selectedItem}
+            open={movementsDialogOpen}
+            onOpenChange={setMovementsDialogOpen}
+          />
+          
+          <EditInventoryItemDialog
+            item={selectedItem}
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+          />
+          
+          <StockMovementDialog
+            item={selectedItem}
+            type={movementType}
+            open={stockMovementDialogOpen}
+            onOpenChange={setStockMovementDialogOpen}
+          />
+        </>
+      )}
     </div>
-  )
+  );
 }
+

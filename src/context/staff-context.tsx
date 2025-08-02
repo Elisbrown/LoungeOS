@@ -2,6 +2,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
+import { useAuth } from './auth-context';
 
 export type StaffRole = "Super Admin" | "Manager" | "Accountant" | "Stock Manager" | "Chef" | "Waiter" | "Cashier" | "Bartender";
 
@@ -30,6 +31,7 @@ const StaffContext = createContext<StaffContextType | undefined>(undefined);
 
 export const StaffProvider = ({ children }: { children: ReactNode }) => {
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const { user } = useAuth();
 
   const fetchStaff = useCallback(async () => {
     const response = await fetch('/api/staff');
@@ -45,29 +47,50 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
     fetchStaff();
   }, [fetchStaff])
 
-  const addStaff = useCallback(async (member: Omit<StaffMember, 'id' | 'status' | 'avatar'>) => {
-    await fetch('/api/staff', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(member)
+  const addStaff = useCallback(async (staffMember: Omit<StaffMember, 'id' | 'status' | 'avatar'>) => {
+    const response = await fetch('/api/staff', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...staffMember,
+        userEmail: user?.email // Pass current user's email for activity logging
+      })
     });
-    await fetchStaff();
-  }, [fetchStaff]);
+    
+    if (response.ok) {
+      await fetchStaff();
+    } else {
+      console.error("Failed to add staff member");
+    }
+  }, [fetchStaff, user?.email]);
 
-  const updateStaff = useCallback(async (email: string, updatedMember: Partial<StaffMember>) => {
-    await fetch(`/api/staff?email=${encodeURIComponent(email)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedMember)
+  const updateStaff = useCallback(async (email: string, updatedStaff: Partial<StaffMember>) => {
+    const response = await fetch(`/api/staff?email=${encodeURIComponent(email)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...updatedStaff,
+        userEmail: user?.email // Pass current user's email for activity logging
+      })
     });
-    await fetchStaff();
-  }, [fetchStaff]);
+    
+    if (response.ok) {
+      await fetchStaff();
+    } else {
+      console.error("Failed to update staff member");
+    }
+  }, [fetchStaff, user?.email]);
 
   const deleteStaff = useCallback(async (email: string) => {
-     await fetch(`/api/staff?email=${encodeURIComponent(email)}`, {
-        method: 'DELETE',
+    const response = await fetch(`/api/staff?email=${encodeURIComponent(email)}`, {
+      method: 'DELETE'
     });
-    await fetchStaff();
+    
+    if (response.ok) {
+      await fetchStaff();
+    } else {
+      console.error("Failed to delete staff member");
+    }
   }, [fetchStaff]);
 
   return (

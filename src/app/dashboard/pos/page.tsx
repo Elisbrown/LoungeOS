@@ -8,13 +8,15 @@ import { OrderSummary, type OrderItem } from '@/components/dashboard/pos/order-s
 import { ProductGrid } from '@/components/dashboard/pos/product-grid'
 import type { Meal } from '@/context/product-context'
 import { useOrders } from '@/context/order-context'
+import { useInventory } from '@/context/inventory-context'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/context/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { useProducts } from '@/context/product-context'
-import { useCategories } from '@/context/category-context'
+
 import { useTables } from '@/context/table-context'
 import { TableProvider } from '@/context/table-context'
+import { useStaff } from '@/context/staff-context'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Lock, ArrowLeft, Table as TableIcon } from 'lucide-react'
 import { useTranslation } from '@/hooks/use-translation'
@@ -31,12 +33,13 @@ function PosPageContent() {
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
   
-  const { addOrder, orders, updateOrder } = useOrders()
-  const { categories } = useCategories()
+  const { addOrder, orders, updateOrder, updateOrderStatus } = useOrders()
   const { user } = useAuth()
   const { toast } = useToast()
   const { deductIngredientsForMeal } = useProducts()
   const { updateTableStatus, tables } = useTables();
+  const { items: inventoryItems, addMovement } = useInventory();
+  const { staff } = useStaff();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -71,6 +74,23 @@ function PosPageContent() {
   };
 
   const handleProductClick = (product: Meal) => {
+    // Check if this is an inventory item (packaging)
+    const isInventoryItem = product.id.startsWith('inv_');
+    
+    if (isInventoryItem) {
+      const inventoryId = parseInt(product.id.replace('inv_', ''));
+      const inventoryItem = inventoryItems.find(item => item.id === inventoryId);
+      
+      if (inventoryItem && inventoryItem.current_stock <= 0) {
+        toast({
+          variant: "destructive",
+          title: t('toasts.error'),
+          description: `${product.name} is out of stock.`,
+        });
+        return;
+      }
+    }
+
     setOrderItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === product.id)
       if (existingItem) {
@@ -124,9 +144,27 @@ function PosPageContent() {
             toast({ title: t('toasts.orderUpdated'), description: t('toasts.orderUpdatedDesc', { orderId: activeOrderId })});
         }
     } else {
-        // Create new order
-        const foodItems = orderItems.filter(item => categories.find(c => c.name === item.category)?.isFood);
-        const drinkItems = orderItems.filter(item => !categories.find(c => c.name === item.category)?.isFood);
+        // Create new order - split by food vs drinks based on category
+        const foodItems = orderItems.filter(item => {
+            const category = item.category.toLowerCase();
+            return category.includes('food') || category.includes('meal') || category.includes('dish') || 
+                   category.includes('main') || category.includes('appetizer') || category.includes('dessert') ||
+                   category.includes('snack') || category.includes('breakfast') || category.includes('lunch') ||
+                   category.includes('dinner') || category.includes('burger') || category.includes('pizza') ||
+                   category.includes('pasta') || category.includes('salad') || category.includes('soup') ||
+                   category.includes('chicken') || category.includes('beef') || category.includes('fish') ||
+                   category.includes('rice') || category.includes('bread') || category.includes('cake');
+        });
+        
+        const drinkItems = orderItems.filter(item => {
+            const category = item.category.toLowerCase();
+            return category.includes('drink') || category.includes('beverage') || category.includes('beer') ||
+                   category.includes('wine') || category.includes('cocktail') || category.includes('juice') ||
+                   category.includes('soda') || category.includes('coffee') || category.includes('tea') ||
+                   category.includes('water') || category.includes('spirit') || category.includes('liquor') ||
+                   category.includes('whiskey') || category.includes('vodka') || category.includes('rum') ||
+                   category.includes('gin') || category.includes('brandy') || category.includes('champagne');
+        });
         
         if (foodItems.length > 0) {
             addOrder({
@@ -172,8 +210,32 @@ function PosPageContent() {
     const existingOrder = orders.find(o => o.id === activeOrderId);
     if (!existingOrder) return;
 
-    updateOrder({ ...existingOrder, status: "Completed", items: orderItems });
-    updateTableStatus(selectedTable, "Available");
+    // Get current user's ID from staff data
+    const currentStaff = staff.find(s => s.email === user.email);
+    const userId = currentStaff ? parseInt(currentStaff.id) : undefined;
+
+    // Deduct inventory for packaging items
+    existingOrder.items.forEach(item => {
+      if (item.id.startsWith('inv_')) {
+        const inventoryId = parseInt(item.id.replace('inv_', ''));
+        const inventoryItem = inventoryItems.find(inv => inv.id === inventoryId);
+        
+        if (inventoryItem) {
+          // Add movement to record the sale
+          addMovement({
+            item_id: inventoryId,
+            movement_type: 'OUT',
+            quantity: item.quantity,
+            reference_type: 'SALES_ORDER',
+            notes: `Sold in order ${activeOrderId} for table ${existingOrder.table}`,
+            user_id: userId
+          });
+        }
+      }
+    });
+
+    // Use updateOrderStatus to properly handle the status change
+    updateOrderStatus(activeOrderId, "Completed");
     
     handleClearOrder()
     setActiveOrderId(null);

@@ -1,14 +1,22 @@
 
 // src/app/api/products/route.ts
 import { NextResponse } from 'next/server';
-import { getMeals, addMeal, updateMeal, deleteMeal } from '@/lib/db/products';
+import { getMeals, getUnifiedProducts, addMeal, updateMeal, deleteMeal } from '@/lib/db/products';
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const meals = await getMeals();
-        return NextResponse.json(meals);
+        const { searchParams } = new URL(request.url);
+        const unified = searchParams.get('unified');
+        
+        if (unified === 'true') {
+            const products = await getUnifiedProducts();
+            return NextResponse.json(products);
+        } else {
+            const meals = await getMeals();
+            return NextResponse.json(meals);
+        }
     } catch (error: any) {
-        return NextResponse.json({ message: 'Failed to fetch meals', error: error.message }, { status: 500 });
+        return NextResponse.json({ message: 'Failed to fetch products', error: error.message }, { status: 500 });
     }
 }
 

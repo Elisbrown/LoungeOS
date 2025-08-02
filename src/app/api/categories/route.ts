@@ -1,52 +1,40 @@
 
 // src/app/api/categories/route.ts
-import { NextResponse } from 'next/server';
-import { getCategories, addCategory, updateCategory, deleteCategory } from '@/lib/db/categories';
+import { NextRequest, NextResponse } from 'next/server';
+import { getInventoryCategories, addInventoryCategory } from '@/lib/db/inventory';
 
 export async function GET() {
     try {
-        const categories = await getCategories();
+        const categories = await getInventoryCategories();
         return NextResponse.json(categories);
-    } catch (error: any) {
-        return NextResponse.json({ message: 'Failed to fetch categories', error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error('Error fetching categories:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch categories' },
+            { status: 500 }
+        );
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
-        const categoryData = await request.json();
-        const newCategory = await addCategory(categoryData);
+        const body = await request.json();
+        const { categoryData } = body;
+
+        if (!categoryData) {
+            return NextResponse.json(
+                { error: 'Category data is required' },
+                { status: 400 }
+            );
+        }
+
+        const newCategory = await addInventoryCategory(categoryData);
         return NextResponse.json(newCategory, { status: 201 });
-    } catch (error: any) {
-        return NextResponse.json({ message: 'Failed to add category', error: error.message }, { status: 500 });
-    }
-}
-
-export async function PUT(request: Request) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
-        if (!id) {
-            return NextResponse.json({ message: 'ID query parameter is required' }, { status: 400 });
-        }
-        const categoryData = await request.json();
-        const updatedCategory = await updateCategory({ ...categoryData, id });
-        return NextResponse.json(updatedCategory);
-    } catch (error: any) {
-        return NextResponse.json({ message: 'Failed to update category', error: error.message }, { status: 500 });
-    }
-}
-
-export async function DELETE(request: Request) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
-        if (!id) {
-            return NextResponse.json({ message: 'ID query parameter is required' }, { status: 400 });
-        }
-        await deleteCategory(id);
-        return NextResponse.json({ message: 'Category deleted successfully' });
-    } catch (error: any) {
-        return NextResponse.json({ message: 'Failed to delete category', error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error('Error adding category:', error);
+        return NextResponse.json(
+            { error: 'Failed to add category' },
+            { status: 500 }
+        );
     }
 }

@@ -146,6 +146,23 @@ export async function addOrder(order: Omit<Order, 'id' | 'timestamp'> & { id?: s
 }
 
 
+export async function updateOrderStatus(orderId: string, status: Order['status']): Promise<Order> {
+    const db = getDb();
+    const transaction = db.transaction((id, newStatus) => {
+        // Update only the order status and timestamp
+        db.prepare('UPDATE orders SET status = ?, timestamp = ? WHERE id = ?')
+          .run(newStatus, new Date().toISOString(), id);
+        
+        return getOrderById(id, db)!;
+    });
+
+    try {
+        return transaction(orderId, status);
+    } finally {
+        // No close
+    }
+}
+
 export async function updateOrder(updatedOrder: Order): Promise<Order> {
     const db = getDb();
     const transaction = db.transaction((order) => {
@@ -265,6 +282,121 @@ export async function mergeOrders(fromOrderId: string, toOrderId: string): Promi
 
     try {
         return transaction(fromOrderId, toOrderId);
+    } finally {
+        // No close
+    }
+}
+
+export async function getOrderStats(): Promise<{
+    totalOrders: number;
+    completedOrders: number;
+    canceledOrders: number;
+    totalRevenue: number;
+    totalSpending: number;
+    recentSales: any[];
+    topSellingProducts: any[];
+}> {
+    const db = getDb();
+    try {
+        // Get total orders
+        const totalOrders = db.prepare('SELECT COUNT(*) as count FROM orders').get() as any;
+        
+        // Get completed orders
+        const completedOrders = db.prepare('SELECT COUNT(*) as count FROM orders WHERE status = ?').get('Completed') as any;
+        
+        // Get canceled orders (assuming 'Canceled' status exists, if not we'll use 0)
+        const canceledOrders = db.prepare('SELECT COUNT(*) as count FROM orders WHERE status = ?').get('Canceled') as any;
+        
+        // Get total revenue from completed orders
+        const revenueResult = db.prepare(`
+            SELECT SUM(oi.quantity * oi.price) as total
+            FROM order_items oi
+            JOIN orders o ON oi.order_id = o.id
+            WHERE o.status = 'Completed'
+        `).get() as any;
+        
+        // Get recent sales (last 10 completed orders)
+        const recentSales = db.prepare(`
+            SELECT 
+                o.id,
+                o.table_name,
+                o.timestamp,
+                SUM(oi.quantity * oi.price) as total_amount,
+                COUNT(oi.id) as item_count
+            FROM orders o
+            JOIN order_items oi ON o.id = oi.order_id
+            WHERE o.status = 'Completed'
+            GROUP BY o.id
+            ORDER BY o.timestamp DESC
+            LIMIT 10
+        `).all() as any[];
+        
+        // Get top selling products
+        const topProducts = db.prepare(`
+            SELECT 
+                p.id,
+                p.name,
+                p.category,
+                p.image,
+                SUM(oi.quantity) as total_sold,
+                SUM(oi.quantity * oi.price) as total_revenue
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            JOIN orders o ON oi.order_id = o.id
+            WHERE o.status = 'Completed'
+            GROUP BY p.id
+            ORDER BY total_sold DESC
+            LIMIT 5
+        `).all() as any[];
+        
+        // For now, set total spending to 0 (this would come from inventory costs)
+        const totalSpending = 0;
+        
+        return {
+            totalOrders: totalOrders.count,
+            completedOrders: completedOrders.count,
+            canceledOrders: canceledOrders.count || 0,
+            totalRevenue: revenueResult.total || 0,
+            totalSpending,
+            recentSales: recentSales.map(sale => ({
+                id: sale.id,
+                table: sale.table_name,
+                amount: sale.total_amount,
+                itemCount: sale.item_count,
+                timestamp: new Date(sale.timestamp)
+            })),
+            topSellingProducts: topProducts.map(product => ({
+                id: String(product.id),
+                name: product.name,
+                category: product.category,
+                image: product.image,
+                totalSold: product.total_sold,
+                totalRevenue: product.total_revenue
+            }))
+        };
+    } finally {
+        // No close
+    }
+}
+
+export async function getTableStats(): Promise<{
+    totalTables: number;
+    occupiedTables: number;
+    availableTables: number;
+    activeTables: string;
+}> {
+    const db = getDb();
+    try {
+        const totalTables = db.prepare('SELECT COUNT(*) as count FROM tables').get() as any;
+        const occupiedTables = db.prepare('SELECT COUNT(*) as count FROM tables WHERE status = ?').get('Occupied') as any;
+        const availableTables = db.prepare('SELECT COUNT(*) as count FROM tables WHERE status = ?').get('Available') as any;
+        
+        return {
+            totalTables: totalTables.count,
+            occupiedTables: occupiedTables.count,
+            availableTables: availableTables.count,
+            activeTables: `${occupiedTables.count} / ${totalTables.count}`
+        };
     } finally {
         // No close
     }

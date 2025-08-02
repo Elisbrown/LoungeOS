@@ -23,6 +23,7 @@ import { Printer } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { type Order, type OrderItem } from "@/context/order-context"
 import { useSettings } from "@/context/settings-context";
+import { formatCurrency } from "@/lib/utils";
 
 export type PaymentDetails = {
     paymentMethod: string;
@@ -37,6 +38,12 @@ type PaymentDialogProps = {
   onPaymentSuccess: (details: PaymentDetails) => void
   orderForReceipt: Omit<Order, 'id' | 'timestamp' | 'status'>,
   onClose: () => void;
+  // Tax and discount information
+  subtotal?: number;
+  discount?: number;
+  tax?: number;
+  taxRate?: number;
+  discountName?: string;
 }
 
 export function PaymentDialog({
@@ -46,6 +53,11 @@ export function PaymentDialog({
   onPaymentSuccess,
   orderForReceipt,
   onClose,
+  subtotal,
+  discount,
+  tax,
+  taxRate,
+  discountName,
 }: PaymentDialogProps) {
   const [paymentMethod, setPaymentMethod] = useState("cash")
   const [amountPaid, setAmountPaid] = useState(totalAmount)
@@ -117,7 +129,7 @@ export function PaymentDialog({
       orderId: (orderForReceipt as Order).id || `PAY-${Date.now()}`,
       table: orderForReceipt.table,
       items: orderForReceipt.items,
-      subtotal: totalAmount,
+      subtotal: subtotal || totalAmount,
       total: totalAmount,
       totalPaid: totalAmount,
       totalDue: 0,
@@ -126,7 +138,12 @@ export function PaymentDialog({
       paymentMethod: paymentDetails.paymentMethod,
       timestamp: new Date(),
       cashierName: user.name,
-      settings: settings, // Pass settings explicitly
+      settings: settings,
+      // Pass tax and discount information
+      discount,
+      tax,
+      taxRate,
+      discountName,
     };
     setReceiptProps(finalReceiptProps)
 
@@ -163,7 +180,7 @@ export function PaymentDialog({
         {!isConfirmed ? (
             <div className="space-y-4 py-4">
             <div className="text-4xl font-bold text-center">
-                XAF {totalAmount.toLocaleString()}
+                {formatCurrency(totalAmount, settings.defaultCurrency)}
             </div>
             <div className="space-y-2">
                 <Label>{t('pos.paymentMethod')}</Label>

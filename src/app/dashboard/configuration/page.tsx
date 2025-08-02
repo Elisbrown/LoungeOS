@@ -1,7 +1,7 @@
 // src/app/dashboard/configuration/page.tsx
 "use client"
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Header } from '@/components/dashboard/header'
 import { useAuth } from '@/context/auth-context'
 import { useSettings, type ReceiptField } from '@/context/settings-context'
@@ -9,9 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Lock, Palette, FileText, Image as ImageIcon, Trash2, PlusCircle, X, Clapperboard } from 'lucide-react'
+import { Lock, Palette, FileText, Image as ImageIcon, Trash2, PlusCircle, X, Clapperboard, DollarSign, Calculator, Percent, Plus } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import Image from 'next/image'
 import { Receipt } from '@/components/dashboard/pos/receipt'
@@ -19,6 +20,9 @@ import type { OrderItem } from '@/components/dashboard/pos/order-summary'
 import { Slider } from '@/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useTranslation } from '@/hooks/use-translation'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 
 function LoungeChairIcon({ className }: { className?: string }) {
     return (
@@ -46,6 +50,7 @@ function GeneralSettings() {
     const { settings, setSettings } = useSettings()
     const { t } = useTranslation()
     const { toast } = useToast()
+    const { user } = useAuth()
     const logoInputRef = React.useRef<HTMLInputElement>(null)
     const [localSettings, setLocalSettings] = React.useState({
         platformName: settings.platformName,
@@ -71,22 +76,41 @@ function GeneralSettings() {
         setLocalSettings(prev => ({...prev, [name]: value }))
     }
 
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault()
-        setSettings({ ...settings, ...localSettings })
+        const newSettings = { ...settings, ...localSettings }
+        await setSettings(newSettings)
         toast({ title: t('toasts.settingsSaved'), description: t('toasts.generalSettingsDesc')})
     }
     
-    const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
         if (file) {
-            const reader = new FileReader()
-            reader.onload = (e) => {
-                const dataUrl = e.target?.result as string
-                setLocalSettings(prev => ({...prev, platformLogo: dataUrl }))
-                toast({ title: t('toasts.logoUpdated'), description: t('toasts.logoUpdatedDesc') })
+            try {
+                const formData = new FormData()
+                formData.append('file', file)
+                formData.append('type', 'logo')
+                formData.append('userEmail', user?.email || 'system')
+                
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    body: formData
+                })
+                
+                if (response.ok) {
+                    const result = await response.json()
+                    setLocalSettings(prev => ({...prev, platformLogo: result.imagePath }))
+                    toast({ title: t('toasts.logoUpdated'), description: t('toasts.logoUpdatedDesc') })
+                } else {
+                    throw new Error('Upload failed')
+                }
+            } catch (error) {
+                toast({ 
+                    variant: "destructive",
+                    title: t('toasts.error'), 
+                    description: t('toasts.logoUploadFailed') 
+                })
             }
-            reader.readAsDataURL(file)
         }
     }
     
@@ -153,12 +177,12 @@ function AppearanceSettings() {
     const { toast } = useToast()
     const [newThemeName, setNewThemeName] = React.useState("")
 
-    const handleAddTheme = () => {
+    const handleAddTheme = async () => {
         if (!newThemeName.trim()) {
             toast({ variant: "destructive", title: t('toasts.invalidName'), description: t('toasts.themeNameEmpty')})
             return
         }
-        addTheme({
+        await addTheme({
             name: newThemeName.trim(),
             colors: {
                 primary: "#E11D48",
@@ -170,14 +194,14 @@ function AppearanceSettings() {
         toast({ title: t('toasts.themeAdded'), description: t('toasts.themeAddedDesc', { name: newThemeName })})
     }
 
-    const handleColorChange = (themeName: string, colorType: 'primary' | 'background' | 'accent', value: string) => {
+    const handleColorChange = async (themeName: string, colorType: 'primary' | 'background' | 'accent', value: string) => {
         const theme = settings.themes.find(t => t.name === themeName)
         if(theme) {
             const updatedTheme = {
                 ...theme,
                 colors: { ...theme.colors, [colorType]: value }
             }
-            updateSetting('themes', settings.themes.map(t => t.name === themeName ? updatedTheme : t))
+            await updateSetting('themes', settings.themes.map(t => t.name === themeName ? updatedTheme : t))
         }
     }
 
@@ -286,8 +310,9 @@ function ReceiptSettings() {
         setLocalSettings(prev => ({...prev, receiptCustomFields: prev.receiptCustomFields.filter((_, i) => i !== index)}));
     }
     
-    const handleSave = () => {
-        setSettings({ ...settings, ...localSettings })
+    const handleSave = async () => {
+        const newSettings = { ...settings, ...localSettings }
+        await setSettings(newSettings)
         toast({ title: t('toasts.settingsSaved'), description: t('toasts.receiptSettingsDesc')})
     }
     
@@ -396,25 +421,57 @@ function LoginScreenSettings() {
     const { settings, updateSetting } = useSettings()
     const { t } = useTranslation()
     const { toast } = useToast()
+    const { user } = useAuth()
     const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
         if (file) {
-            const reader = new FileReader()
-            reader.onload = (e) => {
-                const dataUrl = e.target?.result as string
-                const newImages = [...(settings.loginCarouselImages || []), dataUrl]
-                updateSetting('loginCarouselImages', newImages)
-                toast({ title: "Image Added", description: "New image added to the login screen carousel."})
+            try {
+                const formData = new FormData()
+                formData.append('file', file)
+                formData.append('type', 'carousel')
+                formData.append('userEmail', user?.email || 'system')
+                
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    body: formData
+                })
+                
+                if (response.ok) {
+                    const result = await response.json()
+                    const newImages = [...(settings.loginCarouselImages || []), result.imagePath]
+                    await updateSetting('loginCarouselImages', newImages)
+                    toast({ title: "Image Added", description: "New image added to the login screen carousel."})
+                } else {
+                    throw new Error('Upload failed')
+                }
+            } catch (error) {
+                toast({ 
+                    variant: "destructive",
+                    title: t('toasts.error'), 
+                    description: "Failed to upload image" 
+                })
             }
-            reader.readAsDataURL(file)
         }
     }
 
-    const removeImage = (index: number) => {
+    const removeImage = async (index: number) => {
+        const imageToRemove = settings.loginCarouselImages?.[index]
         const newImages = (settings.loginCarouselImages || []).filter((_, i) => i !== index)
-        updateSetting('loginCarouselImages', newImages)
+        
+        // Delete the image file if it's a local upload
+        if (imageToRemove && imageToRemove.startsWith('/uploads/')) {
+            try {
+                await fetch(`/api/settings?imagePath=${encodeURIComponent(imageToRemove)}&userEmail=${encodeURIComponent(user?.email || 'system')}`, {
+                    method: 'DELETE'
+                })
+            } catch (error) {
+                console.error('Failed to delete image file:', error)
+            }
+        }
+        
+        await updateSetting('loginCarouselImages', newImages)
         toast({ title: "Image Removed", description: "Image removed from the login screen carousel."})
     }
     
@@ -458,11 +515,437 @@ function LoginScreenSettings() {
     )
 }
 
+function FinancialSettings() {
+    const { t } = useTranslation()
+    const { settings, updateDefaultCurrency, addCurrency, removeCurrency, toggleTax, addTaxRate, updateTaxRate, deleteTaxRate, setDefaultTaxRate, toggleDiscount, addDiscountRule, updateDiscountRule, deleteDiscountRule, toggleDiscountRule } = useSettings()
+    const { toast } = useToast()
+
+    // Currency Management
+    const [newCurrency, setNewCurrency] = useState<{ code: string; name: string; symbol: string; position: 'before' | 'after' }>({ code: '', name: '', symbol: '', position: 'before' })
+    const [showAddCurrency, setShowAddCurrency] = useState(false)
+
+    const handleAddCurrency = async () => {
+        if (!newCurrency.code || !newCurrency.name || !newCurrency.symbol) {
+            toast({ title: "Error", description: "Please fill in all currency fields", variant: "destructive" })
+            return
+        }
+        
+        if (settings.availableCurrencies.some(c => c.code === newCurrency.code)) {
+            toast({ title: "Error", description: "Currency code already exists", variant: "destructive" })
+            return
+        }
+
+        await addCurrency(newCurrency)
+        setNewCurrency({ code: '', name: '', symbol: '', position: 'before' })
+        setShowAddCurrency(false)
+        toast({ title: "Success", description: "Currency added successfully" })
+    }
+
+    const handleRemoveCurrency = async (currencyCode: string) => {
+        await removeCurrency(currencyCode)
+        toast({ title: "Success", description: "Currency removed successfully" })
+    }
+
+    // Tax Management
+    const [newTaxRate, setNewTaxRate] = useState({ name: '', rate: 0, isDefault: false })
+    const [showAddTaxRate, setShowAddTaxRate] = useState(false)
+
+    const handleAddTaxRate = async () => {
+        if (!newTaxRate.name || newTaxRate.rate <= 0) {
+            toast({ title: "Error", description: "Please fill in all tax rate fields", variant: "destructive" })
+            return
+        }
+
+        await addTaxRate(newTaxRate)
+        setNewTaxRate({ name: '', rate: 0, isDefault: false })
+        setShowAddTaxRate(false)
+        toast({ title: "Success", description: "Tax rate added successfully" })
+    }
+
+    const handleDeleteTaxRate = async (id: string) => {
+        await deleteTaxRate(id)
+        toast({ title: "Success", description: "Tax rate deleted successfully" })
+    }
+
+    // Discount Management
+    const [newDiscountRule, setNewDiscountRule] = useState<{ name: string; type: 'percentage' | 'fixed'; value: number; isActive: boolean }>({ name: '', type: 'percentage', value: 0, isActive: true })
+    const [showAddDiscountRule, setShowAddDiscountRule] = useState(false)
+
+    const handleAddDiscountRule = async () => {
+        if (!newDiscountRule.name || newDiscountRule.value < 0) {
+            toast({ title: "Error", description: "Please fill in all discount rule fields", variant: "destructive" })
+            return
+        }
+
+        await addDiscountRule(newDiscountRule)
+        setNewDiscountRule({ name: '', type: 'percentage', value: 0, isActive: true })
+        setShowAddDiscountRule(false)
+        toast({ title: "Success", description: "Discount rule added successfully" })
+    }
+
+    const handleDeleteDiscountRule = async (id: string) => {
+        await deleteDiscountRule(id)
+        toast({ title: "Success", description: "Discount rule deleted successfully" })
+    }
+
+    return (
+        <div className="space-y-6">
+            {/* Currency Settings */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <DollarSign className="h-5 w-5" />
+                        {t('settings.currencySettings')}
+                    </CardTitle>
+                    <CardDescription>
+                        Configure the default currency and available currencies for your business.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>{t('settings.defaultCurrency')}</Label>
+                        <Select value={settings.defaultCurrency.code} onValueChange={(value) => {
+                            const currency = settings.availableCurrencies.find(c => c.code === value)
+                            if (currency) updateDefaultCurrency(currency)
+                        }}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {settings.availableCurrencies.map((currency) => (
+                                    <SelectItem key={currency.code} value={currency.code}>
+                                        {currency.symbol} {currency.name} ({currency.code})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label>{t('settings.availableCurrencies')}</Label>
+                            <Button variant="outline" size="sm" onClick={() => setShowAddCurrency(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                {t('settings.addCurrency')}
+                            </Button>
+                        </div>
+                        <div className="space-y-2">
+                            {settings.availableCurrencies.map((currency) => (
+                                <div key={currency.code} className="flex items-center justify-between p-3 border rounded-lg">
+                                    <div>
+                                        <p className="font-medium">{currency.symbol} {currency.name}</p>
+                                        <p className="text-sm text-muted-foreground">{currency.code} • {currency.position === 'before' ? 'Before amount' : 'After amount'}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {currency.code === settings.defaultCurrency.code && (
+                                            <Badge variant="secondary">Default</Badge>
+                                        )}
+                                        {currency.code !== 'XAF' && (
+                                            <Button variant="outline" size="sm" onClick={() => handleRemoveCurrency(currency.code)}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Tax Management */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Calculator className="h-5 w-5" />
+                        {t('settings.taxManagement')}
+                    </CardTitle>
+                    <CardDescription>
+                        Configure tax settings and rates for your business transactions.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <Label>{settings.taxEnabled ? t('settings.taxEnabled') : t('settings.taxDisabled')}</Label>
+                            <p className="text-sm text-muted-foreground">
+                                {settings.taxEnabled ? 'Tax will be applied to transactions' : 'Tax will not be applied to transactions'}
+                            </p>
+                        </div>
+                        <Switch checked={settings.taxEnabled} onCheckedChange={toggleTax} />
+                    </div>
+
+                    {settings.taxEnabled && (
+                        <>
+                            <Separator />
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label>{t('settings.taxRates')}</Label>
+                                    <Button variant="outline" size="sm" onClick={() => setShowAddTaxRate(true)}>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        {t('settings.addTaxRate')}
+                                    </Button>
+                                </div>
+                                <div className="space-y-2">
+                                    {settings.taxRates.map((taxRate) => (
+                                        <div key={taxRate.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div>
+                                                <p className="font-medium">{taxRate.name}</p>
+                                                <p className="text-sm text-muted-foreground">{taxRate.rate}%</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {taxRate.isDefault && (
+                                                    <Badge variant="secondary">{t('settings.isDefault')}</Badge>
+                                                )}
+                                                {!taxRate.isDefault && (
+                                                    <Button variant="outline" size="sm" onClick={() => setDefaultTaxRate(taxRate.id)}>
+                                                        {t('settings.setAsDefault')}
+                                                    </Button>
+                                                )}
+                                                <Button variant="outline" size="sm" onClick={() => handleDeleteTaxRate(taxRate.id)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Discount Management */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Percent className="h-5 w-5" />
+                        {t('settings.discountManagement')}
+                    </CardTitle>
+                    <CardDescription>
+                        Configure discount rules and settings for your business.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <Label>{settings.discountEnabled ? t('settings.discountEnabled') : t('settings.discountDisabled')}</Label>
+                            <p className="text-sm text-muted-foreground">
+                                {settings.discountEnabled ? 'Discounts can be applied to transactions' : 'Discounts cannot be applied to transactions'}
+                            </p>
+                        </div>
+                        <Switch checked={settings.discountEnabled} onCheckedChange={toggleDiscount} />
+                    </div>
+
+                    {settings.discountEnabled && (
+                        <>
+                            <Separator />
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label>{t('settings.discountRules')}</Label>
+                                    <Button variant="outline" size="sm" onClick={() => setShowAddDiscountRule(true)}>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        {t('settings.addDiscountRule')}
+                                    </Button>
+                                </div>
+                                <div className="space-y-2">
+                                    {settings.discountRules.map((rule) => (
+                                        <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div>
+                                                <p className="font-medium">{rule.name}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {rule.type === 'percentage' ? `${rule.value}%` : `${rule.value} ${settings.defaultCurrency.symbol}`}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Switch 
+                                                    checked={rule.isActive} 
+                                                    onCheckedChange={(checked) => toggleDiscountRule(rule.id, checked)} 
+                                                />
+                                                <Button variant="outline" size="sm" onClick={() => handleDeleteDiscountRule(rule.id)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Add Currency Dialog */}
+            <Dialog open={showAddCurrency} onOpenChange={setShowAddCurrency}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('settings.addCurrency')}</DialogTitle>
+                        <DialogDescription>
+                            Add a new currency to your available currencies list.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>{t('settings.currencyCode')}</Label>
+                            <Input 
+                                value={newCurrency.code} 
+                                onChange={(e) => setNewCurrency({ ...newCurrency, code: e.target.value.toUpperCase() })}
+                                placeholder="USD"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>{t('settings.currencyName')}</Label>
+                            <Input 
+                                value={newCurrency.name} 
+                                onChange={(e) => setNewCurrency({ ...newCurrency, name: e.target.value })}
+                                placeholder="United States Dollar"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>{t('settings.currencySymbol')}</Label>
+                            <Input 
+                                value={newCurrency.symbol} 
+                                onChange={(e) => setNewCurrency({ ...newCurrency, symbol: e.target.value })}
+                                placeholder="$"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>{t('settings.symbolPosition')}</Label>
+                            <Select value={newCurrency.position} onValueChange={(value: 'before' | 'after') => setNewCurrency({ ...newCurrency, position: value })}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="before">{t('settings.before')}</SelectItem>
+                                    <SelectItem value="after">{t('settings.after')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowAddCurrency(false)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button onClick={handleAddCurrency}>
+                            {t('settings.addCurrency')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Tax Rate Dialog */}
+            <Dialog open={showAddTaxRate} onOpenChange={setShowAddTaxRate}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('settings.addTaxRate')}</DialogTitle>
+                        <DialogDescription>
+                            Add a new tax rate for your business.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>{t('settings.taxRateName')}</Label>
+                            <Input 
+                                value={newTaxRate.name} 
+                                onChange={(e) => setNewTaxRate({ ...newTaxRate, name: e.target.value })}
+                                placeholder="Value Added Tax (VAT)"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>{t('settings.taxRatePercentage')}</Label>
+                            <Input 
+                                type="number"
+                                value={newTaxRate.rate} 
+                                onChange={(e) => setNewTaxRate({ ...newTaxRate, rate: parseFloat(e.target.value) || 0 })}
+                                placeholder="19"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                            />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox 
+                                id="isDefault" 
+                                checked={newTaxRate.isDefault}
+                                onCheckedChange={(checked) => setNewTaxRate({ ...newTaxRate, isDefault: checked as boolean })}
+                            />
+                            <Label htmlFor="isDefault">{t('settings.setAsDefault')}</Label>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowAddTaxRate(false)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button onClick={handleAddTaxRate}>
+                            {t('settings.addTaxRate')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Discount Rule Dialog */}
+            <Dialog open={showAddDiscountRule} onOpenChange={setShowAddDiscountRule}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('settings.addDiscountRule')}</DialogTitle>
+                        <DialogDescription>
+                            Add a new discount rule for your business.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>{t('settings.discountRuleName')}</Label>
+                            <Input 
+                                value={newDiscountRule.name} 
+                                onChange={(e) => setNewDiscountRule({ ...newDiscountRule, name: e.target.value })}
+                                placeholder="10% Student Discount"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>{t('settings.discountType')}</Label>
+                            <Select value={newDiscountRule.type} onValueChange={(value: 'percentage' | 'fixed') => setNewDiscountRule({ ...newDiscountRule, type: value })}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="percentage">{t('settings.percentage')}</SelectItem>
+                                    <SelectItem value="fixed">{t('settings.fixedAmount')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>{t('settings.discountValue')}</Label>
+                            <Input 
+                                type="number"
+                                value={newDiscountRule.value} 
+                                onChange={(e) => setNewDiscountRule({ ...newDiscountRule, value: parseFloat(e.target.value) || 0 })}
+                                placeholder={newDiscountRule.type === 'percentage' ? "10" : "1000"}
+                                min="0"
+                                step="0.01"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowAddDiscountRule(false)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button onClick={handleAddDiscountRule}>
+                            {t('settings.addDiscountRule')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    )
+}
+
 function ConfigurationPageContent() {
     const { t } = useTranslation()
     return (
         <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="general">
                     <ImageIcon className="mr-2 h-4 w-4" /> {t('config.tabs.general')}
                 </TabsTrigger>
@@ -471,6 +954,9 @@ function ConfigurationPageContent() {
                 </TabsTrigger>
                 <TabsTrigger value="receipt">
                     <FileText className="mr-2 h-4 w-4" /> {t('config.tabs.receipt')}
+                </TabsTrigger>
+                <TabsTrigger value="financial">
+                    <DollarSign className="mr-2 h-4 w-4" /> {t('settings.financial')}
                 </TabsTrigger>
                 <TabsTrigger value="loginScreen">
                     <Clapperboard className="mr-2 h-4 w-4" /> {t('config.tabs.loginScreen')}
@@ -501,6 +987,15 @@ function ConfigurationPageContent() {
                         <CardDescription>{t('config.receipt.description')}</CardDescription>
                     </CardHeader>
                     <ReceiptSettings />
+                </Card>
+            </TabsContent>
+            <TabsContent value="financial">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('settings.financial')}</CardTitle>
+                        <CardDescription>{t('settings.financialDesc')}</CardDescription>
+                    </CardHeader>
+                    <FinancialSettings />
                 </Card>
             </TabsContent>
             <TabsContent value="loginScreen">

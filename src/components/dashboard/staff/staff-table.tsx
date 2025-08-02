@@ -7,7 +7,6 @@ import { useStaff, type StaffMember } from "@/context/staff-context"
 import { useAuth } from "@/context/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
-import { useActivityLog } from "@/hooks/use-activity-log"
 import { format } from "date-fns"
 
 import { Badge } from "@/components/ui/badge"
@@ -54,7 +53,6 @@ export function StaffTable() {
   const { user } = useAuth()
   const { toast } = useToast()
   const { t } = useTranslation()
-  const { logActivity } = useActivityLog()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const [searchTerm, setSearchTerm] = useState("")
@@ -82,7 +80,6 @@ export function StaffTable() {
 
   const handleUpdate = (updated: StaffMember) => {
     updateStaff(updated.email, updated);
-    logActivity('Update Staff', `Updated details for ${updated.name}.`)
     toast({
         title: t('toasts.staffUpdated'),
         description: t('toasts.staffUpdatedDesc', { name: updated.name }),
@@ -93,7 +90,6 @@ export function StaffTable() {
   const handleToggleStatus = (member: StaffMember) => {
     const newStatus = member.status === "Active" ? "Away" : "Active";
     updateStaff(member.email, { ...member, status: newStatus });
-    logActivity(`${newStatus === 'Active' ? 'Activate' : 'Deactivate'} Staff`, `Set status of ${member.name} to ${newStatus}.`)
     toast({
       title: "Staff Status Updated",
       description: `${member.name}'s status has been set to ${newStatus}.`,
@@ -112,7 +108,6 @@ export function StaffTable() {
         return
     }
     deleteStaff(member.email);
-    logActivity('Delete Staff', `Deleted user ${member.name}.`)
     toast({
         title: t('toasts.staffDeleted'),
         description: t('toasts.staffDeletedDesc', { name: member.name }),
@@ -124,7 +119,6 @@ export function StaffTable() {
     // In a real app, this would trigger a secure password reset flow.
     // Here, we just set the force_password_change flag.
     updateStaff(member.email, { ...member, force_password_change: 1 });
-    logActivity('Reset Password', `Reset password for user ${member.name}.`)
     toast({
       title: t('toasts.passwordResetSuccess'),
       description: t('toasts.passwordResetSuccessDesc', { name: member.name }),
@@ -184,7 +178,6 @@ export function StaffTable() {
         });
         
         newStaffMembers.forEach(addStaff);
-        logActivity('Import Staff', `Imported ${newStaffMembers.length} staff members from CSV.`)
         toast({ title: t('toasts.importSuccess'), description: t('toasts.importSuccessDesc', { count: newStaffMembers.length }) })
       } catch (error) {
         toast({ variant: "destructive", title: t('toasts.importFailed'), description: t('toasts.importFailedDesc') })

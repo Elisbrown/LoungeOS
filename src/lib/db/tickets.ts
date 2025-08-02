@@ -25,17 +25,21 @@ export async function getTickets(): Promise<Ticket[]> {
         // Note: Comments are not stored in the DB in this schema version.
         // Returning an empty array for comments.
         return rows.map(row => ({
-            id: String(row.id),
+            id: row.id,
             title: row.title,
             description: row.description,
             priority: row.priority,
             category: row.category,
             status: row.status,
-            timestamp: new Date(row.created_at),
-            creatorId: row.creatorId,
-            creatorName: row.creatorName,
-            assignee: row.assigneeId ? { id: row.assigneeId, name: row.assigneeName } : undefined,
-            comments: [] // Comments need a separate table if they are to be persisted
+            timestamp: new Date(row.timestamp),
+            lastUpdated: new Date(row.last_updated || row.timestamp),
+            creatorId: row.creator_id,
+            creatorName: row.creator_name,
+            assignee: row.assignee_id ? {
+                id: row.assignee_id,
+                name: row.assignee_name
+            } : undefined,
+            comments: []
         }));
     } finally {
         db.close();

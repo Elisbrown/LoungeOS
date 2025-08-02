@@ -29,13 +29,19 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const addNotification = useCallback((notificationData: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    console.log('Adding notification:', notificationData);
     const newNotification: Notification = {
       ...notificationData,
       id: `noti_${Date.now()}`,
       timestamp: new Date(),
       read: false,
     };
-    setNotifications(prev => [newNotification, ...prev]);
+    console.log('Created notification:', newNotification);
+    setNotifications(prev => {
+      const updated = [newNotification, ...prev];
+      console.log('Updated notifications array:', updated);
+      return updated;
+    });
   }, []);
 
   const markAsRead = useCallback((id: string) => {

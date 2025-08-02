@@ -1,26 +1,28 @@
 "use client"
 
-// This file is updated to wrap the bar view in a DndProvider
+import { useState } from 'react'
+import { useOrders } from '@/context/order-context'
+import { useCategories } from '@/context/category-context'
+import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from '@/hooks/use-translation'
+import { useNotifications } from '@/context/notification-context'
 import { Header } from '@/components/dashboard/header'
 import { BarView } from '@/components/dashboard/bar/bar-view'
 import { DndProvider } from '@/components/dnd/dnd-provider'
-import { useTranslation } from '@/hooks/use-translation'
 import { useDnd } from '@/hooks/use-dnd'
-import { useOrders, type OrderStatus } from '@/context/order-context'
-import { useCategories } from '@/context/category-context'
-import { useToast } from '@/hooks/use-toast'
-import { useNotifications } from '@/context/notification-context'
-import { useState } from 'react'
-import type { Order } from '@/context/order-context'
+import { DragOverlay } from '@dnd-kit/core'
+import { OrderCard } from '@/components/dnd/dnd-components'
+import type { Order, OrderStatus } from '@/context/order-context'
 
-function BarPageContent() {
-  const { t } = useTranslation()
-
+function BarPageContent({ orderToCancel, setOrderToCancel }: { 
+  orderToCancel: Order | null; 
+  setOrderToCancel: (order: Order | null) => void 
+}) {
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <Header title={t('bar.title')} />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <BarView />
+      <Header title="Bar" />
+      <main className="flex flex-1 flex-col p-4 md:p-8">
+        <BarView orderToCancel={orderToCancel} setOrderToCancel={setOrderToCancel} />
       </main>
     </div>
   )
@@ -65,7 +67,7 @@ export default function BarPage() {
     }
   }
 
-  const { handleDragStart, handleDragEnd } = useDnd(
+  const { activeId, activeOrder, handleDragStart, handleDragEnd } = useDnd(
     allDrinkOrders, 
     handleUpdateStatus,
     setOrderToCancel
@@ -73,7 +75,10 @@ export default function BarPage() {
 
   return (
     <DndProvider onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <BarPageContent />
+      <BarPageContent orderToCancel={orderToCancel} setOrderToCancel={setOrderToCancel} />
+      <DragOverlay>
+        {activeOrder ? <OrderCard order={activeOrder} isDragging /> : null}
+      </DragOverlay>
     </DndProvider>
   )
 }

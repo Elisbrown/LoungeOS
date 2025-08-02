@@ -44,7 +44,32 @@ const getInitialSettings = (): Settings => ({
     receiptFont: 'mono',
     loginCarouselImages: [
         'https://placehold.co/1920x1080.png'
-    ]
+    ],
+    // Currency & Financial Settings
+    defaultCurrency: { code: 'XAF', name: 'Central African Franc', symbol: 'FCFA', position: 'before' },
+    availableCurrencies: [
+        { code: 'XAF', name: 'Central African Franc', symbol: 'FCFA', position: 'before' },
+        { code: 'USD', name: 'United States Dollar', symbol: '$', position: 'before' },
+        { code: 'EUR', name: 'Euro', symbol: '€', position: 'before' },
+        { code: 'GBP', name: 'British Pound', symbol: '£', position: 'before' },
+        { code: 'NGN', name: 'Nigerian Naira', symbol: '₦', position: 'before' },
+        { code: 'GHS', name: 'Ghanaian Cedi', symbol: '₵', position: 'before' },
+    ],
+    // Tax Management
+    taxEnabled: true,
+    taxRates: [
+        { id: 'VAT', name: 'Value Added Tax (VAT)', rate: 19, isDefault: true },
+        { id: 'GST', name: 'Goods and Services Tax (GST)', rate: 10, isDefault: false },
+        { id: 'PST', name: 'Property Tax (PST)', rate: 5, isDefault: false },
+    ],
+    // Discount Management
+    discountEnabled: true,
+    discountRules: [
+        { id: '1', name: 'No Discount', type: 'percentage', value: 0, isActive: true },
+        { id: '2', name: '10% Discount', type: 'percentage', value: 10, isActive: true },
+        { id: '3', name: '20% Discount', type: 'percentage', value: 20, isActive: true },
+        { id: '4', name: 'Fixed 1000 FCFA', type: 'fixed', value: 1000, isActive: true },
+    ],
 });
 
 

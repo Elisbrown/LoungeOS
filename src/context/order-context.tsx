@@ -92,12 +92,34 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus) => {
     const orderToUpdate = orders.find(o => o.id === orderId);
     if(orderToUpdate) {
+        const updatedOrder = { ...orderToUpdate, status, timestamp: new Date() };
+        
+        // Update table status if order is completed
         if(status === "Completed") {
             updateTableStatus(orderToUpdate.table, "Available");
         }
-        await updateOrder({ ...orderToUpdate, status, timestamp: new Date() });
+        
+        // Update the order in the database - send only status data
+        const response = await fetch(`/api/orders?id=${orderId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: orderId, status, timestamp: new Date() })
+        });
+        
+        if (response.ok) {
+            // Update local state immediately for better UX
+            setOrders(prevOrders => 
+                prevOrders.map(order => 
+                    order.id === orderId ? updatedOrder : order
+                )
+            );
+        } else {
+            console.error("Failed to update order status");
+            // Revert local state if database update failed
+            await fetchOrders();
+        }
     }
-  }, [orders, updateOrder, updateTableStatus]);
+  }, [orders, updateTableStatus, fetchOrders]);
   
   const deleteOrder = useCallback(async (orderId: string) => {
     await fetch(`/api/orders?id=${orderId}`, {

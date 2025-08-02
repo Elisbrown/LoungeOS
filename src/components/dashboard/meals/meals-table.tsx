@@ -279,6 +279,7 @@ export function MealsTable() {
                         <TableHead>{t('inventory.category')}</TableHead>
                         <TableHead>{t('meals.price')}</TableHead>
                         <TableHead>{t('meals.quantityAvailable')}</TableHead>
+                        <TableHead>{t('meals.stockSource')}</TableHead>
                         <TableHead>{t('inventory.status')}</TableHead>
                         {canManage && (
                         <TableHead>
@@ -303,6 +304,11 @@ export function MealsTable() {
                         <TableCell>XAF {meal.price.toLocaleString()}</TableCell>
                         <TableCell>{meal.quantity}</TableCell>
                         <TableCell>
+                            <Badge variant={meal.id.startsWith('inv_') ? "secondary" : "default"}>
+                                {meal.id.startsWith('inv_') ? t('meals.inventoryItem') : t('meals.regularProduct')}
+                            </Badge>
+                        </TableCell>
+                        <TableCell>
                             <Badge variant={getStatusVariant(meal.quantity)}>
                                 {t(getStatusTextKey(meal.quantity))}
                             </Badge>
@@ -318,14 +324,24 @@ export function MealsTable() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>{t('inventory.actions')}</DropdownMenuLabel>
-                                <DropdownMenuItem onSelect={() => setEditingMeal(meal)}>
-                                    <Edit className="mr-2 h-4 w-4"/>
-                                    {t('dialogs.edit')}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setDeletingMeal(meal)} className="text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4"/>
-                                    {t('dialogs.delete')}
-                                </DropdownMenuItem>
+                                {!meal.id.startsWith('inv_') && (
+                                    <DropdownMenuItem onSelect={() => setEditingMeal(meal)}>
+                                        <Edit className="mr-2 h-4 w-4"/>
+                                        {t('dialogs.edit')}
+                                    </DropdownMenuItem>
+                                )}
+                                {!meal.id.startsWith('inv_') && (
+                                    <DropdownMenuItem onSelect={() => setDeletingMeal(meal)} className="text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                        {t('dialogs.delete')}
+                                    </DropdownMenuItem>
+                                )}
+                                {meal.id.startsWith('inv_') && (
+                                    <DropdownMenuItem disabled className="text-muted-foreground">
+                                        <Edit className="mr-2 h-4 w-4"/>
+                                        {t('dialogs.edit')} (Managed in Inventory)
+                                    </DropdownMenuItem>
+                                )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                             </TableCell>

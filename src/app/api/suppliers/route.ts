@@ -1,52 +1,86 @@
 
 // src/app/api/suppliers/route.ts
-import { NextResponse } from 'next/server';
-import { getSuppliers, addSupplier, updateSupplier, deleteSupplier } from '@/lib/db/suppliers';
+import { NextRequest, NextResponse } from 'next/server';
+import { getInventorySuppliers, addInventorySupplier, updateInventorySupplier, deleteInventorySupplier } from '@/lib/db/inventory';
 
 export async function GET() {
     try {
-        const suppliers = await getSuppliers();
+        const suppliers = await getInventorySuppliers();
         return NextResponse.json(suppliers);
-    } catch (error: any) {
-        return NextResponse.json({ message: 'Failed to fetch suppliers', error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error('Error fetching suppliers:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch suppliers' },
+            { status: 500 }
+        );
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
-        const supplierData = await request.json();
-        const newSupplier = await addSupplier(supplierData);
+        const body = await request.json();
+        const { supplierData } = body;
+
+        if (!supplierData) {
+            return NextResponse.json(
+                { error: 'Supplier data is required' },
+                { status: 400 }
+            );
+        }
+
+        const newSupplier = await addInventorySupplier(supplierData);
         return NextResponse.json(newSupplier, { status: 201 });
-    } catch (error: any) {
-        return NextResponse.json({ message: 'Failed to add supplier', error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error('Error adding supplier:', error);
+        return NextResponse.json(
+            { error: 'Failed to add supplier' },
+            { status: 500 }
+        );
     }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
-        if (!id) {
-            return NextResponse.json({ message: 'ID query parameter is required' }, { status: 400 });
+        const body = await request.json();
+        const { supplierData } = body;
+
+        if (!supplierData || !supplierData.id) {
+            return NextResponse.json(
+                { error: 'Supplier data with ID is required' },
+                { status: 400 }
+            );
         }
-        const supplierData = await request.json();
-        const updatedSupplier = await updateSupplier({ ...supplierData, id });
+
+        const updatedSupplier = await updateInventorySupplier(supplierData);
         return NextResponse.json(updatedSupplier);
-    } catch (error: any) {
-        return NextResponse.json({ message: 'Failed to update supplier', error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error('Error updating supplier:', error);
+        return NextResponse.json(
+            { error: 'Failed to update supplier' },
+            { status: 500 }
+        );
     }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
+        const body = await request.json();
+        const { id } = body;
+
         if (!id) {
-            return NextResponse.json({ message: 'ID query parameter is required' }, { status: 400 });
+            return NextResponse.json(
+                { error: 'Supplier ID is required' },
+                { status: 400 }
+            );
         }
-        await deleteSupplier(id);
-        return NextResponse.json({ message: 'Supplier deleted successfully' });
-    } catch (error: any) {
-        return NextResponse.json({ message: 'Failed to delete supplier', error: error.message }, { status: 500 });
+
+        await deleteInventorySupplier(parseInt(id));
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting supplier:', error);
+        return NextResponse.json(
+            { error: 'Failed to delete supplier' },
+            { status: 500 }
+        );
     }
 }

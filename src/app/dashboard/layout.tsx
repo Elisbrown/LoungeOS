@@ -14,6 +14,7 @@ import { TicketProvider } from '@/context/ticket-context'
 import { NotificationProvider, useNotifications } from '@/context/notification-context'
 import { ActivityLogProvider } from '@/context/activity-log-context'
 import { CategoryProvider } from '@/context/category-context'
+import { InventoryProvider } from '@/context/inventory-context'
 import { OnboardingProvider } from '@/context/onboarding-context'
 import { useOutsideClick } from '@/hooks/use-outside-click'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -26,25 +27,66 @@ function AudioPlayer() {
         const lastNotification = notifications[0];
         // Play sound for specific important notifications
         if (lastNotification && (lastNotification.type === 'alert' || lastNotification.title.includes('Ready') || lastNotification.title.includes('Prête'))) {
-            audioRef.current?.play().catch(e => console.error("Audio play failed:", e));
+            console.log('Attempting to play audio for notification:', lastNotification.title);
+            if (audioRef.current) {
+                audioRef.current.play()
+                    .then(() => console.log('Audio played successfully'))
+                    .catch(e => {
+                        console.error("Audio play failed:", e);
+                        // Try to reload the audio and play again
+                        audioRef.current!.load();
+                        audioRef.current!.play().catch(e2 => console.error("Audio retry failed:", e2));
+                    });
+            } else {
+                console.error("Audio element not found");
+            }
         }
     }, [notifications]);
 
-    return <audio ref={audioRef} src="/audio/notification.mp3" preload="auto" />;
+    const testAudio = () => {
+        console.log('Testing audio manually...');
+        if (audioRef.current) {
+            audioRef.current.play()
+                .then(() => console.log('Manual audio test successful'))
+                .catch(e => console.error("Manual audio test failed:", e));
+        }
+    };
+
+    return (
+        <>
+            <audio 
+                ref={audioRef} 
+                src="/audio/notification.mp3" 
+                preload="auto"
+                onError={(e) => console.error("Audio element error:", e)}
+                onLoadStart={() => console.log("Audio loading started")}
+                onCanPlay={() => console.log("Audio can play")}
+            />
+            {/* Debug button - remove in production */}
+            <button 
+                onClick={testAudio}
+                style={{
+                    position: 'fixed',
+                    bottom: '10px',
+                    right: '10px',
+                    zIndex: 9999,
+                    padding: '5px 10px',
+                    background: 'red',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontSize: '12px'
+                }}
+            >
+                Test Audio
+            </button>
+        </>
+    );
 }
 
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-    const { isMobile, setOpen, setOpenMobile } = useSidebar();
-    const sidebarRef = React.useRef<HTMLDivElement>(null);
-
-    useOutsideClick(sidebarRef, () => {
-        if (isMobile) {
-            setOpenMobile(false);
-        } else {
-            setOpen(false);
-        }
-    });
+    const { isMobile, setOpenMobile } = useSidebar();
 
     const handleLinkClick = () => {
         if (isMobile) {
@@ -54,7 +96,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
     return (
         <>
-            <Sidebar ref={sidebarRef}>
+            <Sidebar>
                 <AppSidebar onLinkClick={handleLinkClick} />
             </Sidebar>
             <SidebarInset>
@@ -80,12 +122,13 @@ export default function DashboardLayout({
             <NotificationProvider>
                 <ProductProvider>
                     <CategoryProvider>
-                        <FloorProvider>
-                        <TableProvider>
-                            <OrderProvider>
-                                <SupplierProvider>
-                                <TicketProvider>
-                                <OnboardingProvider>
+                        <InventoryProvider>
+                            <FloorProvider>
+                            <TableProvider>
+                                <OrderProvider>
+                                    <SupplierProvider>
+                                    <TicketProvider>
+                                    <OnboardingProvider>
                                     <SidebarProvider defaultOpen={isMobile ? false : true} open={open} onOpenChange={setOpen}>
                                         <DashboardContent>
                                             {children}
@@ -97,6 +140,7 @@ export default function DashboardLayout({
                             </OrderProvider>
                         </TableProvider>
                         </FloorProvider>
+                        </InventoryProvider>
                     </CategoryProvider>
                 </ProductProvider>
             </NotificationProvider>

@@ -49,7 +49,7 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   const { addNotification } = useNotifications(); // Get addNotification function
 
   const fetchMeals = useCallback(async () => {
-    const response = await fetch('/api/products');
+    const response = await fetch('/api/products?unified=true');
     const data = await response.json();
     if(response.ok) {
         setMeals(data);
@@ -75,13 +75,24 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
               type: 'alert'
             });
           }
-          const updatedMeal = { ...mealToUpdate, quantity: newQuantity > 0 ? newQuantity : 0 };
-          // This should ideally be a single API call
-          fetch(`/api/products?id=${mealId}`, {
+          
+          // Check if this is an inventory item (has 'inv_' prefix)
+          if (mealId.startsWith('inv_')) {
+            // Update inventory stock
+            fetch('/api/products/update-stock', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ inventoryId: mealId, quantitySold }),
+            });
+          } else {
+            // Update regular product
+            const updatedMeal = { ...mealToUpdate, quantity: newQuantity > 0 ? newQuantity : 0 };
+            fetch(`/api/products?id=${mealId}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(updatedMeal),
-          });
+            });
+          }
       }
       return prevMeals.map(m => m.id === mealId ? {...m, quantity: m.quantity - quantitySold} : m);
     });

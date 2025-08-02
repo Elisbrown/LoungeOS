@@ -26,7 +26,11 @@ import {
   History,
   Banknote,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Package,
+  TrendingUp,
+  ClipboardList,
+  Calendar
 } from 'lucide-react'
 import {
   SidebarContent,
@@ -65,11 +69,23 @@ const allMenuItems = [
     ]
   },
   { href: '/dashboard/meals', labelKey: 'sidebar.meals', icon: Utensils, roles: ["Manager", "Super Admin", "Chef", "Stock Manager", "Accountant"] },
-  { href: '/dashboard/inventory', labelKey: 'sidebar.inventory', icon: Boxes, roles: ["Stock Manager", "Manager", "Super Admin", "Accountant"] },
+  {
+    labelKey: 'sidebar.inventory', icon: Boxes, roles: ["Stock Manager", "Manager", "Super Admin", "Accountant"],
+    subItems: [
+      { href: '/dashboard/inventory', labelKey: 'sidebar.inventoryDashboard', icon: LayoutDashboard },
+      { href: '/dashboard/inventory/items', labelKey: 'sidebar.inventoryItems', icon: Package },
+      { href: '/dashboard/inventory/movements', labelKey: 'sidebar.inventoryMovements', icon: TrendingUp },
+      { href: '/dashboard/inventory/suppliers', labelKey: 'sidebar.inventorySuppliers', icon: Truck },
+      { href: '/dashboard/inventory/stocktake', labelKey: 'sidebar.inventoryStocktake', icon: ClipboardList },
+      { href: '/dashboard/inventory/reports', labelKey: 'sidebar.inventoryReports', icon: BarChart3 },
+      { href: '/dashboard/inventory/recipes', labelKey: 'sidebar.inventoryRecipes', icon: BookOpen },
+    ]
+  },
   { href: '/dashboard/suppliers', labelKey: 'sidebar.suppliers', icon: Truck, roles: ["Stock Manager", "Manager", "Super Admin"] },
   { href: '/dashboard/categories', labelKey: 'sidebar.categories', icon: Folder, roles: ["Manager", "Super Admin"] },
   { href: '/dashboard/staff', labelKey: 'sidebar.staff', icon: Users2, roles: ["Manager", "Super Admin"] },
   { href: '/dashboard/reports', labelKey: 'sidebar.reports', icon: BarChart3, roles: ["Manager", "Super Admin", "Accountant"] },
+  { href: '/dashboard/events', labelKey: 'sidebar.events', icon: Calendar, roles: ["Manager", "Super Admin"] },
   { href: '/dashboard/activity', labelKey: 'sidebar.activity', icon: History, roles: ["Manager", "Super Admin"] },
   { href: '/dashboard/backup', labelKey: 'sidebar.backup', icon: ShieldCheck, roles: ["Manager", "Super Admin"] },
   { href: '/dashboard/configuration', labelKey: 'sidebar.configuration', icon: Wrench, roles: ["Manager", "Super Admin"] },
@@ -87,7 +103,8 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
   const { state: sidebarState } = useSidebar() // Use the sidebar state
   const [isClient, setIsClient] = useState(false)
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-    'sidebar.accounting': pathname.startsWith('/dashboard/accounting')
+    'sidebar.accounting': pathname.startsWith('/dashboard/accounting'),
+    'sidebar.inventory': pathname.startsWith('/dashboard/inventory')
   });
 
   useEffect(() => {
@@ -97,7 +114,8 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
   useEffect(() => {
     setOpenMenus(prev => ({
         ...prev,
-        'sidebar.accounting': pathname.startsWith('/dashboard/accounting')
+        'sidebar.accounting': pathname.startsWith('/dashboard/accounting'),
+        'sidebar.inventory': pathname.startsWith('/dashboard/inventory')
     }))
   }, [pathname]);
 
@@ -139,7 +157,7 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
                 <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                         <SidebarMenuButton
-                        isActive={pathname.startsWith('/dashboard/accounting')}
+                        isActive={pathname.startsWith('/dashboard/accounting') || pathname.startsWith('/dashboard/inventory')}
                         tooltip={t(item.labelKey)}
                         className="w-full justify-between"
                         >

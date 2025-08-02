@@ -39,10 +39,10 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
   const handleExportCSV = () => {
     const headers = ["User", "Email", "Action", "Details", "Timestamp"];
     const rows = logs.map(log => [
-      log.user.name,
-      log.user.email,
+      log.user?.name || 'Unknown',
+      log.user?.email || 'Unknown',
       log.action,
-      log.details,
+      log.details || '',
       format(new Date(log.timestamp), "yyyy-MM-dd HH:mm:ss")
     ]);
 
@@ -87,25 +87,31 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
         </TableHeader>
         <TableBody>
           {logs.length > 0 ? (
-            logs.map((log) => (
-              <TableRow key={log.id}>
-                <TableCell>
-                   <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={log.user.avatar} alt={log.user.name} data-ai-hint="person" />
-                        <AvatarFallback>{log.user.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                          <p className="font-medium">{log.user.name}</p>
-                          <p className="text-xs text-muted-foreground">{log.user.email}</p>
-                      </div>
-                  </div>
-                </TableCell>
-                <TableCell className="font-medium">{log.action}</TableCell>
-                <TableCell>{log.details}</TableCell>
-                <TableCell>{format(new Date(log.timestamp), "yyyy-MM-dd HH:mm:ss")}</TableCell>
-              </TableRow>
-            ))
+            logs.map((log) => {
+              const userName = log.user?.name || 'Unknown User';
+              const userEmail = log.user?.email || 'No email';
+              const userAvatar = log.user?.avatar || "https://placehold.co/100x100.png";
+              
+              return (
+                <TableRow key={log.id}>
+                  <TableCell>
+                     <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={userAvatar} alt={userName} data-ai-hint="person" />
+                          <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-medium">{userName}</p>
+                            <p className="text-xs text-muted-foreground">{userEmail}</p>
+                        </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-medium">{log.action}</TableCell>
+                  <TableCell>{log.details || ''}</TableCell>
+                  <TableCell>{format(new Date(log.timestamp), "yyyy-MM-dd HH:mm:ss")}</TableCell>
+                </TableRow>
+              );
+            })
           ) : (
             <TableRow>
               <TableCell colSpan={4} className="h-24 text-center">

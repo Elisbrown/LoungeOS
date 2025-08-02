@@ -1,6 +1,7 @@
 // New page for the accounting dashboard
 "use client"
 
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/dashboard/header'
 import { useAuth } from '@/context/auth-context'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -15,16 +16,8 @@ import {
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-
-
-const chartData = [
-  { month: "January", revenue: 186000, expenses: 80000 },
-  { month: "February", revenue: 305000, expenses: 200000 },
-  { month: "March", revenue: 237000, expenses: 120000 },
-  { month: "April", revenue: 73000, expenses: 190000 },
-  { month: "May", revenue: 209000, expenses: 130000 },
-  { month: "June", revenue: 214000, expenses: 140000 },
-]
+import { useSettings } from '@/context/settings-context'
+import { formatCurrency } from '@/lib/utils'
 
 const chartConfig = {
   revenue: {
@@ -37,8 +30,99 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+type AccountingData = {
+  currentMonth: {
+    netProfit: number
+    totalRevenue: number
+    totalExpenses: number
+    profitMargin: number
+  }
+  changes: {
+    revenue: number
+    expenses: number
+    profit: number
+    profitMargin: number
+  }
+  chartData: Array<{
+    month: string
+    revenue: number
+    expenses: number
+  }>
+}
+
 function AccountingDashboardContent() {
   const { t } = useTranslation()
+  const { settings } = useSettings()
+  const [data, setData] = useState<AccountingData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/accounting/dashboard')
+        if (!response.ok) {
+          throw new Error('Failed to fetch accounting data')
+        }
+        const dashboardData = await response.json()
+        setData(dashboardData)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen w-full flex-col">
+        <Header title={t('accounting.dashboard.title')} />
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <div className="flex min-h-screen w-full flex-col">
+        <Header title={t('accounting.dashboard.title')} />
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+          <Card className="flex flex-col items-center justify-center p-10 text-center">
+            <CardHeader>
+              <div className="mx-auto bg-muted rounded-full p-4">
+                <BarChart2 className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <CardTitle className="mt-4">Error Loading Data</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                {error || 'Unable to load accounting dashboard data'}
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -51,8 +135,12 @@ function AccountingDashboardContent() {
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">XAF 452,310.89</div>
-                    <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                    <div className="text-2xl font-bold">
+                      {formatCurrency(data.currentMonth.netProfit, settings.defaultCurrency)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {data.changes.profit >= 0 ? '+' : ''}{data.changes.profit}% from last month
+                    </p>
                 </CardContent>
             </Card>
             <Card>
@@ -61,8 +149,12 @@ function AccountingDashboardContent() {
                     <ArrowUp className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">XAF 1,234,567.00</div>
-                    <p className="text-xs text-muted-foreground">+15% from last month</p>
+                    <div className="text-2xl font-bold">
+                      {formatCurrency(data.currentMonth.totalRevenue, settings.defaultCurrency)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {data.changes.revenue >= 0 ? '+' : ''}{data.changes.revenue}% from last month
+                    </p>
                 </CardContent>
             </Card>
             <Card>
@@ -71,8 +163,12 @@ function AccountingDashboardContent() {
                     <ArrowDown className="h-4 w-4 text-red-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">XAF 782,256.11</div>
-                    <p className="text-xs text-muted-foreground">+10% from last month</p>
+                    <div className="text-2xl font-bold">
+                      {formatCurrency(data.currentMonth.totalExpenses, settings.defaultCurrency)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {data.changes.expenses >= 0 ? '+' : ''}{data.changes.expenses}% from last month
+                    </p>
                 </CardContent>
             </Card>
              <Card>
@@ -81,8 +177,10 @@ function AccountingDashboardContent() {
                     <BarChart2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">36.6%</div>
-                    <p className="text-xs text-muted-foreground">+2% from last month</p>
+                    <div className="text-2xl font-bold">{data.currentMonth.profitMargin}%</div>
+                    <p className="text-xs text-muted-foreground">
+                      {data.changes.profitMargin >= 0 ? '+' : ''}{data.changes.profitMargin}% from last month
+                    </p>
                 </CardContent>
             </Card>
         </div>
@@ -95,7 +193,7 @@ function AccountingDashboardContent() {
                     <ChartContainer config={chartConfig} className="h-[300px] w-full">
                         <AreaChart
                             accessibilityLayer
-                            data={chartData}
+                            data={data.chartData}
                             margin={{
                             left: 12,
                             right: 12,
@@ -113,7 +211,7 @@ function AccountingDashboardContent() {
                                 tickLine={false}
                                 axisLine={false}
                                 tickMargin={8}
-                                tickFormatter={(value) => `XAF ${Number(value) / 1000}k`}
+                                tickFormatter={(value) => `${settings.defaultCurrency.symbol}${Number(value) / 1000}k`}
                             />
                             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                             <Area

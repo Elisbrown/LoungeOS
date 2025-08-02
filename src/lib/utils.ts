@@ -1,8 +1,86 @@
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { Currency } from "@/context/settings-context"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+/**
+ * Format a number as currency based on the provided currency settings
+ * @param amount - The amount to format
+ * @param currency - The currency settings to use
+ * @param locale - The locale to use for formatting (defaults to 'en-US')
+ * @returns Formatted currency string
+ */
+export function formatCurrency(amount: number, currency: Currency, locale: string = 'en-US'): string {
+  const formattedAmount = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount)
+
+  if (currency.position === 'before') {
+    return `${currency.symbol}${formattedAmount}`
+  } else {
+    return `${formattedAmount}${currency.symbol}`
+  }
+}
+
+/**
+ * Calculate tax amount based on subtotal and tax rate
+ * @param subtotal - The subtotal amount
+ * @param taxRate - The tax rate as a percentage (e.g., 19 for 19%)
+ * @returns The tax amount
+ */
+export function calculateTax(subtotal: number, taxRate: number): number {
+  return (subtotal * taxRate) / 100
+}
+
+/**
+ * Calculate discount amount based on subtotal and discount rule
+ * @param subtotal - The subtotal amount
+ * @param discountType - The type of discount ('percentage' or 'fixed')
+ * @param discountValue - The discount value
+ * @returns The discount amount
+ */
+export function calculateDiscount(subtotal: number, discountType: 'percentage' | 'fixed', discountValue: number): number {
+  if (discountType === 'percentage') {
+    return (subtotal * discountValue) / 100
+  } else {
+    return Math.min(discountValue, subtotal) // Fixed amount, but cannot exceed subtotal
+  }
+}
+
+/**
+ * Calculate total amount including tax and discount
+ * @param subtotal - The subtotal amount
+ * @param taxRate - The tax rate as a percentage
+ * @param discountType - The type of discount
+ * @param discountValue - The discount value
+ * @returns Object containing breakdown of amounts
+ */
+export function calculateTotal(
+  subtotal: number, 
+  taxRate: number = 0, 
+  discountType: 'percentage' | 'fixed' = 'percentage', 
+  discountValue: number = 0
+): {
+  subtotal: number
+  discount: number
+  tax: number
+  total: number
+} {
+  const discount = calculateDiscount(subtotal, discountType, discountValue)
+  const amountAfterDiscount = subtotal - discount
+  const tax = calculateTax(amountAfterDiscount, taxRate)
+  const total = amountAfterDiscount + tax
+
+  return {
+    subtotal,
+    discount,
+    tax,
+    total
+  }
 }
 
 export function hexToHsl(hex: string): string {

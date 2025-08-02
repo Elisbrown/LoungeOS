@@ -5,7 +5,7 @@ import React from 'react';
 import { OrderItem } from './order-summary';
 import { type Settings } from '@/context/settings-context';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 
 function LoungeChairIcon({ className }: { className?: string }) {
     return (
@@ -45,13 +45,18 @@ export type ReceiptProps = {
   cashierName: string;
   waiterName?: string;
   settings: Settings; // Make settings mandatory for printing
+  // Tax and discount breakdown
+  discount?: number;
+  tax?: number;
+  taxRate?: number;
+  discountName?: string;
 };
 
 export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
   (props, ref) => {
     const { 
         orderId, type, table, items, subtotal, total, totalPaid, totalDue, amountTendered, change, paymentMethod,
-        timestamp, cashierName, waiterName, settings
+        timestamp, cashierName, waiterName, settings, discount, tax, taxRate, discountName
     } = props;
     
     const fontClass = {
@@ -132,8 +137,8 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
               <tr key={item.id}>
                 <td className="text-left">{item.name}</td>
                 <td className="text-center">{item.quantity}</td>
-                <td className="text-right">{item.price.toFixed(2)}</td>
-                <td className="text-right">{(item.price * item.quantity).toFixed(2)}</td>
+                <td className="text-right">{formatCurrency(item.price, settings.defaultCurrency)}</td>
+                <td className="text-right">{formatCurrency(item.price * item.quantity, settings.defaultCurrency)}</td>
               </tr>
             ))}
           </tbody>
@@ -148,13 +153,29 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             </div>
             <div className="flex justify-between">
               <span>Sub Total:</span>
-              <span>{subtotal.toFixed(2)}</span>
+              <span>{formatCurrency(subtotal, settings.defaultCurrency)}</span>
             </div>
-             {/* Add logic for discounts or taxes here if needed */}
+            
+            {/* Discount */}
+            {discount && discount > 0 && (
+              <div className="flex justify-between">
+                <span>Discount{discountName ? ` (${discountName})` : ''}:</span>
+                <span>-{formatCurrency(discount, settings.defaultCurrency)}</span>
+              </div>
+            )}
+            
+            {/* Tax */}
+            {settings.taxEnabled && tax && tax > 0 && (
+              <div className="flex justify-between">
+                <span>Tax{taxRate ? ` (${taxRate}%)` : ''}:</span>
+                <span>{formatCurrency(tax, settings.defaultCurrency)}</span>
+              </div>
+            )}
+            
             <hr className="border-dashed border-black my-1" />
             <div className="flex justify-between font-bold">
               <span>TOTAL:</span>
-              <span>XAF {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span>{formatCurrency(total, settings.defaultCurrency)}</span>
             </div>
         </div>
 
@@ -165,13 +186,13 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                     {amountTendered !== undefined && (
                         <div className="flex justify-between">
                             <span>Amount Tendered ({paymentMethod}):</span>
-                            <span>{amountTendered.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span>{formatCurrency(amountTendered, settings.defaultCurrency)}</span>
                         </div>
                     )}
                     {change !== undefined && (
                          <div className="flex justify-between">
                             <span>Change:</span>
-                            <span>{change.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span>{formatCurrency(change, settings.defaultCurrency)}</span>
                         </div>
                     )}
                 </div>
