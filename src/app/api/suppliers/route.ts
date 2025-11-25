@@ -3,6 +3,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getInventorySuppliers, addInventorySupplier, updateInventorySupplier, deleteInventorySupplier } from '@/lib/db/inventory';
 
+export const runtime = 'nodejs';
+
 export async function GET() {
     try {
         const suppliers = await getInventorySuppliers();

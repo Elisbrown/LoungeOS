@@ -8,7 +8,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useProducts } from '@/context/product-context'
 import { useInventory } from '@/context/inventory-context'
 import type { Meal } from '@/context/product-context'
-import type { InventoryItem } from '@/context/inventory-context'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
@@ -103,8 +102,9 @@ export function ProductGrid({ onProductClick }: ProductGridProps) {
              category.includes('cup') || category.includes('plate') || category.includes('bowl') ||
              category.includes('utensil') || category.includes('napkin') || category.includes('tissue');
     })
-    .map(item => ({
-      id: `inv_${item.id}`,
+    .map((item, index) => ({
+      // Use SKU primarily, fallback to id, and add index to ensure uniqueness
+      id: `inv_${item.sku || item.id}_${index}`,
       name: item.name,
       price: item.cost_per_unit ? item.cost_per_unit * 1.5 : 100, // Add markup for packaging
       category: item.category,

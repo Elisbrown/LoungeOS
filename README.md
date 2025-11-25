@@ -26,17 +26,19 @@ This application is designed to run in a local environment without internet acce
 
 The `better-sqlite3` package is already included in `package.json`. Running `npm install` will set it up.
 
-### Step 2: Create the Database File
+### Step 2: Initialize the Database Schema
 
-Create an empty file named `loungeos.db` in the root directory of the project. This file will store all your application data.
+Run the following command to create all necessary tables in your `loungeos.db` file:
 
-### Step 3: Define the Database Schema
+```bash
+npm run db:init
+```
 
-You need to create the necessary tables in your `loungeos.db` file. You can do this by running a SQL client against the database file or by creating a separate script. The full, detailed schema can be found in `docs/database.md`.
+This will set up the full schema automatically. You do NOT need to manually create tables.
 
-### Step 4: Seed the Database with Default Users
+### Step 3: Seed the Database with Default Users
 
-To get started quickly, you can populate the database with a default user for each role. This script will create the necessary user accounts for initial setup.
+To get started quickly, populate the database with a default user for each role:
 
 ```bash
 npm run db:seed
@@ -53,6 +55,14 @@ This will create the following user accounts with the password `password` for al
 - `bartender@lounge.com` (Bartender)
 
 For more details on roles and permissions, see `docs/authentication.md`.
+
+### Step 4: (Optional) Seed Inventory Data
+
+To populate the inventory tables with sample data, run:
+
+```bash
+npm run db:seed-inventory
+```
 
 ### Step 5: Implement the Data Layer
 

@@ -96,7 +96,7 @@ export default function PasswordResetPage() {
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center mb-4">
                         {settings.platformLogo ? (
-                            <Image src={settings.platformLogo} alt="Platform Logo" width={60} height={60} className="rounded-md" />
+                            <Image src={settings.platformLogo} alt="Platform Logo" width={60} height={60} className="rounded-md object-contain aspect-square" />
                         ) : (
                             <LoungeChairIcon className="h-16 w-16 text-primary" />
                         )}

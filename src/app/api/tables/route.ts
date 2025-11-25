@@ -3,6 +3,8 @@
 import { NextResponse } from 'next/server';
 import { getTables, addTable, updateTable } from '@/lib/db/tables';
 
+export const runtime = 'nodejs';
+
 export async function GET() {
     try {
         const tables = await getTables();

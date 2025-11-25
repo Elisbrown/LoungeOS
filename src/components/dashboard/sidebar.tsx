@@ -74,11 +74,7 @@ const allMenuItems = [
     subItems: [
       { href: '/dashboard/inventory', labelKey: 'sidebar.inventoryDashboard', icon: LayoutDashboard },
       { href: '/dashboard/inventory/items', labelKey: 'sidebar.inventoryItems', icon: Package },
-      { href: '/dashboard/inventory/movements', labelKey: 'sidebar.inventoryMovements', icon: TrendingUp },
       { href: '/dashboard/inventory/suppliers', labelKey: 'sidebar.inventorySuppliers', icon: Truck },
-      { href: '/dashboard/inventory/stocktake', labelKey: 'sidebar.inventoryStocktake', icon: ClipboardList },
-      { href: '/dashboard/inventory/reports', labelKey: 'sidebar.inventoryReports', icon: BarChart3 },
-      { href: '/dashboard/inventory/recipes', labelKey: 'sidebar.inventoryRecipes', icon: BookOpen },
     ]
   },
   { href: '/dashboard/suppliers', labelKey: 'sidebar.suppliers', icon: Truck, roles: ["Stock Manager", "Manager", "Super Admin"] },
@@ -136,7 +132,7 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
         <Link href="/dashboard" className="flex items-center gap-2">
             {isClient ? (
                 <>
-                    <Image src={settings.platformLogo || '/logo.png'} alt="logo" width={24} height={24} className="h-6 w-6" />
+                    <Image src={settings.platformLogo || '/logo.png'} alt="logo" width={24} height={24} className="h-6 w-6 object-contain rounded-sm aspect-square" />
                     {sidebarState === 'expanded' && (
                       <span className="font-bold text-lg text-primary-foreground font-headline">{settings.platformName}</span>
                     )}

@@ -25,13 +25,13 @@ export function InventoryMovementsDialog({ item, open, onOpenChange }: Inventory
     if (open && item) {
       fetchMovements(item.id)
     }
-  }, [open, item, fetchMovements])
+  }, [open, item?.id]) // Only depend on open and item.id, not fetchMovements
 
   useEffect(() => {
     if (item) {
       setFilteredMovements(movements.filter(m => m.item_id === item.id))
     }
-  }, [movements, item])
+  }, [movements, item?.id]) // Only depend on item.id, not entire item object
 
   const getMovementIcon = (type: string) => {
     switch (type) {

@@ -3,6 +3,8 @@
 import { NextResponse } from 'next/server';
 import { getFloors, addFloor, deleteFloor } from '@/lib/db/floors';
 
+export const runtime = 'nodejs';
+
 export async function GET() {
     try {
         const floors = await getFloors();

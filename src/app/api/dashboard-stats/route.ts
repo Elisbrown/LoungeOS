@@ -1,5 +1,7 @@
 
 // src/app/api/dashboard-stats/route.ts
+export const runtime = 'nodejs';
+
 import { NextRequest } from 'next/server'
 import Database from 'better-sqlite3'
 import path from 'path'

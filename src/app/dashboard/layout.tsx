@@ -18,6 +18,7 @@ import { InventoryProvider } from '@/context/inventory-context'
 import { OnboardingProvider } from '@/context/onboarding-context'
 import { useOutsideClick } from '@/hooks/use-outside-click'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { BackupSchedulerProvider } from '@/context/backup-scheduler-context'
 
 function AudioPlayer() {
     const { notifications } = useNotifications();
@@ -53,34 +54,14 @@ function AudioPlayer() {
     };
 
     return (
-        <>
-            <audio 
-                ref={audioRef} 
-                src="/audio/notification.mp3" 
-                preload="auto"
-                onError={(e) => console.error("Audio element error:", e)}
-                onLoadStart={() => console.log("Audio loading started")}
-                onCanPlay={() => console.log("Audio can play")}
-            />
-            {/* Debug button - remove in production */}
-            <button 
-                onClick={testAudio}
-                style={{
-                    position: 'fixed',
-                    bottom: '10px',
-                    right: '10px',
-                    zIndex: 9999,
-                    padding: '5px 10px',
-                    background: 'red',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '12px'
-                }}
-            >
-                Test Audio
-            </button>
-        </>
+        <audio 
+            ref={audioRef} 
+            src="/audio/notification.mp3" 
+            preload="auto"
+            onError={(e) => console.error("Audio element error:", e)}
+            onLoadStart={() => console.log("Audio loading started")}
+            onCanPlay={() => console.log("Audio can play")}
+        />
     );
 }
 
@@ -129,11 +110,13 @@ export default function DashboardLayout({
                                     <SupplierProvider>
                                     <TicketProvider>
                                     <OnboardingProvider>
+                                    <BackupSchedulerProvider>
                                     <SidebarProvider defaultOpen={isMobile ? false : true} open={open} onOpenChange={setOpen}>
                                         <DashboardContent>
                                             {children}
                                         </DashboardContent>
                                     </SidebarProvider>
+                                    </BackupSchedulerProvider>
                                 </OnboardingProvider>
                                 </TicketProvider>
                                 </SupplierProvider>

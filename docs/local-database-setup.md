@@ -23,9 +23,15 @@ npm install
 
 1.  **Create the Database File**: In the root directory of the project, create an empty file named `loungeos.db`.
 
-2.  **Define the Schema**: Open the `loungeos.db` file with your SQLite client. Copy the entire SQL schema from `docs/database.md` and execute it. This will create all the necessary tables (`users`, `products`, `orders`, `floors`, `tickets`, etc.).
+2.  **Initialize the Schema**: Run the following command to automatically create all tables:
 
-3.  **Seed the Database**: Run the seed script to populate the `users` table with default accounts for each role. This is crucial for being able to log in.
+    ```bash
+    npm run db:init
+    ```
+
+    This will execute the schema from `scripts/init-db.ts` and set up all required tables. You do NOT need to manually run SQL for schema creation.
+
+3.  **Seed the Database**: Run the seed script to populate the `users` table with default accounts for each role:
 
     ```bash
     npm run db:seed

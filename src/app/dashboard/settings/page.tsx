@@ -200,7 +200,7 @@ export default function SettingsPage() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('settings.name')}</FormLabel>
+                          <FormLabel>{t('settings.nameLabel')}</FormLabel>
                           <FormControl>
                             <Input placeholder="Your name" {...field} />
                           </FormControl>
@@ -213,7 +213,7 @@ export default function SettingsPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('settings.email')}</FormLabel>
+                          <FormLabel>{t('settings.emailLabel')}</FormLabel>
                           <FormControl>
                             <Input placeholder="Your email" {...field} disabled />
                           </FormControl>
@@ -242,7 +242,7 @@ export default function SettingsPage() {
                       name="currentPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('settings.currentPassword')}</FormLabel>
+                          <FormLabel>{t('settings.currentPasswordLabel')}</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
@@ -255,7 +255,7 @@ export default function SettingsPage() {
                       name="newPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('settings.newPassword')}</FormLabel>
+                          <FormLabel>{t('settings.newPasswordLabel')}</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
@@ -268,7 +268,7 @@ export default function SettingsPage() {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('settings.confirmPassword')}</FormLabel>
+                          <FormLabel>{t('settings.confirmPasswordLabel')}</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>

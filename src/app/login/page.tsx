@@ -1,41 +1,15 @@
 
 "use client"
 
-import Image from 'next/image'
-import React, { useState, useEffect } from 'react'
-import { LoginForm } from '@/components/auth/login-form'
-import { useTranslation } from '@/hooks/use-translation'
-import { useSettings } from '@/context/settings-context'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from "@/components/ui/carousel"
+import Image from "next/image"
+import Link from "next/link"
+import { useState, useEffect } from "react"
+import { LoginForm } from "@/components/auth/login-form"
+import { useSettings } from "@/context/settings-context"
+import { useTranslation } from "@/hooks/use-translation"
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
 import Autoplay from "embla-carousel-autoplay"
-
-
-function LoungeChairIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            className={className}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M14 17a2 2 0 1 0-4 0" />
-            <path d="M6 10h12" />
-            <path d="M16 4h-8" />
-            <path d="M6 4v13" />
-            <path d="M18 4v13" />
-            <path d="M5 17h14" />
-        </svg>
-    )
-}
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function LoginPage() {
   const { t } = useTranslation()
@@ -48,50 +22,72 @@ export default function LoginPage() {
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
-      <div className="relative hidden bg-muted lg:block">
-        <Carousel 
+      <div className="relative hidden bg-muted lg:block h-screen overflow-hidden">
+        {/* Background Carousel */}
+        <div className="absolute inset-0">
+          <Carousel 
             className="h-full w-full"
             plugins={[ Autoplay({ delay: 5000, stopOnInteraction: false }) ]}
             opts={{ loop: true }}
-        >
-            <CarouselContent>
-                {(settings.loginCarouselImages || ['https://placehold.co/1280x800.png']).map((img, index) => (
-                    <CarouselItem key={index}>
-                        <Image
-                            src={img}
-                            alt={`Login background ${index + 1}`}
-                            layout="fill"
-                            objectFit="cover"
-                            className="brightness-50"
-                        />
-                    </CarouselItem>
-                ))}
-            </CarouselContent>
-        </Carousel>
-        <div className="absolute inset-0 flex items-center justify-center p-12 text-center">
-             <div className="relative z-10 text-primary-foreground">
-                <div className="flex justify-center items-center mb-4">
-                    {isClient ? (
-                        settings.platformLogo ? (
-                            <Image src={settings.platformLogo} alt="Platform Logo" width={80} height={80} className="rounded-md" />
-                        ) : (
-                            <LoungeChairIcon className="h-20 w-20 text-white" />
-                        )
+          >
+            <CarouselContent className="h-full">
+              {(settings.loginCarouselImages || ['https://placehold.co/1280x800.png']).map((mediaUrl, index) => {
+                const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(mediaUrl);
+                
+                return (
+                  <CarouselItem key={index} className="h-full">
+                    {isVideo ? (
+                      <video
+                        className="h-full w-full object-cover"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                      >
+                        <source src={mediaUrl} type="video/mp4" />
+                      </video>
                     ) : (
-                        <Skeleton className="h-20 w-20 rounded-md" />
+                      <Image
+                        src={mediaUrl}
+                        alt={`Login background ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="50vw"
+                        priority={index === 0}
+                      />
                     )}
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+          </Carousel>
+        </div>
+
+        {/* Overlay with Logo, Name, and Tagline */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-black/60 flex items-center justify-center">
+          <div className="text-center space-y-6 px-8">
+            {isClient && (
+              <>
+                <div className="flex justify-center">
+                  <Image
+                    src={settings.platformLogo || "/logo.png"}
+                    alt="Logo"
+                    width={120}
+                    height={120}
+                    className="h-30 w-30 object-contain"
+                  />
                 </div>
-                {isClient ? (
-                    <h1 className="font-headline text-5xl font-bold tracking-tighter text-white">
-                        {settings.platformName}
-                    </h1>
-                ) : (
-                    <Skeleton className="h-12 w-72" />
-                )}
-                <p className="mt-4 text-xl text-white/80">
+                <div className="space-y-2">
+                  <h1 className="text-4xl font-bold text-white font-headline">
+                    {settings.platformName || 'LoungeOS'}
+                  </h1>
+                  <p className="text-lg text-white/90 max-w-md mx-auto">
                     {t('appDescription')}
-                </p>
-            </div>
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
       <div className="flex items-center justify-center py-12">

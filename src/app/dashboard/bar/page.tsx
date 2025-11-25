@@ -39,6 +39,21 @@ export default function BarPage() {
   const getDrinkOrders = (status: OrderStatus) => {
     return orders
       .filter(order => order.status === status && order.items.some(item => {
+        // First check if item category string contains drink keywords
+        const categoryStr = item.category.toLowerCase();
+        const isDrinkByKeyword = categoryStr.includes('drink') || categoryStr.includes('beverage') || 
+            categoryStr.includes('beer') || categoryStr.includes('wine') || 
+            categoryStr.includes('cocktail') || categoryStr.includes('juice') ||
+            categoryStr.includes('soda') || categoryStr.includes('coffee') || 
+            categoryStr.includes('tea') || categoryStr.includes('water') || 
+            categoryStr.includes('spirit') || categoryStr.includes('liquor') ||
+            categoryStr.includes('whiskey') || categoryStr.includes('vodka') || 
+            categoryStr.includes('rum') || categoryStr.includes('gin') || 
+            categoryStr.includes('brandy') || categoryStr.includes('champagne');
+        
+        if (isDrinkByKeyword) return true;
+        
+        // Fallback to category lookup
         const category = categories.find(c => c.name === item.category);
         return category && !category.isFood;
       }))

@@ -39,8 +39,32 @@ export default function KitchenPage() {
   const getFoodOrders = (status: OrderStatus) => {
     return orders
       .filter(order => order.status === status && order.items.some(item => {
+        // Check item name for food keywords
+        const itemName = item.name.toLowerCase();
+        const isFoodByName = itemName.includes('chaff') || itemName.includes('corn') ||
+            itemName.includes('burger') || itemName.includes('pizza') ||
+            itemName.includes('pasta') || itemName.includes('salad') || 
+            itemName.includes('soup') || itemName.includes('chicken') || 
+            itemName.includes('beef') || itemName.includes('fish') ||
+            itemName.includes('rice') || itemName.includes('bread') || itemName.includes('cake') ||
+            itemName.includes('ndomba') || itemName.includes('ndole') ||
+            itemName.includes('koki') || itemName.includes('puff');
+        
+        if (isFoodByName) return true;
+        
+        // Check category string for food keywords
+        const categoryStr = item.category.toLowerCase();
+        const isFoodByKeyword = categoryStr.includes('food') || categoryStr.includes('meal') || 
+            categoryStr.includes('dish') || categoryStr.includes('main') || 
+            categoryStr.includes('appetizer') || categoryStr.includes('dessert') ||
+            categoryStr.includes('snack') || categoryStr.includes('breakfast') || 
+            categoryStr.includes('lunch') || categoryStr.includes('dinner');
+        
+        if (isFoodByKeyword) return true;
+        
+        // Fallback to category lookup
         const category = categories.find(c => c.name === item.category);
-        return category?.isFood;
+        return category?.isFood || false;
       }))
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   };

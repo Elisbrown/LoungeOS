@@ -3,6 +3,8 @@
 import { NextResponse } from 'next/server';
 import { getStaffByEmail, verifyPassword, updatePassword as dbUpdatePassword } from '@/lib/db/staff';
 
+export const runtime = 'nodejs';
+
 async function handleLogin(request: Request) {
     try {
         const { email, password } = await request.json();
@@ -69,8 +71,10 @@ async function handlePasswordReset(request: Request) {
 
 export async function POST(
   request: Request,
-  { params }: { params: { action: string[] } }
+  context: { params: { action: string[] } }
 ) {
+  // Await params if they are a Promise (Next.js app router)
+  const params = context.params instanceof Promise ? await context.params : context.params;
   const action = params.action[0];
 
   switch (action) {

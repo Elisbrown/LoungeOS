@@ -2,6 +2,7 @@
 // New component for displaying activity logs in a table
 "use client"
 
+import { useState, useMemo } from 'react'
 import {
   Table,
   TableBody,
@@ -11,13 +12,16 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
 import { useTranslation } from "@/hooks/use-translation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Trash2, Download } from "lucide-react"
+import { Trash2, Download, Search } from "lucide-react"
 import type { ActivityLog } from '@/context/activity-log-context'
 import { useActivityLog } from '@/hooks/use-activity-log'
 import { useToast } from '@/hooks/use-toast'
+import { Pagination } from "@/components/ui/pagination"
 
 type ActivityLogTableProps = {
   logs: ActivityLog[]
@@ -27,6 +31,9 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
   const { t } = useTranslation()
   const { clearLogs } = useActivityLog()
   const { toast } = useToast()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const handleClearLogs = () => {
     clearLogs()
@@ -59,11 +66,61 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
     document.body.removeChild(link);
   }
 
+  // Filter logs based on search term
+  const filteredLogs = useMemo(() => {
+    if (!searchTerm) return logs;
+    
+    const search = searchTerm.toLowerCase();
+    return logs.filter(log => 
+      (log.user?.name?.toLowerCase().includes(search)) ||
+      (log.user?.email?.toLowerCase().includes(search)) ||
+      (log.action?.toLowerCase().includes(search)) ||
+      (log.details?.toLowerCase().includes(search))
+    );
+  }, [logs, searchTerm]);
+
+  // Paginate filtered logs
+  const paginatedLogs = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredLogs.slice(startIndex, endIndex);
+  }, [filteredLogs, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+
+  // Reset to page 1 when search term changes
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {t('activity.totalLogs', { count: logs.length })}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-[300px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search logs..."
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+          </div>
+          <Select value={itemsPerPage.toString()} onValueChange={(value) => {
+            setItemsPerPage(parseInt(value));
+            setCurrentPage(1);
+          }}>
+            <SelectTrigger className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExportCSV}>
@@ -76,6 +133,7 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
           </Button>
         </div>
       </div>
+      
       <Table>
         <TableHeader>
           <TableRow>
@@ -86,8 +144,8 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {logs.length > 0 ? (
-            logs.map((log) => {
+          {paginatedLogs.length > 0 ? (
+            paginatedLogs.map((log) => {
               const userName = log.user?.name || 'Unknown User';
               const userEmail = log.user?.email || 'No email';
               const userAvatar = log.user?.avatar || "https://placehold.co/100x100.png";
@@ -115,12 +173,22 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
           ) : (
             <TableRow>
               <TableCell colSpan={4} className="h-24 text-center">
-                {t('activity.noLogs')}
+                {searchTerm ? 'No logs match your search' : t('activity.noLogs')}
               </TableCell>
             </TableRow>
           )}
         </TableBody>
       </Table>
+
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredLogs.length}
+        />
+      )}
     </div>
   )
 }

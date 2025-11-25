@@ -76,7 +76,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
         <div className="text-center mb-2">
            <div className="flex items-center justify-center mb-1">
               {settings.platformLogo ? (
-                <Image src={settings.platformLogo} alt="logo" width={40} height={40} className="h-10 w-10 object-contain" />
+                <Image src={settings.platformLogo} alt="logo" width={40} height={40} className="h-10 w-10 object-contain aspect-square" />
               ) : (
                 <LoungeChairIcon className="h-8 w-8 text-black" />
               )}

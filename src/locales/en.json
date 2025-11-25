@@ -627,7 +627,11 @@
     "percentage": "Percentage",
     "fixedAmount": "Fixed Amount",
     "isActive": "Active",
-    "toggleActive": "Toggle Active"
+    "toggleActive": "Toggle Active",
+    "language": {
+      "title": "Language",
+      "description": "Choose your preferred language for the application."
+    }
   },
   "support": {
     "title": "Support & Ticketing",

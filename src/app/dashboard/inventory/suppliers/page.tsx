@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { Header } from '@/components/dashboard/header'
 import { useAuth } from '@/context/auth-context'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Lock, Truck, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, MoreHorizontal, ArrowUpDown } from 'lucide-react'
+import { Lock, Truck, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, MoreHorizontal, ArrowUpDown, Download } from 'lucide-react'
 import { useTranslation } from '@/hooks/use-translation'
 import { useInventory } from '@/context/inventory-context'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -44,7 +44,7 @@ export default function InventorySuppliersPage() {
   const [sortField, setSortField] = useState<SortField>('name')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(25)
   const [editingSupplier, setEditingSupplier] = useState<any>(null)
   const [deletingSupplier, setDeletingSupplier] = useState<any>(null)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -59,6 +59,31 @@ export default function InventorySuppliersPage() {
     if (!user) return false
     const allowedRoles = ["Manager", "Admin", "Super Admin", "Stock Manager"];
     return allowedRoles.includes(user.role)
+  }
+
+  // Export to CSV function
+  const exportToCSV = () => {
+    const headers = ['Name', 'Contact Person', 'Email', 'Phone', 'Address']
+    const csvData = filteredSuppliers.map(supplier => [
+      supplier.name,
+      supplier.contact_person || '',
+      supplier.email || '',
+      supplier.phone || '',
+      supplier.address || ''
+    ])
+    
+    const csv = [headers, ...csvData].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `suppliers-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    
+    toast({
+      title: t('toasts.success'),
+      description: "Suppliers exported successfully"
+    })
   }
 
   // Filtered and sorted suppliers
@@ -193,10 +218,16 @@ export default function InventorySuppliersPage() {
                 <CardDescription>{t('inventory.suppliers.description')}</CardDescription>
               </div>
               {canManage() && (
-                <Button onClick={() => setShowAddForm(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('inventory.suppliers.addSupplier')}
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={exportToCSV}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                  <Button onClick={() => setShowAddForm(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t('inventory.suppliers.addSupplier')}
+                  </Button>
+                </div>
               )}
             </div>
           </CardHeader>
@@ -214,7 +245,10 @@ export default function InventorySuppliersPage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">{t('common.itemsPerPage')}:</span>
-                <Select value={itemsPerPage.toString()} disabled>
+                <Select value={itemsPerPage.toString()} onValueChange={(val) => {
+                  setItemsPerPage(Number(val))
+                  setCurrentPage(1)
+                }}>
                   <SelectTrigger className="w-20">
                     <SelectValue />
                   </SelectTrigger>
@@ -222,6 +256,7 @@ export default function InventorySuppliersPage() {
                     <SelectItem value="10">10</SelectItem>
                     <SelectItem value="25">25</SelectItem>
                     <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -246,48 +246,34 @@ function InventoryDashboardContent() {
           <Card className="col-span-3">
             <CardHeader>
               <CardTitle>{t('inventory.dashboard.quickActions')}</CardTitle>
-              <CardDescription>{t('inventory.dashboard.actionsDescription')}</CardDescription>
+              <CardDescription>Manage your inventory</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Link href="/dashboard/inventory/items">
-                <Button variant="outline" className="w-full justify-start">
-                  <Package className="mr-2 h-4 w-4" />
-                  {t('inventory.dashboard.manageItems')}
-                </Button>
-              </Link>
-              
-              <Link href="/dashboard/inventory/movements">
-                <Button variant="outline" className="w-full justify-start">
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  {t('inventory.dashboard.stockMovements')}
+                <Button variant="outline" className="w-full justify-start h-auto py-4">
+                  <div className="flex items-start gap-3 text-left">
+                    <Package className="h-5 w-5 mt-0.5" />
+                    <div>
+                      <div className="font-semibold">Stock Items</div>
+                      <div className="text-sm text-muted-foreground">
+                        Manage inventory items, adjust stock levels, and track movements
+                      </div>
+                    </div>
+                  </div>
                 </Button>
               </Link>
               
               <Link href="/dashboard/inventory/suppliers">
-                <Button variant="outline" className="w-full justify-start">
-                  <Truck className="mr-2 h-4 w-4" />
-                  {t('inventory.dashboard.manageSuppliers')}
-                </Button>
-              </Link>
-              
-              <Link href="/dashboard/inventory/stocktake">
-                <Button variant="outline" className="w-full justify-start">
-                  <ClipboardList className="mr-2 h-4 w-4" />
-                  {t('inventory.dashboard.stocktake')}
-                </Button>
-              </Link>
-              
-              <Link href="/dashboard/inventory/reports">
-                <Button variant="outline" className="w-full justify-start">
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  {t('inventory.dashboard.reports')}
-                </Button>
-              </Link>
-              
-              <Link href="/dashboard/inventory/recipes">
-                <Button variant="outline" className="w-full justify-start">
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  {t('inventory.dashboard.recipeManagement')}
+                <Button variant="outline" className="w-full justify-start h-auto py-4">
+                  <div className="flex items-start gap-3 text-left">
+                    <Truck className="h-5 w-5 mt-0.5" />
+                    <div>
+                      <div className="font-semibold">Suppliers</div>
+                      <div className="text-sm text-muted-foreground">
+                        Manage supplier information and contacts
+                      </div>
+                    </div>
+                  </div>
                 </Button>
               </Link>
             </CardContent>

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { AddTableForm } from "./add-table-form"
 import { ManageFloorsDialog } from "./manage-floors-dialog"
+import { ManageTablesDialog } from "./manage-tables-dialog"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { useAuth } from "@/context/auth-context"
 import type { Table } from "@/context/table-context"
@@ -101,12 +102,7 @@ export function TablesView() {
             <div className="flex items-center gap-2">
               {canManage && <ManageFloorsDialog />}
               {canManage && <AddTableForm onAddTable={addTable} />}
-              {canManage && (
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Layers className="h-4 w-4" />
-                  {t('tables.manageTables')}
-                </Button>
-              )}
+              {canManage && <ManageTablesDialog />}
             </div>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

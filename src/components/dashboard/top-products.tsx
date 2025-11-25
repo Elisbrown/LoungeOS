@@ -9,8 +9,10 @@ type TopProductsProps = {
         name: string;
         category: string;
         image: string;
-        totalSold: number;
-        totalRevenue: number;
+        total_sold?: number;  // From database
+        totalSold?: number;   // Legacy format
+        total_revenue?: number;  // From database
+        totalRevenue?: number;   // Legacy format
     }[];
 }
 
@@ -23,24 +25,30 @@ export function TopProducts({ products }: TopProductsProps) {
   
   return (
     <div className="space-y-8">
-        {products.map((product, index) => (
-            <div className="flex items-center" key={product.id}>
-                <Avatar className="h-9 w-9">
-                    <AvatarImage src={product.image} alt={product.name} />
-                    <AvatarFallback>{product.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">{product.category}</p>
-                </div>
-                <div className="ml-auto text-right">
-                    <div className="text-sm font-medium">{product.totalSold} sold</div>
-                    <div className="text-xs text-muted-foreground">
-                        {formatCurrency(product.totalRevenue, settings.defaultCurrency)}
+        {products.map((product, index) => {
+            // Handle both database format (total_sold) and legacy format (totalSold)
+            const sold = product.total_sold ?? product.totalSold ?? 0;
+            const revenue = product.total_revenue ?? product.totalRevenue ?? 0;
+            
+            return (
+                <div className="flex items-center" key={product.id}>
+                    <Avatar className="h-9 w-9">
+                        <AvatarImage src={product.image} alt={product.name} data-ai-hint="product" />
+                        <AvatarFallback>{product.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="ml-4 space-y-1">
+                        <p className="text-sm font-medium leading-none">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">{product.category}</p>
+                    </div>
+                    <div className="ml-auto text-right">
+                        <div className="text-sm font-medium">{sold} sold</div>
+                        <div className="text-xs text-muted-foreground">
+                            {formatCurrency(revenue, settings.defaultCurrency)}
+                        </div>
                     </div>
                 </div>
-            </div>
-        ))}
+            );
+        })}
     </div>
   )
 }

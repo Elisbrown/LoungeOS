@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getActivityLogs, addActivityLog, clearActivityLogs } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
 
+export const runtime = 'nodejs';
+
 export async function GET() {
     try {
         const logs = await getActivityLogs();

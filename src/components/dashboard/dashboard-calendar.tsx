@@ -53,10 +53,16 @@ export function DashboardCalendar() {
 
   // Get events for a specific date
   const getEventsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Use UTC dates to avoid timezone issues
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    
     return events.filter(event => {
-      const eventDate = new Date(event.start_date).toISOString().split('T')[0];
-      return eventDate === dateStr;
+      const eventDate = new Date(event.start_date);
+      return eventDate.getFullYear() === year &&
+             eventDate.getMonth() === month &&
+             eventDate.getDate() === day;
     });
   };
 

@@ -565,7 +565,11 @@
     "percentage": "Pourcentage",
     "fixedAmount": "Montant fixe",
     "isActive": "Actif",
-    "toggleActive": "Activer/Désactiver"
+    "toggleActive": "Activer/Désactiver",
+    "language": {
+      "title": "Langue",
+      "description": "Choisissez votre langue préférée pour l'application."
+    }
   },
   "support": {
     "title": "Support & Billetterie",

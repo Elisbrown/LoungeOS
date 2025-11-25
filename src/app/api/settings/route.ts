@@ -7,6 +7,8 @@ import { writeFile } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
+export const runtime = 'nodejs';
+
 export async function GET() {
     try {
         const settings = await getSettings();

@@ -47,7 +47,7 @@ function LoungeChairIcon({ className }: { className?: string }) {
 }
 
 function GeneralSettings() {
-    const { settings, setSettings } = useSettings()
+    const { settings, setSettings, updateSetting } = useSettings()
     const { t } = useTranslation()
     const { toast } = useToast()
     const { user } = useAuth()
@@ -80,6 +80,10 @@ function GeneralSettings() {
         e.preventDefault()
         const newSettings = { ...settings, ...localSettings }
         await setSettings(newSettings)
+        // Also explicitly update the platformLogo setting to ensure it's persisted
+        if (localSettings.platformLogo !== settings.platformLogo) {
+            await updateSetting('platformLogo', localSettings.platformLogo)
+        }
         toast({ title: t('toasts.settingsSaved'), description: t('toasts.generalSettingsDesc')})
     }
     
@@ -482,26 +486,39 @@ function LoginScreenSettings() {
                 <p className="text-sm text-muted-foreground">{t('config.loginScreen.imagesDesc')}</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {(settings.loginCarouselImages || []).map((imgSrc, index) => (
-                    <div key={index} className="relative group/img">
-                        <Image 
-                            src={imgSrc} 
-                            alt={`Login Background ${index + 1}`} 
-                            width={200} 
-                            height={200}
-                            className="rounded-lg object-cover aspect-video"
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity">
-                            <Button 
-                                variant="destructive" 
-                                size="icon"
-                                onClick={() => removeImage(index)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
+                {(settings.loginCarouselImages || []).map((mediaSrc, index) => {
+                    const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(mediaSrc);
+                    return (
+                        <div key={index} className="relative group/img">
+                            {isVideo ? (
+                                <video
+                                    src={mediaSrc}
+                                    className="rounded-lg object-cover aspect-video w-full"
+                                    muted
+                                    loop
+                                    autoPlay
+                                />
+                            ) : (
+                                <Image 
+                                    src={mediaSrc} 
+                                    alt={`Login Background ${index + 1}`} 
+                                    width={200} 
+                                    height={200}
+                                    className="rounded-lg object-cover aspect-video"
+                                />
+                            )}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity">
+                                <Button 
+                                    variant="destructive" 
+                                    size="icon"
+                                    onClick={() => removeImage(index)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
                 <div 
                     className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer aspect-video hover:bg-muted"
                     onClick={() => fileInputRef.current?.click()}
@@ -509,7 +526,7 @@ function LoginScreenSettings() {
                     <PlusCircle className="h-8 w-8 text-muted-foreground" />
                     <span className="text-sm mt-2 text-muted-foreground">{t('config.loginScreen.addImage')}</span>
                 </div>
-                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/mp4,video/webm,video/ogg" onChange={handleImageUpload} />
             </div>
         </CardContent>
     )

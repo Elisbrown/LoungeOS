@@ -31,8 +31,8 @@ export function Header({ title }: HeaderProps) {
   }, [])
 
   return (
-    <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 sm:px-6">
-      <SidebarTrigger className="flex"/>
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+      <SidebarTrigger className="h-9 w-auto px-3 gap-2" />
       <div className="relative ml-auto flex-1 md:grow-0">
           <h1 className="text-xl md:text-2xl font-semibold font-headline whitespace-nowrap">{title}</h1>
       </div>

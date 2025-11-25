@@ -26,6 +26,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { DateRange } from 'react-day-picker'
+import { CategorySalesChart } from '@/components/dashboard/charts/category-sales-chart'
+import { RevenueDistributionChart } from '@/components/dashboard/charts/revenue-distribution-chart'
 
 type DashboardData = {
   totalRevenue: number;
@@ -265,13 +267,16 @@ export default function DashboardPage() {
 
           <TabsContent value="overview" className="space-y-4">
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-              {/* Charts Section */}
+              {/* Charts Section - Now using visual charts from Analytics */}
               <Card className="xl:col-span-2">
                 <CardHeader>
                   <CardTitle className="font-headline flex items-center gap-2">
                     <LineChart className="h-5 w-5" />
                     Revenue & Orders Trend
                   </CardTitle>
+                  <CardDescription>
+                    Daily performance metrics over the last 30 days
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {loading || !data ? (
@@ -353,9 +358,7 @@ export default function DashboardPage() {
                   {loading || !data ? (
                     <Skeleton className="h-[300px] w-full" />
                   ) : (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                      Category Sales Chart
-                    </div>
+                    <CategorySalesChart />
                   )}
                 </CardContent>
               </Card>
@@ -371,9 +374,7 @@ export default function DashboardPage() {
                   {loading || !data ? (
                     <Skeleton className="h-[300px] w-full" />
                   ) : (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                      Revenue Distribution Chart
-                    </div>
+                    <RevenueDistributionChart />
                   )}
                 </CardContent>
               </Card>

@@ -54,18 +54,25 @@ export function PendingOrdersTable() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}/status`, {
+      const response = await fetch(`/api/orders?id=${orderId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ 
+          id: orderId,
+          status: newStatus,
+          timestamp: new Date().toISOString()
+        })
       });
 
       if (response.ok) {
-        setPendingOrders(prev => prev.filter(order => order.id !== orderId));
+        // Refresh the orders list
+        await fetchPendingOrders();
         toast({
           title: "Success",
           description: `Order ${newStatus.toLowerCase()} successfully`
         });
+      } else {
+        throw new Error('Failed to update status');
       }
     } catch (error) {
       console.error('Failed to update order status:', error);
@@ -189,7 +196,10 @@ export function PendingOrdersTable() {
                 </div>
                 <div className="text-right">
                   <div className="font-medium">
-                    {formatCurrency(order.total_amount, settings.defaultCurrency)}
+                    {formatCurrency(
+                      order.total_amount || order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0), 
+                      settings.defaultCurrency
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Order #{order.id.slice(-6)}
@@ -198,8 +208,8 @@ export function PendingOrdersTable() {
               </div>
 
               <div className="space-y-2 mb-3">
-                {order.items.slice(0, 3).map(item => (
-                  <div key={`${order.id}-${item.id}`} className="flex items-center justify-between text-sm">
+                {order.items.slice(0, 3).map((item, idx) => (
+                  <div key={`${order.id}-${item.id}-${idx}`} className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
                       <span className="font-medium">{item.quantity}x</span>
                       <span>{item.name}</span>

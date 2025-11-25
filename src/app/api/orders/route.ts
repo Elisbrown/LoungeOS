@@ -1,15 +1,39 @@
-
 // src/app/api/orders/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getOrders, addOrder, updateOrder, updateOrderStatus, deleteOrder } from '@/lib/db/orders';
 import { addActivityLog } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
 
-export async function GET() {
+export const runtime = 'nodejs';
+
+export async function GET(request: NextRequest) {
     try {
-        const orders = await getOrders();
-        return NextResponse.json(orders);
+        const { searchParams } = new URL(request.url);
+        const statusParam = searchParams.get('status');
+        
+        const allOrders = await getOrders();
+        
+        // Filter by status if provided
+        if (statusParam) {
+            if (statusParam.toLowerCase() === 'pending') {
+                // For pending orders, return only Pending, In Progress, and Ready statuses
+                const pendingOrders = allOrders.filter(order => 
+                    order.status === 'Pending' || order.status === 'In Progress' || order.status === 'Ready'
+                );
+                return NextResponse.json(pendingOrders);
+            } else {
+                // Filter by exact status match
+                const filteredOrders = allOrders.filter(order => 
+                    order.status.toLowerCase() === statusParam.toLowerCase()
+                );
+                return NextResponse.json(filteredOrders);
+            }
+        }
+        
+        // Return all orders if no status filter
+        return NextResponse.json(allOrders);
     } catch (error: any) {
+        console.error('Failed to fetch orders:', error);
         return NextResponse.json({ message: 'Failed to fetch orders', error: error.message }, { status: 500 });
     }
 }
