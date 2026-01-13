@@ -443,6 +443,16 @@ export async function getInventorySuppliers(): Promise<InventorySupplier[]> {
     }
 }
 
+export async function getInventorySupplierById(id: number): Promise<InventorySupplier | null> {
+    const db = getDb();
+    try {
+        const supplier = db.prepare('SELECT * FROM inventory_suppliers WHERE id = ?').get(id) as InventorySupplier | undefined;
+        return supplier || null;
+    } finally {
+        // No close
+    }
+}
+
 export async function addInventorySupplier(supplierData: Omit<InventorySupplier, 'id' | 'created_at'>): Promise<InventorySupplier> {
     const db = getDb();
     try {

@@ -33,10 +33,35 @@ export async function PUT(
       )
     }
 
+    // Fetch and return the complete updated note
+    const getStmt = db.prepare(`
+      SELECT 
+        id,
+        title,
+        content,
+        tags,
+        user_id,
+        is_pinned,
+        created_at,
+        updated_at
+      FROM notes 
+      WHERE id = ?
+    `)
+    
+    const note: any = getStmt.get(noteId)
+    
+    if (!note) {
+      return Response.json(
+        { error: 'Note not found' },
+        { status: 404 }
+      )
+    }
+
     const updatedNote = {
-      id: noteId.toString(),
-      is_pinned: is_pinned,
-      updated_at: new Date().toISOString()
+      ...note,
+      id: note.id.toString(),
+      tags: note.tags ? JSON.parse(note.tags) : [],
+      is_pinned: Boolean(note.is_pinned)
     }
 
     return Response.json(updatedNote)

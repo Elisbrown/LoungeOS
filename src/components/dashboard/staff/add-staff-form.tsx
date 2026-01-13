@@ -49,6 +49,9 @@ const formSchema = z.object({
     required_error: "Role is required.",
   }),
   floor: z.string().optional(),
+  emergency_contact_name: z.string().optional(),
+  emergency_contact_relationship: z.string().optional(),
+  emergency_contact_phone: z.string().optional(),
 }).refine(data => {
     if (["Waiter", "Cashier"].includes(data.role)) {
         return !!data.floor && data.floor.length > 0;
@@ -75,6 +78,12 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
       name: "",
       email: "",
       phone: "",
+      hireDate: undefined, // Explicitly set to undefined for optional date
+      role: "Waiter",
+      floor: "",
+      emergency_contact_name: "",
+      emergency_contact_relationship: "",
+      emergency_contact_phone: "",
     },
   })
   
@@ -86,7 +95,17 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
       title: t('toasts.staffAdded'),
       description: t('toasts.staffAddedDesc', { name: values.name }),
     })
-    form.reset()
+    form.reset({
+      name: "",
+      email: "",
+      phone: "",
+      hireDate: undefined,
+      role: "Waiter",
+      floor: "",
+      emergency_contact_name: "",
+      emergency_contact_relationship: "",
+      emergency_contact_phone: "",
+    });
     setOpen(false)
   }
 
@@ -237,6 +256,54 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
                 )}
                 />
             )}
+
+            <div className="border-t pt-2 mt-2">
+                <h4 className="text-sm font-medium mb-3">Emergency Contact Information</h4>
+                <div className="grid gap-4">
+                    <FormField
+                    control={form.control}
+                    name="emergency_contact_name"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Contact Name</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Next of Kin Name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                        control={form.control}
+                        name="emergency_contact_relationship"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Relationship</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g. Spouse, Parent" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={form.control}
+                        name="emergency_contact_phone"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Contact Phone</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Phone Number" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
+                </div>
+            </div>
+
             <DialogFooter>
                 <Button variant="outline" type="button" onClick={() => setOpen(false)}>{t('dialogs.cancel')}</Button>
               <Button type="submit">{t('staff.addStaff')}</Button>

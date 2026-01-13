@@ -2,6 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { formatCurrency } from "@/lib/utils"
 import { useSettings } from "@/context/settings-context"
+import { useTranslation } from "@/hooks/use-translation"
 
 type TopProductsProps = {
     products: {
@@ -18,9 +19,10 @@ type TopProductsProps = {
 
 export function TopProducts({ products }: TopProductsProps) {
   const { settings } = useSettings();
+  const { t } = useTranslation();
   
   if (!products || products.length === 0) {
-    return <div className="text-center text-muted-foreground">No products sold yet</div>;
+    return <div className="text-center text-muted-foreground">{t('dashboard.noProductsSold')}</div>;
   }
   
   return (
@@ -41,7 +43,7 @@ export function TopProducts({ products }: TopProductsProps) {
                         <p className="text-xs text-muted-foreground">{product.category}</p>
                     </div>
                     <div className="ml-auto text-right">
-                        <div className="text-sm font-medium">{sold} sold</div>
+                        <div className="text-sm font-medium">{sold} {t('dashboard.sold')}</div>
                         <div className="text-xs text-muted-foreground">
                             {formatCurrency(revenue, settings.defaultCurrency)}
                         </div>

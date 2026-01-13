@@ -48,13 +48,13 @@ function initializeTicketsTable() {
             status TEXT NOT NULL DEFAULT 'Open',
             priority TEXT NOT NULL DEFAULT 'Medium',
             category TEXT NOT NULL,
-            created_by INTEGER NOT NULL,
-            assigned_to INTEGER,
+            creator_id INTEGER NOT NULL,
+            assignee_id INTEGER,
             created_at TEXT DEFAULT (datetime('now')),
             updated_at TEXT DEFAULT (datetime('now')),
             resolved_at TEXT,
-            FOREIGN KEY (created_by) REFERENCES users(id),
-            FOREIGN KEY (assigned_to) REFERENCES users(id)
+            FOREIGN KEY (creator_id) REFERENCES users(id),
+            FOREIGN KEY (assignee_id) REFERENCES users(id)
         )
     `);
     
@@ -71,8 +71,8 @@ export function getTickets(filters?: TicketFilters): Ticket[] {
             c.id as creator_id, c.name as creator_name, c.email as creator_email,
             a.id as assignee_id, a.name as assignee_name, a.email as assignee_email
         FROM tickets t
-        LEFT JOIN users c ON t.created_by = c.id
-        LEFT JOIN users a ON t.assigned_to = a.id
+        LEFT JOIN users c ON t.creator_id = c.id
+        LEFT JOIN users a ON t.assignee_id = a.id
         WHERE 1=1
     `;
     
@@ -91,11 +91,11 @@ export function getTickets(filters?: TicketFilters): Ticket[] {
         params.push(filters.category);
     }
     if (filters?.assigned_to) {
-        query += ' AND t.assigned_to = ?';
+        query += ' AND t.assignee_id = ?';
         params.push(filters.assigned_to);
     }
     if (filters?.created_by) {
-        query += ' AND t.created_by = ?';
+        query += ' AND t.creator_id = ?';
         params.push(filters.created_by);
     }
     
@@ -142,8 +142,8 @@ export function getTicketById(id: number): Ticket | null {
             c.id as creator_id, c.name as creator_name, c.email as creator_email,
             a.id as assignee_id, a.name as assignee_name, a.email as assignee_email
         FROM tickets t
-        LEFT JOIN users c ON t.created_by = c.id
-        LEFT JOIN users a ON t.assigned_to = a.id
+        LEFT JOIN users c ON t.creator_id = c.id
+        LEFT JOIN users a ON t.assignee_id = a.id
         WHERE t.id = ?
     `);
     
@@ -188,7 +188,7 @@ export function createTicket(data: {
     const db = new Database(dbPath);
     
     const stmt = db.prepare(`
-        INSERT INTO tickets (title, description, priority, category, created_by)
+        INSERT INTO tickets (title, description, priority, category, creator_id)
         VALUES (?, ?, ?, ?, ?)
     `);
     
@@ -241,7 +241,7 @@ export function updateTicket(id: number, data: Partial<Ticket>): Ticket {
         params.push(data.category);
     }
     if (data.assigned_to !== undefined) {
-        updates.push('assigned_to = ?');
+        updates.push('assignee_id = ?');
         params.push(data.assigned_to);
     }
     
@@ -265,7 +265,7 @@ export function updateTicket(id: number, data: Partial<Ticket>): Ticket {
 
 // Assign ticket to user
 export function assignTicket(ticketId: number, userId: number | null): Ticket {
-    return updateTicket(ticketId, { assigned_to: userId });
+    return updateTicket(ticketId, { assigned_to: userId ?? undefined });
 }
 
 // Update ticket status

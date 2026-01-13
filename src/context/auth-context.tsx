@@ -102,6 +102,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     router.push('/login');
   };
 
+  // Session Timeout Logic (30 minutes)
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (user) {
+          timeoutId = setTimeout(() => {
+            console.log("Session expired due to inactivity");
+            logout();
+          }, SESSION_TIMEOUT);
+      }
+    };
+
+    const handleUserActivity = () => {
+      resetTimer();
+    };
+
+    if (user) {
+        window.addEventListener('mousemove', handleUserActivity);
+        window.addEventListener('keydown', handleUserActivity);
+        window.addEventListener('click', handleUserActivity);
+        window.addEventListener('scroll', handleUserActivity);
+        
+        // Initial timer start
+        resetTimer();
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      window.removeEventListener('mousemove', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+      window.removeEventListener('click', handleUserActivity);
+      window.removeEventListener('scroll', handleUserActivity);
+    };
+  }, [user, logout]); // Re-run when user changes (login/logout)
+
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
       {children}

@@ -32,10 +32,15 @@ loungeos.db-wal
 
 # backups
 /backups/*
+!/backups/.gitkeep
 
-# user uploads
-/public/uploads/*
-!/public/uploads/.gitkeep
+# uploads (uploaded files)
+/uploads/*
+!/uploads/logos/
+!/uploads/.gitkeep
+
+# local env files
+.env*.local
 
 # debug
 npm-debug.log*

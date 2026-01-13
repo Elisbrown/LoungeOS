@@ -33,12 +33,15 @@ function getDb(): Database.Database {
 export async function getStaff(): Promise<StaffMember[]> {
   const db = getDb();
   try {
-    const stmt = db.prepare('SELECT id, name, email, role, status, avatar, floor, phone, hire_date, force_password_change FROM users');
+    const stmt = db.prepare('SELECT id, name, email, role, status, avatar, floor, phone, hire_date, force_password_change, emergency_contact_name, emergency_contact_relationship, emergency_contact_phone FROM users');
     const rows = stmt.all() as any[];
     return rows.map(row => ({
       ...row,
       id: String(row.id),
-      hireDate: row.hire_date ? new Date(row.hire_date) : undefined
+      hireDate: row.hire_date ? new Date(row.hire_date) : undefined,
+      emergency_contact_name: row.emergency_contact_name,
+      emergency_contact_relationship: row.emergency_contact_relationship,
+      emergency_contact_phone: row.emergency_contact_phone
     }));
   } finally {
     // No close
@@ -48,13 +51,16 @@ export async function getStaff(): Promise<StaffMember[]> {
 export async function getStaffByEmail(email: string): Promise<StaffMember | undefined> {
     const db = getDb();
     try {
-        const stmt = db.prepare('SELECT id, name, email, role, status, avatar, floor, phone, hire_date, force_password_change FROM users WHERE email = ?');
+        const stmt = db.prepare('SELECT id, name, email, role, status, avatar, floor, phone, hire_date, force_password_change, emergency_contact_name, emergency_contact_relationship, emergency_contact_phone FROM users WHERE email = ?');
         const row = stmt.get(email) as any;
         if (!row) return undefined;
         return {
             ...row,
             id: String(row.id),
-            hireDate: row.hire_date ? new Date(row.hire_date) : undefined
+            hireDate: row.hire_date ? new Date(row.hire_date) : undefined,
+            emergency_contact_name: row.emergency_contact_name,
+            emergency_contact_relationship: row.emergency_contact_relationship,
+            emergency_contact_phone: row.emergency_contact_phone
         };
     } finally {
         // No close
@@ -93,17 +99,27 @@ export async function addStaff(staffData: Omit<StaffMember, 'id' | 'status' | 'a
     };
     
     const stmt = db.prepare(`
-      INSERT INTO users (name, email, password, role, status, avatar, floor, phone, hire_date, force_password_change) 
-      VALUES (@name, @email, @password, @role, @status, @avatar, @floor, @phone, @hire_date, @force_password_change)
+      INSERT INTO users (name, email, password, role, status, avatar, floor, phone, hire_date, force_password_change, emergency_contact_name, emergency_contact_relationship, emergency_contact_phone) 
+      VALUES (@name, @email, @password, @role, @status, @avatar, @floor, @phone, @hire_date, @force_password_change, @emergency_contact_name, @emergency_contact_relationship, @emergency_contact_phone)
     `);
     
     const info = stmt.run({
-      ...newStaff,
+      name: newStaff.name,
+      email: newStaff.email,
       password: hashedPassword,
-      hire_date: newStaff.hireDate?.toISOString().split('T')[0]
+      role: newStaff.role,
+      status: newStaff.status,
+      avatar: newStaff.avatar,
+      floor: newStaff.floor || null,
+      phone: newStaff.phone || null,
+      hire_date: newStaff.hireDate ? new Date(newStaff.hireDate).toISOString().split('T')[0] : null,
+      force_password_change: newStaff.force_password_change,
+      emergency_contact_name: newStaff.emergency_contact_name || null,
+      emergency_contact_relationship: newStaff.emergency_contact_relationship || null,
+      emergency_contact_phone: newStaff.emergency_contact_phone || null
     });
 
-    return { ...newStaff, id: String(info.lastInsertRowid) };
+    return { ...newStaff, id: String(info.lastInsertRowid) } as StaffMember;
   } finally {
     // No close
   }
@@ -121,13 +137,24 @@ export async function updateStaff(email: string, updatedStaff: Partial<StaffMemb
     
     const stmt = db.prepare(`
       UPDATE users 
-      SET name = @name, role = @role, status = @status, avatar = @avatar, floor = @floor, phone = @phone, hire_date = @hire_date, force_password_change = @force_password_change
+      SET name = @name, role = @role, status = @status, avatar = @avatar, floor = @floor, phone = @phone, hire_date = @hire_date, force_password_change = @force_password_change,
+          emergency_contact_name = @emergency_contact_name, emergency_contact_relationship = @emergency_contact_relationship, emergency_contact_phone = @emergency_contact_phone
       WHERE email = @email
     `);
     
     stmt.run({
-        ...finalStaff,
-        hire_date: finalStaff.hireDate ? new Date(finalStaff.hireDate).toISOString().split('T')[0] : null
+        name: finalStaff.name,
+        role: finalStaff.role,
+        status: finalStaff.status,
+        avatar: finalStaff.avatar,
+        floor: finalStaff.floor || null,
+        phone: finalStaff.phone || null,
+        hire_date: finalStaff.hireDate ? new Date(finalStaff.hireDate).toISOString().split('T')[0] : null,
+        force_password_change: finalStaff.force_password_change,
+        emergency_contact_name: finalStaff.emergency_contact_name || null,
+        emergency_contact_relationship: finalStaff.emergency_contact_relationship || null,
+        emergency_contact_phone: finalStaff.emergency_contact_phone || null,
+        email: email
     });
     return finalStaff;
   } finally {

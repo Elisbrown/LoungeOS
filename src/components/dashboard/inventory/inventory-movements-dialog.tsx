@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowUpRight, ArrowDownRight, ArrowLeftRight, Settings } from "lucide-react"
 import { useInventory } from "@/context/inventory-context"
 import { useTranslation } from "@/hooks/use-translation"
-import type { InventoryItem, InventoryMovement } from "@/context/inventory-context"
+import type { InventoryItem, InventoryMovement } from "@/lib/db/inventory"
 
 interface InventoryMovementsDialogProps {
   item: InventoryItem | null

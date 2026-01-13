@@ -39,15 +39,15 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { AddStaffForm } from "./add-staff-form"
 import { EditStaffForm } from "./edit-staff-form"
+import { ChevronLeft, ChevronRight, CheckSquare, Square } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-
 
 const roleOptions = ["All", "Manager", "Waiter", "Chef", "Stock Manager", "Cashier", "Bartender", "Super Admin"];
-const statusOptions = ["All", "Active", "Away"];
+const statusOptions = ["All", "Active", "Away", "Inactive"];
 
 export function StaffTable() {
-  const { staff, addStaff, updateStaff, deleteStaff } = useStaff()
+  const { staff, addStaff, updateStaff, deleteStaff, bulkDeleteStaff, bulkUpdateStaffStatus } = useStaff()
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null)
   const [deletingStaff, setDeletingStaff] = useState<StaffMember | null>(null)
   const { user } = useAuth()
@@ -60,8 +60,37 @@ export function StaffTable() {
   const [statusFilter, setStatusFilter] = useState("All")
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
 
   const canManage = user?.role === "Manager" || user?.role === "Super Admin"
+
+  const toggleSelectAll = () => {
+    if (selectedStaff.length === paginatedStaff.length) {
+      setSelectedStaff([]);
+    } else {
+      setSelectedStaff(paginatedStaff.map(s => s.email));
+    }
+  };
+
+  const toggleSelectOne = (email: string) => {
+    setSelectedStaff(prev => 
+      prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (confirm(`Are you sure you want to delete ${selectedStaff.length} staff members?`)) {
+        await bulkDeleteStaff(selectedStaff);
+        setSelectedStaff([]);
+        toast({ title: "Bulk Delete Successful", description: `Deleted ${selectedStaff.length} members.` });
+    }
+  };
+
+  const handleBulkDeactivate = async () => {
+      await bulkUpdateStaffStatus(selectedStaff, "Inactive");
+      setSelectedStaff([]);
+      toast({ title: "Bulk Deactivation Successful", description: `Deactivated ${selectedStaff.length} members.` });
+  };
 
   const filteredStaff = useMemo(() => {
     return staff.filter(member => {
@@ -88,10 +117,10 @@ export function StaffTable() {
   }
   
   const handleToggleStatus = (member: StaffMember) => {
-    const newStatus = member.status === "Active" ? "Away" : "Active";
+    const newStatus = member.status === "Active" ? "Inactive" : "Active";
     updateStaff(member.email, { ...member, status: newStatus });
     toast({
-      title: "Staff Status Updated",
+      title: newStatus === "Inactive" ? "Staff Deactivated" : "Staff Activated",
       description: `${member.name}'s status has been set to ${newStatus}.`,
     });
   }
@@ -200,7 +229,20 @@ export function StaffTable() {
             <CardTitle className="font-headline">{t('staff.title')}</CardTitle>
             <CardDescription>{t('staff.description')}</CardDescription>
           </div>
-           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+                {selectedStaff.length > 0 && canManage && (
+                    <div className="flex items-center gap-2 mr-4 border-r pr-4">
+                        <span className="text-sm font-medium">{selectedStaff.length} selected</span>
+                        <Button variant="outline" size="sm" onClick={handleBulkDeactivate}>
+                            <UserX className="h-4 w-4 mr-2" />
+                            Deactivate
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                        </Button>
+                    </div>
+                )}
                 {canManage && <AddStaffForm onAddStaff={addStaff} />}
                  {canManage && (
                     <DropdownMenu>
@@ -280,6 +322,14 @@ export function StaffTable() {
             <Table>
             <TableHeader>
                 <TableRow>
+                {canManage && (
+                    <TableHead className="w-[50px]">
+                        <Checkbox 
+                            checked={selectedStaff.length === paginatedStaff.length && paginatedStaff.length > 0}
+                            onCheckedChange={toggleSelectAll}
+                        />
+                    </TableHead>
+                )}
                 <TableHead>{t('staff.name')}</TableHead>
                 <TableHead>{t('staff.role')}</TableHead>
                 <TableHead>{t('staff.phone')}</TableHead>
@@ -287,15 +337,22 @@ export function StaffTable() {
                 <TableHead>{t('staff.assignedFloor')}</TableHead>
                 <TableHead>{t('staff.status')}</TableHead>
                 {canManage && (
-                    <TableHead>
-                        <span className="sr-only">{t('inventory.actions')}</span>
-                    </TableHead>
+                    <TableHead className="text-right">{t('inventory.actions')}</TableHead>
                 )}
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {paginatedStaff.map((member) => (
-                <TableRow key={member.email}>
+                <TableRow key={member.email} className={selectedStaff.includes(member.email) ? "bg-muted/50" : ""}>
+                    {canManage && (
+                        <TableCell>
+                            <Checkbox 
+                                checked={selectedStaff.includes(member.email)}
+                                onCheckedChange={() => toggleSelectOne(member.email)}
+                                disabled={member.role === 'Super Admin'}
+                            />
+                        </TableCell>
+                    )}
                     <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
@@ -417,7 +474,7 @@ export function StaffTable() {
     {deletingStaff && (
         <DeleteConfirmationDialog
             open={!!deletingStaff}
-            onOpenChange={(isOpen) => !isOpen && setDeletingStaff(null)}
+            onOpenChange={(isOpen: boolean) => !isOpen && setDeletingStaff(null)}
             onConfirm={() => handleDelete(deletingStaff)}
             title={t('dialogs.deleteStaffTitle')}
             description={t('dialogs.deleteStaffDesc', { name: deletingStaff.name })}

@@ -1,8 +1,7 @@
-
 "use client"
 
 import { useEffect, useState, useCallback } from 'react'
-import { CreditCard, DollarSign, Users, Activity, History, XCircle, CheckCircle2, PackageSearch, TrendingUp, TrendingDown, Clock, Calendar, FileText, BarChart3, LineChart, PieChart } from 'lucide-react'
+import { CreditCard, DollarSign, Users, Activity, History, XCircle, CheckCircle2, PackageSearch, TrendingUp, TrendingDown, Clock, Calendar, FileText, Receipt, BarChart3, LineChart, PieChart } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Header } from '@/components/dashboard/header'
 import { KpiCard } from '@/components/dashboard/kpi-card'
@@ -31,7 +30,8 @@ import { RevenueDistributionChart } from '@/components/dashboard/charts/revenue-
 
 type DashboardData = {
   totalRevenue: number;
-  totalSpending: number;
+  totalSales: number;
+  totalExpenses: number;
   totalOrders: number;
   completedOrders: number;
   canceledOrders: number;
@@ -44,13 +44,21 @@ type DashboardData = {
   salesChange: number;
   ordersChange: number;
   revenueChange: number;
-  cashFlow: number;
-  cashFlowChange: number;
+  dailyExpenditure: number;
+  dailyExpenditureChange: number;
   staffPerformance: any[];
+  categorySales: Array<{ category: string; sales: number; color: string }>;
+  revenueDistribution: Array<{ label: string; value: number; color: string }>;
   chartData: {
-    revenue: Array<{ date: string; value: number }>;
-    orders: Array<{ date: string; value: number }>;
-    cashFlow: Array<{ date: string; value: number }>;
+    sales: Array<{ label: string; current: number; previous: number }>;
+    revenue: Array<{ label: string; current: number; previous: number }>;
+  };
+  inventory: {
+    totalItems: number;
+    lowStockItems: number;
+    outOfStockItems: number;
+    totalValue: number;
+    recentMovements: number;
   };
 }
 
@@ -75,14 +83,64 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    from: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 0, 0, 0),
     to: new Date()
   });
-  const [selectedPeriod, setSelectedPeriod] = useState('30d');
-  const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
+  const [selectedPeriod, setSelectedPeriod] = useState('today');
+  const [refreshInterval, setRefreshInterval] = useState(10000); // 10 seconds
   const { logs } = useActivityLog();
 
   const recentLogs = logs.slice(0, 5);
+
+  const handlePeriodChange = (period: string) => {
+    setSelectedPeriod(period);
+    
+    const now = new Date();
+    let from: Date;
+    let to: Date = now;
+    
+    switch (period) {
+      case 'today':
+        from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case 'yesterday':
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        from = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0);
+        to = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59);
+        break;
+      case '3d':
+        from = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '1m':
+        from = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        break;
+      case '3m':
+        from = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        break;
+      case '6m':
+        from = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        break;
+      case '9m':
+        from = new Date(now.getFullYear(), now.getMonth() - 9, now.getDate());
+        break;
+      case '12m':
+        from = new Date(now.getFullYear(), now.getMonth() - 12, now.getDate());
+        break;
+      default:
+        from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    }
+    
+    setDateRange({ from, to });
+  };
+
+  const handleCustomDateChange = (range: DateRange | undefined) => {
+    setDateRange(range);
+    setSelectedPeriod('custom');
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -100,7 +158,8 @@ export default function DashboardPage() {
       console.error("Failed to fetch dashboard data:", error)
       setData({
           totalRevenue: 0,
-          totalSpending: 0,
+          totalSales: 0,
+          totalExpenses: 0,
           totalOrders: 0,
           completedOrders: 0,
           canceledOrders: 0,
@@ -113,13 +172,21 @@ export default function DashboardPage() {
           salesChange: 0,
           ordersChange: 0,
           revenueChange: 0,
-          cashFlow: 0,
-          cashFlowChange: 0,
+          dailyExpenditure: 0,
+          dailyExpenditureChange: 0,
           staffPerformance: [],
+          categorySales: [],
+          revenueDistribution: [],
           chartData: {
-            revenue: [],
-            orders: [],
-            cashFlow: []
+            sales: [],
+            revenue: []
+          },
+          inventory: {
+            totalItems: 0,
+            lowStockItems: 0,
+            outOfStockItems: 0,
+            totalValue: 0,
+            recentMovements: 0
           }
       });
     } finally {
@@ -162,26 +229,32 @@ export default function DashboardPage() {
         {/* Dashboard Controls */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex items-center gap-4">
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7d">Last 7 days</SelectItem>
-                <SelectItem value="30d">Last 30 days</SelectItem>
-                <SelectItem value="90d">Last 90 days</SelectItem>
-                <SelectItem value="1y">Last year</SelectItem>
+                <SelectItem value="today">{t('periods.today')}</SelectItem>
+                <SelectItem value="yesterday">{t('periods.yesterday')}</SelectItem>
+                <SelectItem value="3d">{t('periods.last3Days')}</SelectItem>
+                <SelectItem value="7d">{t('periods.last7Days')}</SelectItem>
+                <SelectItem value="1m">{t('periods.lastMonth')}</SelectItem>
+                <SelectItem value="3m">{t('periods.last3Months')}</SelectItem>
+                <SelectItem value="6m">{t('periods.last6Months')}</SelectItem>
+                <SelectItem value="9m">{t('periods.last9Months')}</SelectItem>
+                <SelectItem value="12m">{t('periods.last12Months')}</SelectItem>
+                <SelectItem value="custom" disabled>{t('periods.custom') || 'Custom'}</SelectItem>
               </SelectContent>
             </Select>
-            <DateRangePicker onDateRangeChange={setDateRange} />
+            <DateRangePicker onDateRangeChange={handleCustomDateChange} initialDateRange={dateRange} />
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              Live Data
+              {t('dashboard.liveData')}
             </Badge>
             <Button variant="outline" size="sm" onClick={fetchData}>
-              Refresh
+              {t('dashboard.refresh')}
             </Button>
           </div>
         </div>
@@ -199,7 +272,6 @@ export default function DashboardPage() {
                 value={formatCurrency(data.totalRevenue, settings.defaultCurrency)}
                 change={formatChange(data.revenueChange)}
                 icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
-                trend={getChangeIcon(data.revenueChange)}
                 trendColor={getChangeColor(data.revenueChange)}
               />
               <KpiCard 
@@ -207,23 +279,20 @@ export default function DashboardPage() {
                 value={formatCurrency(data.dailySales, settings.defaultCurrency)}
                 change={formatChange(data.salesChange)}
                 icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
-                trend={getChangeIcon(data.salesChange)}
                 trendColor={getChangeColor(data.salesChange)}
               />
               <KpiCard 
-                title={t('dashboard.cashFlow')}
-                value={formatCurrency(data.cashFlow, settings.defaultCurrency)}
-                change={formatChange(data.cashFlowChange)}
-                icon={<CreditCard className="h-4 w-4 text-muted-foreground" />}
-                trend={getChangeIcon(data.cashFlowChange)}
-                trendColor={getChangeColor(data.cashFlowChange)}
+                title={t('dashboard.outOfStock') || "Out of Stock"}
+                value={data.inventory.outOfStockItems.toString()}
+                change={`${data.inventory.lowStockItems} ${t('dashboard.lowStockCount') || 'low on stock'}`}
+                icon={<PackageSearch className="h-4 w-4 text-muted-foreground" />}
+                variant={data.inventory.outOfStockItems > 0 ? "destructive" : "default"}
               />
               <KpiCard 
                 title={t('dashboard.totalOrders')}
                 value={data.totalOrders.toLocaleString()}
                 change={formatChange(data.ordersChange)}
                 icon={<PackageSearch className="h-4 w-4 text-muted-foreground" />}
-                trend={getChangeIcon(data.ordersChange)}
                 trendColor={getChangeColor(data.ordersChange)}
               />
               <KpiCard 
@@ -235,7 +304,7 @@ export default function DashboardPage() {
               <KpiCard 
                 title={t('dashboard.pendingOrders')}
                 value={data.pendingOrders.toLocaleString()}
-                change="Active"
+                change={t('dashboard.active')}
                 icon={<Clock className="h-4 w-4 text-muted-foreground" />}
                 variant="warning"
               />
@@ -249,7 +318,7 @@ export default function DashboardPage() {
               <KpiCard 
                 title={t('dashboard.activeTables')}
                 value={data.activeTables}
-                change="Current"
+                change={t('dashboard.current')}
                 icon={<Activity className="h-4 w-4 text-muted-foreground" />}
               />
             </>
@@ -259,10 +328,10 @@ export default function DashboardPage() {
         {/* Main Dashboard Content */}
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-            <TabsTrigger value="tools">Tools</TabsTrigger>
+            <TabsTrigger value="overview">{t('dashboard.overview')}</TabsTrigger>
+            <TabsTrigger value="analytics">{t('dashboard.analytics')}</TabsTrigger>
+            <TabsTrigger value="performance">{t('dashboard.performance')}</TabsTrigger>
+            <TabsTrigger value="tools">{t('dashboard.tools')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -272,10 +341,10 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle className="font-headline flex items-center gap-2">
                     <LineChart className="h-5 w-5" />
-                    Revenue & Orders Trend
+                    {t('dashboard.revenueAndOrdersTrend')}
                   </CardTitle>
                   <CardDescription>
-                    Daily performance metrics over the last 30 days
+                    {t('dashboard.revenueAndOrdersTrendDesc')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -306,7 +375,7 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle className="font-headline flex items-center gap-2">
                     <Clock className="h-5 w-5" />
-                    Pending Orders
+                    {t('dashboard.pendingOrders')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -351,14 +420,14 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle className="font-headline flex items-center gap-2">
                     <BarChart3 className="h-5 w-5" />
-                    Sales by Category
+                    {t('dashboard.salesByCategory')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {loading || !data ? (
                     <Skeleton className="h-[300px] w-full" />
                   ) : (
-                    <CategorySalesChart />
+                    <CategorySalesChart data={data.categorySales} />
                   )}
                 </CardContent>
               </Card>
@@ -367,14 +436,14 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle className="font-headline flex items-center gap-2">
                     <PieChart className="h-5 w-5" />
-                    Revenue Distribution
+                    {t('dashboard.revenueDistribution')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {loading || !data ? (
                     <Skeleton className="h-[300px] w-full" />
                   ) : (
-                    <RevenueDistributionChart />
+                    <RevenueDistributionChart data={data.revenueDistribution} />
                   )}
                 </CardContent>
               </Card>
@@ -388,7 +457,7 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle className="font-headline flex items-center gap-2">
                     <Users className="h-5 w-5" />
-                    Staff Performance
+                    {t('dashboard.staffPerformance')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -424,7 +493,7 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle className="font-headline flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Calendar
+                    {t('dashboard.calendar.title')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -437,7 +506,7 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle className="font-headline flex items-center gap-2">
                     <FileText className="h-5 w-5" />
-                    Quick Notes
+                    {t('dashboard.quickNotes')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -19,19 +18,47 @@ import { useAuth } from "@/context/auth-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { formatDistanceToNow } from "date-fns"
 import { OrderDetailsDialog } from "./order-details-dialog"
-import { Download, ChevronLeft, ChevronRight } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { CalendarIcon, Download, ChevronLeft, ChevronRight } from "lucide-react"
+import { format } from "date-fns"
+import { cn, formatCurrency } from "@/lib/utils"
+import { useSettings } from "@/context/settings-context"
+import { Label } from "@/components/ui/label"
+import { useStaff } from "@/context/staff-context"
+import { exportOrdersToPDF } from "@/lib/pdf-export"
+import { useSearchParams } from "next/navigation"
 
-const statusOptions: (OrderStatus | "All")[] = ["All", "Pending", "In Progress", "Ready", "Completed"];
+const statusOptions: (OrderStatus | "All")[] = ["All", "Pending", "In Progress", "Ready", "Completed", "Canceled"];
 
 export function OrdersView() {
   const { orders } = useOrders()
   const { user } = useAuth()
+  const { staff } = useStaff()
+  const { settings } = useSettings()
   const { t } = useTranslation()
+  const searchParams = useSearchParams()
+  
   const [searchTerm, setSearchTerm] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState<OrderStatus | "All">("All")
   const [selectedOrder, setSelectedOrder] = React.useState<Order | null>(null)
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage, setItemsPerPage] = React.useState(10);
+  const [exportOpen, setExportOpen] = React.useState(false)
+  const [dateRange, setDateRange] = React.useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined,
+  })
+
+  React.useEffect(() => {
+    const orderId = searchParams.get('id');
+    if (orderId && orders.length > 0) {
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+            setSelectedOrder(order);
+        }
+    }
+  }, [orders, searchParams]);
   
   const getStatusVariant = (status: OrderStatus) => {
     switch (status) {
@@ -39,13 +66,14 @@ export function OrdersView() {
       case "In Progress": return "secondary"
       case "Ready": return "default"
       case "Completed": return "success"
+      case "Canceled": return "outline"
       default: return "outline"
     }
   }
 
   const filteredOrders = React.useMemo(() => {
     return orders.filter(order => {
-        const matchesUser = !user || user.role === "Manager" || user.role === "Super Admin";
+        const matchesUser = !user || user.role === "Manager" || user.role === "Super Admin" || user.role === "Cashier";
         const matchesSearch = searchTerm === "" || 
                               order.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
                               order.table.toLowerCase().includes(searchTerm.toLowerCase());
@@ -57,27 +85,43 @@ export function OrdersView() {
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleExportCSV = () => {
-    const headers = ["Order ID", "Table", "Total (XAF)", "Status", "Timestamp"];
-    const rows = paginatedOrders.map(order => [
-      order.id,
-      order.table,
-      order.items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-      order.status,
-      order.timestamp.toISOString()
-    ]);
+  const getFilteredExportOrders = () => {
+    if (!dateRange.from || !dateRange.to) return filteredOrders;
+    const fromTime = dateRange.from.getTime();
+    const toTime = new Date(dateRange.to);
+    toTime.setHours(23, 59, 59, 999);
+    return filteredOrders.filter(order => {
+      const orderTime = order.timestamp.getTime();
+      return orderTime >= fromTime && orderTime <= toTime.getTime();
+    });
+  }
 
-    let csvContent = "data:text/csv;charset=utf-8," 
-        + headers.join(",") + "\n" 
-        + rows.map(e => e.join(",")).join("\n");
-        
+  const handleExportCSV = () => {
+    const ordersToExport = getFilteredExportOrders();
+    const headers = ["Order ID", "Table", "Total (XAF)", "Status", "Timestamp"];
+    const rows = ordersToExport.map(order => {
+        const sub = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const total = sub - (order.discount || 0) + (order.tax || 0);
+        return [
+            order.id, order.table,
+            total,
+            order.status, order.timestamp.toISOString()
+        ];
+    });
+    let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", `orders_export_${new Date().toISOString()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    setExportOpen(false);
+  }
+
+  const handleExportPDF = () => {
+    const ordersToExport = getFilteredExportOrders();
+    const userInfo = user ? { name: user.name, email: user.email, address: "Douala, Cameroon", phone: "+237 600000000" } : undefined;
+    exportOrdersToPDF(ordersToExport, `Orders Report - ${statusFilter}`, staff, userInfo);
+    setExportOpen(false);
   }
 
   return (
@@ -103,13 +147,41 @@ export function OrdersView() {
                     </SelectContent>
                 </Select>
             </div>
-            <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                <Download className="mr-2 h-4 w-4" />
-                {t('reports.export')} CSV
-            </Button>
+
+            <Popover open={exportOpen} onOpenChange={setExportOpen}>
+                <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                        <Download className="mr-2 h-4 w-4" />
+                        {t('reports.export')}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-4" align="end">
+                    <div className="space-y-4">
+                        <h4 className="font-medium leading-none">Export Options</h4>
+                        <div className="grid gap-2">
+                             <Label>Date Range</Label>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant={"outline"} className={cn("w-[300px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {dateRange?.from ? (dateRange.to ? <>{format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}</> : format(dateRange.from, "LLL dd, y")) : <span>Pick a date range</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange as any} numberOfMonths={2} />
+                                </PopoverContent>
+                             </Popover>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button onClick={handleExportCSV} variant="outline" className="w-full">Download CSV</Button>
+                            <Button onClick={handleExportPDF} className="w-full">Download PDF</Button>
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
         </div>
-          <div className="border rounded-md">
-              <Table>
+        <div className="border rounded-md">
+            <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('orders.orderId')}</TableHead>
@@ -123,78 +195,46 @@ export function OrdersView() {
                 <TableBody>
                   {paginatedOrders.length > 0 ? (
                     paginatedOrders.map((order) => {
-                        const total = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+                        const sub = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                        const total = sub - (order.discount || 0) + (order.tax || 0);
                         return (
                             <TableRow key={order.id}>
                                 <TableCell className="font-medium">{order.id}</TableCell>
                                 <TableCell>{order.table}</TableCell>
-                                <TableCell>XAF {total.toLocaleString()}</TableCell>
-                                <TableCell>
-                                    <Badge variant={getStatusVariant(order.status)}>{t(`orders.statuses.${order.status.toLowerCase().replace(' ', '_')}`)}</Badge>
-                                </TableCell>
+                                <TableCell>{formatCurrency(total, settings.defaultCurrency)}</TableCell>
+                                <TableCell><Badge variant={getStatusVariant(order.status)}>{t(`orders.statuses.${order.status.toLowerCase().replace(' ', '_')}`)}</Badge></TableCell>
                                 <TableCell>{formatDistanceToNow(order.timestamp, { addSuffix: true })}</TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="outline" size="sm" onClick={() => setSelectedOrder(order)}>
-                                        {t('orders.viewDetails')}
-                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => setSelectedOrder(order)}>{t('orders.viewDetails')}</Button>
                                 </TableCell>
                             </TableRow>
                         )
                     })
                   ) : (
-                    <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
-                            {t('orders.noOrdersFound')}
-                        </TableCell>
-                    </TableRow>
+                    <TableRow><TableCell colSpan={6} className="h-24 text-center">{t('orders.noOrdersFound')}</TableCell></TableRow>
                   )}
                 </TableBody>
-              </Table>
-          </div>
-          <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Rows per page:</span>
-                    <Select value={String(itemsPerPage)} onValueChange={(value) => setItemsPerPage(Number(value))}>
-                        <SelectTrigger className="w-20">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="10">10</SelectItem>
-                            <SelectItem value="20">20</SelectItem>
-                            <SelectItem value="50">50</SelectItem>
-                            <SelectItem value="100">100</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                        Previous
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                    >
-                        Next
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                </div>
-           </div>
-      {selectedOrder && (
-          <OrderDetailsDialog 
-            order={selectedOrder}
-            open={!!selectedOrder}
-            onOpenChange={(isOpen) => !isOpen && setSelectedOrder(null)}
-          />
-      )}
+            </Table>
+        </div>
+        <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</div>
+            <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Rows per page:</span>
+                <Select value={String(itemsPerPage)} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                    <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}><ChevronLeft className="h-4 w-4" /> Previous</Button>
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}>Next <ChevronRight className="h-4 w-4" /></Button>
+            </div>
+        </div>
+        {selectedOrder && (
+            <OrderDetailsDialog order={selectedOrder} open={!!selectedOrder} onOpenChange={(isOpen) => !isOpen && setSelectedOrder(null)} />
+        )}
     </>
   )
 }

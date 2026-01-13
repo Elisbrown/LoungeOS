@@ -9,7 +9,9 @@ export type ActivityLog = {
     id: number;
     user_id: number | null;
     action: string;
+    target: string | null;
     details: string | null;
+    metadata: any;
     timestamp: string;
     user?: {
         name: string;
@@ -20,7 +22,7 @@ export type ActivityLog = {
 
 type ActivityLogContextType = {
     logs: ActivityLog[];
-    logActivity: (action: string, details: string) => void;
+    logActivity: (action: string, details: string, target?: string | null, metadata?: any) => void;
     clearLogs: () => void;
     fetchLogs: () => Promise<void>;
 };
@@ -49,25 +51,24 @@ export const ActivityLogProvider = ({ children }: { children: ReactNode }) => {
         fetchLogs();
     }, [fetchLogs]);
 
-    const logActivity = useCallback(async (action: string, details: string) => {
+    const logActivity = useCallback(async (action: string, details: string, target: string | null = null, metadata: any = null) => {
         if (!user) return; // Only log if a user is signed in
 
         try {
-            // For now, we'll log without user ID to avoid circular dependency
-            // The user information will be available in the logs through the user object
             const response = await fetch('/api/activity-logs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    userId: null, // We'll get this from the backend using email
+                    userId: null,
                     action, 
                     details,
-                    userEmail: user.email // Pass email to backend
+                    target,
+                    metadata,
+                    userEmail: user.email
                 })
             });
 
             if (response.ok) {
-                // Refresh logs after adding new one
                 await fetchLogs();
             } else {
                 console.error('Failed to log activity');

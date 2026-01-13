@@ -6,7 +6,13 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Trophy, TrendingUp, TrendingDown, Users, DollarSign, PackageSearch } from 'lucide-react'
+import { Activity, BarChart3, Calendar, CheckCircle2, Clock, DollarSign, FileText, Info, LineChart, PackageSearch, PieChart, TrendingDown, TrendingUp, Trophy, Users, XCircle } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useToast } from '@/hooks/use-toast'
 import { useTranslation } from '@/hooks/use-translation'
 import { formatCurrency } from '@/lib/utils'
@@ -22,87 +28,24 @@ type StaffPerformance = {
   total_revenue: number;
   average_order_value: number;
   completion_rate: number;
-  customer_rating: number;
+  revenue_share: number;
+  aov_comparison: number;
+  status_label: string;
+  trend: number;
   hours_worked: number;
   performance_score: number;
   rank: number;
-}
+};
 
 type StaffPerformanceTableProps = {
   data: StaffPerformance[];
 }
 
 export function StaffPerformanceTable({ data }: StaffPerformanceTableProps) {
-  const [staffData, setStaffData] = useState<StaffPerformance[]>([]);
-  const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'performance_score' | 'orders_processed' | 'total_revenue'>('performance_score');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const { toast } = useToast();
   const { t } = useTranslation();
   const { settings } = useSettings();
-
-  const fetchStaffPerformance = async () => {
-    try {
-      const response = await fetch('/api/staff/performance');
-      if (response.ok) {
-        const data = await response.json();
-        setStaffData(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch staff performance:', error);
-      // Use mock data for now
-      setStaffData([
-        {
-          id: '1',
-          name: 'John Doe',
-          email: 'john@example.com',
-          role: 'Waiter',
-          orders_processed: 45,
-          total_revenue: 125000,
-          average_order_value: 2778,
-          completion_rate: 98.5,
-          customer_rating: 4.8,
-          hours_worked: 160,
-          performance_score: 95,
-          rank: 1
-        },
-        {
-          id: '2',
-          name: 'Jane Smith',
-          email: 'jane@example.com',
-          role: 'Cashier',
-          orders_processed: 38,
-          total_revenue: 110000,
-          average_order_value: 2895,
-          completion_rate: 97.2,
-          customer_rating: 4.6,
-          hours_worked: 155,
-          performance_score: 92,
-          rank: 2
-        },
-        {
-          id: '3',
-          name: 'Mike Johnson',
-          email: 'mike@example.com',
-          role: 'Bartender',
-          orders_processed: 42,
-          total_revenue: 98000,
-          average_order_value: 2333,
-          completion_rate: 96.8,
-          customer_rating: 4.7,
-          hours_worked: 165,
-          performance_score: 89,
-          rank: 3
-        }
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStaffPerformance();
-  }, []);
 
   const handleSort = (field: typeof sortBy) => {
     if (sortBy === field) {
@@ -113,9 +56,9 @@ export function StaffPerformanceTable({ data }: StaffPerformanceTableProps) {
     }
   };
 
-  const sortedData = [...staffData].sort((a, b) => {
-    const aValue = a[sortBy];
-    const bValue = b[sortBy];
+  const sortedData = [...(data || [])].sort((a, b) => {
+    const aValue = a[sortBy] as number;
+    const bValue = b[sortBy] as number;
     
     if (sortOrder === 'asc') {
       return aValue - bValue;
@@ -125,17 +68,10 @@ export function StaffPerformanceTable({ data }: StaffPerformanceTableProps) {
   });
 
   const getPerformanceColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 80) return 'text-yellow-600';
-    if (score >= 70) return 'text-orange-600';
-    return 'text-red-600';
-  };
-
-  const getPerformanceVariant = (score: number) => {
-    if (score >= 90) return 'default';
-    if (score >= 80) return 'secondary';
-    if (score >= 70) return 'outline';
-    return 'destructive';
+    if (score >= 90) return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+    if (score >= 80) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+    if (score >= 70) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+    return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
   };
 
   const getRankIcon = (rank: number) => {
@@ -145,23 +81,13 @@ export function StaffPerformanceTable({ data }: StaffPerformanceTableProps) {
     return `#${rank}`;
   };
 
-  if (loading) {
+  if (!data || data.length === 0) {
     return (
-      <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 bg-muted rounded-full"></div>
-                <div className="flex-1">
-                  <div className="h-4 bg-muted rounded w-1/4 mb-2"></div>
-                  <div className="h-3 bg-muted rounded w-1/2"></div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card className="border-dashed">
+        <CardContent className="p-8 text-center text-muted-foreground italic">
+          {t('dashboard.noStaffData')}
+        </CardContent>
+      </Card>
     );
   }
 
@@ -169,39 +95,45 @@ export function StaffPerformanceTable({ data }: StaffPerformanceTableProps) {
     <div className="space-y-4">
       {/* Performance Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-yellow-50 to-white dark:from-yellow-950/20 dark:to-background border-yellow-100 dark:border-yellow-900/50">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
+                <Trophy className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+              </div>
               <div>
-                <p className="text-sm text-muted-foreground">Top Performer</p>
-                <p className="font-semibold">{staffData[0]?.name || 'N/A'}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{t('dashboard.topPerformer')}</p>
+                <p className="font-bold text-lg">{data[0]?.name || 'N/A'}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background border-blue-100 dark:border-blue-900/50">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <PackageSearch className="h-5 w-5 text-blue-500" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                <PackageSearch className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Orders</p>
-                <p className="font-semibold">
-                  {staffData.reduce((sum, staff) => sum + staff.orders_processed, 0)}
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{t('dashboard.totalOrders')}</p>
+                <p className="font-bold text-lg">
+                  {data.reduce((sum, staff) => sum + staff.orders_processed, 0)}
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-background border-green-100 dark:border-green-900/50">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-500" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg">
+                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="font-semibold">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{t('dashboard.totalRevenue')}</p>
+                <p className="font-bold text-lg">
                   {formatCurrency(
-                    staffData.reduce((sum, staff) => sum + staff.total_revenue, 0),
+                    data.reduce((sum, staff) => sum + staff.total_revenue, 0),
                     settings.defaultCurrency
                   )}
                 </p>
@@ -211,108 +143,190 @@ export function StaffPerformanceTable({ data }: StaffPerformanceTableProps) {
         </Card>
       </div>
 
+      <TooltipProvider>
       {/* Staff Performance Table */}
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Rank</TableHead>
-                <TableHead>Staff Member</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead className="w-[80px]">
+                  <div className="flex items-center gap-1">
+                    {t('dashboard.rank')}
+                    <Tooltip>
+                      <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+                      <TooltipContent>Position based on overall score</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TableHead>
+                <TableHead>{t('dashboard.staffMember')}</TableHead>
                 <TableHead 
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort('orders_processed')}
                 >
-                  Orders
-                  {sortBy === 'orders_processed' && (
-                    <span className="ml-1">
-                      {sortOrder === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {t('dashboard.orders')}
+                    {sortBy === 'orders_processed' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </div>
                 </TableHead>
                 <TableHead 
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort('total_revenue')}
                 >
-                  Revenue
-                  {sortBy === 'total_revenue' && (
-                    <span className="ml-1">
-                      {sortOrder === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {t('dashboard.revenue')}
+                    {sortBy === 'total_revenue' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    <Tooltip>
+                      <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+                      <TooltipContent>Total sales revenue and share of team total</TooltipContent>
+                    </Tooltip>
+                  </div>
                 </TableHead>
-                <TableHead>Avg Order</TableHead>
-                <TableHead>Completion Rate</TableHead>
-                <TableHead>Rating</TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1">
+                    {t('dashboard.efficiency')}
+                    <Tooltip>
+                      <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+                      <TooltipContent>Average Order Value compared to team benchmark</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1">
+                    {t('dashboard.reliability')}
+                    <Tooltip>
+                      <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+                      <TooltipContent>Percentage of successfully completed orders</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TableHead>
+                <TableHead>
+                   <div className="flex items-center gap-1">
+                    {t('dashboard.insights')}
+                    <Tooltip>
+                      <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+                      <TooltipContent>AI-driven categorization of performance patterns</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TableHead>
                 <TableHead 
-                  className="cursor-pointer hover:bg-muted/50"
+                  className="cursor-pointer hover:bg-muted/50 text-right"
                   onClick={() => handleSort('performance_score')}
                 >
-                  Performance
-                  {sortBy === 'performance_score' && (
-                    <span className="ml-1">
-                      {sortOrder === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
+                  <div className="flex items-center justify-end gap-1">
+                    {t('dashboard.score')}
+                    {sortBy === 'performance_score' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    <Tooltip>
+                      <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+                      <TooltipContent>Weighted score including Contribution, Efficiency, and Reliability</TooltipContent>
+                    </Tooltip>
+                  </div>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedData.map((staff) => (
-                <TableRow key={staff.id}>
+                <TableRow key={staff.id} className="group transition-colors hover:bg-muted/30">
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{getRankIcon(staff.rank)}</span>
-                    </div>
+                    <span className="text-xl font-black text-muted-foreground/50 group-hover:text-primary transition-colors">{getRankIcon(staff.rank)}</span>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
+                      <Avatar className="h-10 w-10 border-2 border-background shadow-md">
                         <AvatarImage src={staff.avatar} alt={staff.name} />
-                        <AvatarFallback>{staff.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback className="bg-primary/10 text-primary font-bold">{staff.name.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <div>
-                        <div className="font-medium">{staff.name}</div>
-                        <div className="text-sm text-muted-foreground">{staff.email}</div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm tracking-tight">{staff.name}</span>
+                        <Badge variant="outline" className="w-fit text-[9px] h-4 py-0 font-medium bg-muted/50">
+                          {['Waiter', 'Cashier', 'Bartender', 'Manager'].includes(staff.role) 
+                            ? t(`dashboard.role_${staff.role.toLowerCase()}`) 
+                            : staff.role}
+                        </Badge>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{staff.role}</Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {staff.orders_processed}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatCurrency(staff.total_revenue, settings.defaultCurrency)}
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm">{staff.orders_processed}</span>
+                      <span className="text-[10px] text-muted-foreground">{t('dashboard.orders').toLowerCase()}</span>
+                    </div>
                   </TableCell>
                   <TableCell>
-                    {formatCurrency(staff.average_order_value, settings.defaultCurrency)}
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm">
+                        {formatCurrency(staff.total_revenue, settings.defaultCurrency)}
+                      </span>
+                      <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">
+                        {staff.revenue_share}% {t('dashboard.share')}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium">{staff.completion_rate}%</span>
-                      {staff.completion_rate >= 95 ? (
-                        <TrendingUp className="h-3 w-3 text-green-500" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3 text-red-500" />
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm">
+                        {formatCurrency(staff.average_order_value, settings.defaultCurrency)}
+                      </span>
+                      <div className={`flex items-center gap-0.5 text-[10px] font-bold ${staff.aov_comparison >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {staff.aov_comparison >= 0 ? '+' : ''}{staff.aov_comparison}% {t('dashboard.vsAvg')}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                       <span className="font-bold text-xs">{staff.completion_rate}%</span>
+                       <div className="w-16 bg-muted rounded-full h-1">
+                          <div 
+                            className={`h-full rounded-full ${staff.completion_rate >= 90 ? 'bg-green-500' : staff.completion_rate >= 70 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                            style={{ width: `${staff.completion_rate}%` }}
+                          />
+                       </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      <Badge 
+                        variant="secondary" 
+                        className={`text-[10px] py-0 px-2 font-bold border-none ${
+                          staff.status_label === 'Elite Performer' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400' :
+                          staff.status_label === 'Upsell Pro' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
+                          staff.status_label === 'High Volume' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' :
+                          staff.status_label === 'Needs Support' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' :
+                          'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {staff.status_label}
+                      </Badge>
+                      {(staff.trend || 0) !== 0 && (
+                        <div className={`flex items-center gap-0.5 text-[9px] font-bold px-1 ${staff.trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {staff.trend > 0 ? <TrendingUp className="h-2 w-2" /> : <TrendingDown className="h-2 w-2" />}
+                          {Math.abs(staff.trend)}%
+                        </div>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium">{staff.customer_rating}</span>
-                      <span className="text-yellow-500">★</span>
+                  <TableCell className="text-right">
+                    <div className="inline-flex flex-col items-end">
+                      <span className={`text-lg font-black leading-none ${
+                        staff.performance_score >= 90 ? 'text-green-600 dark:text-green-400' :
+                        staff.performance_score >= 80 ? 'text-blue-600 dark:text-blue-400' :
+                        staff.performance_score >= 70 ? 'text-yellow-600 dark:text-yellow-400' :
+                        'text-red-600 dark:text-red-400'
+                      }`}>
+                        {staff.performance_score}%
+                      </span>
+                      <div className="h-1 w-12 bg-muted rounded-full mt-1 overflow-hidden">
+                        <div 
+                          className={`h-full ${
+                            staff.performance_score >= 90 ? 'bg-green-500' :
+                            staff.performance_score >= 80 ? 'bg-blue-500' :
+                            staff.performance_score >= 70 ? 'bg-yellow-500' :
+                            'bg-red-500'
+                          }`}
+                          style={{ width: `${staff.performance_score}%` }}
+                        />
+                      </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant={getPerformanceVariant(staff.performance_score)}
-                      className={getPerformanceColor(staff.performance_score)}
-                    >
-                      {staff.performance_score}%
-                    </Badge>
                   </TableCell>
                 </TableRow>
               ))}
@@ -322,37 +336,43 @@ export function StaffPerformanceTable({ data }: StaffPerformanceTableProps) {
       </Card>
 
       {/* Performance Insights */}
-      <Card>
+      <Card className="bg-primary/5 border-none shadow-none">
         <CardContent className="p-4">
-          <h4 className="font-medium mb-3">Performance Insights</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
-              <p className="text-muted-foreground mb-1">Average Performance Score</p>
-              <p className="font-medium">
-                {(staffData.reduce((sum, staff) => sum + staff.performance_score, 0) / staffData.length).toFixed(1)}%
+              <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">{t('dashboard.avgPerformance')}</p>
+              <p className="font-black text-lg">
+                {(data.reduce((sum, staff) => sum + staff.performance_score, 0) / data.length).toFixed(1)}%
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-1">Average Customer Rating</p>
-              <p className="font-medium">
-                {(staffData.reduce((sum, staff) => sum + staff.customer_rating, 0) / staffData.length).toFixed(1)} ★
+               <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">{t('dashboard.teamAvgAov')}</p>
+              <p className="font-black text-lg">
+                {formatCurrency(
+                  data.reduce((sum, staff) => sum + staff.average_order_value, 0) / data.length,
+                  settings.defaultCurrency
+                )}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-1">Average Completion Rate</p>
-              <p className="font-medium">
-                {(staffData.reduce((sum, staff) => sum + staff.completion_rate, 0) / staffData.length).toFixed(1)}%
+              <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">{t('dashboard.totalRevenue')}</p>
+              <p className="font-black text-lg text-primary">
+                {formatCurrency(
+                  data.reduce((sum, staff) => sum + staff.total_revenue, 0),
+                  settings.defaultCurrency
+                )}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-1">Total Hours Worked</p>
-              <p className="font-medium">
-                {staffData.reduce((sum, staff) => sum + staff.hours_worked, 0)} hours
+              <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">{t('dashboard.activeStaff')}</p>
+              <p className="font-black text-lg">
+                {data.filter(s => s.orders_processed > 0).length} / {data.length}
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
+      </TooltipProvider>
     </div>
   );
 } 

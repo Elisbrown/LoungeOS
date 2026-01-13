@@ -14,15 +14,16 @@ import { DragOverlay } from '@dnd-kit/core'
 import { OrderCard } from '@/components/dnd/dnd-components'
 import type { Order, OrderStatus } from '@/context/order-context'
 
-function KitchenPageContent({ orderToCancel, setOrderToCancel }: { 
+function KitchenPageContent({ orderToCancel, setOrderToCancel, activeId }: { 
   orderToCancel: Order | null; 
-  setOrderToCancel: (order: Order | null) => void 
+  setOrderToCancel: (order: Order | null) => void;
+  activeId: string | null;
 }) {
   return (
     <div className="flex min-h-screen w-full flex-col">
       <Header title="Kitchen" />
       <main className="flex flex-1 flex-col p-4 md:p-8">
-        <KitchenView orderToCancel={orderToCancel} setOrderToCancel={setOrderToCancel} />
+        <KitchenView orderToCancel={orderToCancel} setOrderToCancel={setOrderToCancel} activeId={activeId} />
       </main>
     </div>
   )
@@ -99,7 +100,7 @@ export default function KitchenPage() {
 
   return (
     <DndProvider onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <KitchenPageContent orderToCancel={orderToCancel} setOrderToCancel={setOrderToCancel} />
+      <KitchenPageContent orderToCancel={orderToCancel} setOrderToCancel={setOrderToCancel} activeId={activeId} />
       <DragOverlay>
         {activeOrder ? <OrderCard order={activeOrder} isDragging /> : null}
       </DragOverlay>

@@ -76,7 +76,7 @@ function LoginFormContent() {
       toast({
           variant: "destructive",
           title: t('login.loginFailed'),
-          description: t('login.invalidCredentials'),
+          description: error.message || t('login.invalidCredentials'),
       })
     }
   }

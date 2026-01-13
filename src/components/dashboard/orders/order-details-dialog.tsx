@@ -2,8 +2,10 @@
 "use client"
 
 import React, { useState, useRef } from "react"
-import ReactDOMServer from 'react-dom/server';
 import { formatDistanceToNow } from 'date-fns'
+import { jsPDF } from "jspdf"
+import autoTable from "jspdf-autotable"
+import { formatCurrency } from "@/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -20,13 +22,15 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/auth-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { PaymentDialog, type PaymentDetails } from "@/components/dashboard/pos/payment-dialog"
-import { Receipt, type ReceiptProps } from "@/components/dashboard/pos/receipt"
 import { SplitOrderDialog } from "./split-order-dialog"
 import { MergeOrderDialog } from "./merge-order-dialog"
-import { MinusCircle, PlusCircle, Trash2, Printer } from "lucide-react"
+import { MinusCircle, PlusCircle, Trash2, Download, AlertCircle } from "lucide-react"
+import { CancelOrderDialog } from "../cancel-order-dialog";
+import { useStaff } from "@/context/staff-context";
+import { useActivityLog } from "@/context/activity-log-context";
 import { useSettings } from "@/context/settings-context";
 
-
+  
 export function OrderDetailsDialog({
   order,
   open,
@@ -37,58 +41,254 @@ export function OrderDetailsDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const { updateOrder, updateOrderStatus } = useOrders()
-  const [isPaymentOpen, setPaymentOpen] = useState(false)
-  const [isSplitOpen, setSplitOpen] = useState(false)
-  const [isMergeOpen, setMergeOpen] = useState(false)
-  const [editableOrder, setEditableOrder] = useState<Order | null>(order)
-  
   const { toast } = useToast()
   const { user } = useAuth()
   const { t } = useTranslation()
   const { settings } = useSettings();
+  const { logActivity } = useActivityLog();
+  const { staff } = useStaff();
+
+  const [isPaymentOpen, setPaymentOpen] = useState(false)
+  const [isSplitOpen, setSplitOpen] = useState(false)
+  const [isMergeOpen, setMergeOpen] = useState(false)
+  const [isCancelOpen, setCancelOpen] = useState(false)
+  const [editableOrder, setEditableOrder] = useState<Order | null>(order)
   
-  const handlePrint = () => {
+  const getBase64Image = async (url: string): Promise<string> => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+  
+  const handleDownloadReceipt = async () => {
     if (!editableOrder || !user) return;
     
-    const invoiceProps: ReceiptProps = {
-        type: 'Invoice',
-        orderId: editableOrder.id,
-        table: editableOrder.table,
-        items: editableOrder.items,
-        subtotal: total,
-        total: total,
-        totalDue: total,
-        timestamp: new Date(),
-        cashierName: user.name,
-        settings: settings, // Pass settings explicitly
+    // Initializing PDF with thermal-like width (80mm)
+    const doc = new jsPDF({
+        unit: 'mm',
+        format: [80, 297] // Standard A4 length but we only use what we need
+    });
+
+    const pageWidth = 80;
+    let currentY = 10;
+    const margin = 5;
+    const contentWidth = pageWidth - (margin * 2);
+
+    // Font setup - Use Courier for that monospaced receipt look
+    doc.setFont('courier', 'normal');
+
+    // Helper for centering text
+    const centerText = (text: string, y: number, fontSize: number = 10, style: 'normal' | 'bold' = 'normal') => {
+        doc.setFontSize(fontSize);
+        doc.setFont('courier', style);
+        const textWidth = doc.getTextWidth(text);
+        const x = (pageWidth - textWidth) / 2;
+        doc.text(text, x, y);
     };
 
-    const printContent = ReactDOMServer.renderToString(
-      <>
-        <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-          @import url('https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap');
-          body { -webkit-print-color-adjust: exact; }
-        `}</style>
-        <Receipt {...invoiceProps} />
-      </>
-    );
+    // Helper for dashed line
+    const drawDashedLine = (y: number) => {
+        doc.setLineDashPattern([1, 1], 0);
+        doc.line(margin, y, pageWidth - margin, y);
+        doc.setLineDashPattern([], 0); // reset
+    };
 
-    const printWindow = window.open('', '', 'height=600,width=400');
-    if (printWindow) {
-        printWindow.document.write('<html><head><title>Print Invoice</title>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(printContent);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.focus();
-        
-        // Use a timeout to ensure content is loaded before printing
-        setTimeout(() => {
-           printWindow.print();
-           printWindow.close();
-        }, 500);
+    // Header - Logo logic
+    if (settings.platformLogo) {
+        try {
+            const base64Logo = await getBase64Image(settings.platformLogo);
+            // Centering logo (12mm x 12mm)
+            const logoSize = 12;
+            doc.addImage(base64Logo, 'PNG', (pageWidth - logoSize) / 2, currentY, logoSize, logoSize);
+            currentY += logoSize + 4;
+        } catch (e) {
+            console.error('Failed to add logo to PDF:', e);
+        }
     }
+
+    centerText(settings.organizationName.toUpperCase(), currentY, 14, 'bold');
+    currentY += 6;
+    centerText(settings.contactAddress, currentY, 9);
+    currentY += 4;
+    centerText(`Tel: ${settings.contactPhone}`, currentY, 9);
+    
+    if (settings.receiptHeader) {
+        currentY += 5;
+        centerText(settings.receiptHeader, currentY, 9);
+    }
+
+    currentY += 6;
+    drawDashedLine(currentY);
+    currentY += 6;
+
+    // Order Info
+    doc.setFontSize(9);
+    doc.setFont('courier', 'bold');
+    doc.text(`RECEIPT:`, margin, currentY);
+    doc.setFont('courier', 'normal');
+    doc.text(`#${editableOrder.id.split('-').pop()}`, pageWidth - margin, currentY, { align: 'right' });
+    currentY += 5;
+
+    doc.setFont('courier', 'bold');
+    doc.text(`DATE:`, margin, currentY);
+    doc.setFont('courier', 'normal');
+    const dateStr = new Date().toLocaleString();
+    doc.text(dateStr, pageWidth - margin, currentY, { align: 'right' });
+    currentY += 5;
+
+    doc.setFont('courier', 'bold');
+    doc.text(`TABLE:`, margin, currentY);
+    doc.setFont('courier', 'normal');
+    doc.text(editableOrder.table, pageWidth - margin, currentY, { align: 'right' });
+    currentY += 5;
+
+    doc.setFont('courier', 'bold');
+    doc.text(`CASHIER:`, margin, currentY);
+    doc.setFont('courier', 'normal');
+    doc.text(user.name, pageWidth - margin, currentY, { align: 'right' });
+    currentY += 5;
+
+    const waiter = staff.find(s => parseInt(s.id) === editableOrder.waiter_id);
+    const waiterName = waiter?.name;
+
+    if (settings.receiptShowWaiter && waiterName) {
+        doc.setFont('courier', 'bold');
+        doc.text(`WAITER:`, margin, currentY);
+        doc.setFont('courier', 'normal');
+        doc.text(waiterName, pageWidth - margin, currentY, { align: 'right' });
+        currentY += 5;
+    }
+
+    // Custom Fields
+    settings.receiptCustomFields.forEach(field => {
+        doc.setFont('courier', 'bold');
+        doc.text(`${field.label.toUpperCase()}:`, margin, currentY);
+        doc.setFont('courier', 'normal');
+        doc.text(field.value, pageWidth - margin, currentY, { align: 'right' });
+        currentY += 5;
+    });
+
+    currentY += 1;
+    drawDashedLine(currentY);
+    currentY += 7;
+
+    // Items - Manual Rendering for exact look
+    editableOrder.items.forEach(item => {
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(10);
+        doc.text(item.name.toUpperCase(), margin, currentY);
+        currentY += 5;
+        
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(9);
+        const qtyPrice = `${item.quantity} x ${formatCurrency(item.price, settings.defaultCurrency)}`;
+        doc.text(qtyPrice, margin, currentY);
+        
+        const itemTotal = formatCurrency(item.price * item.quantity, settings.defaultCurrency);
+        doc.text(itemTotal, pageWidth - margin, currentY, { align: 'right' });
+        currentY += 8;
+    });
+
+    drawDashedLine(currentY);
+    currentY += 6;
+
+    // Recalculate totals precisely for the document to avoid any scope shadowing
+    const docSubtotal = editableOrder.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const docDiscount = editableOrder.discount || 0;
+    const docTax = editableOrder.tax || 0;
+    const docTotal = docSubtotal - docDiscount + docTax;
+
+    // Totals Section using autoTable for perfect alignment & no overlap
+    autoTable(doc, {
+        startY: currentY,
+        body: [
+            ['Subtotal:', formatCurrency(docSubtotal, settings.defaultCurrency)],
+            [`Discount${editableOrder.discountName ? ` (${editableOrder.discountName})` : ''}:`, `-${formatCurrency(docDiscount, settings.defaultCurrency)}`],
+            ['Tax:', formatCurrency(docTax, settings.defaultCurrency)],
+        ],
+        theme: 'plain',
+        styles: { 
+            fontSize: 10, 
+            cellPadding: { top: 1, bottom: 1, left: 0, right: 0 },
+            font: 'courier'
+        },
+        columnStyles: {
+            0: { cellWidth: 45, halign: 'left' },
+            1: { cellWidth: 25, halign: 'right' }
+        },
+        margin: { left: margin, right: margin }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 2;
+
+    // Solid Line before Total
+    doc.setLineWidth(0.5);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+    doc.setLineWidth(0.2);
+    currentY += 6;
+
+    // Total
+    doc.setFontSize(12);
+    doc.setFont('courier', 'bold');
+    doc.text(`TOTAL:`, margin, currentY);
+    doc.text(formatCurrency(docTotal, settings.defaultCurrency), pageWidth - margin, currentY, { align: 'right' });
+    currentY += 6;
+
+    drawDashedLine(currentY);
+    currentY += 6;
+
+    // Payment/Due Info
+    doc.setFontSize(10);
+    doc.setFont('courier', 'normal');
+    
+    if (editableOrder.status === 'Completed') {
+        doc.text(`Paid (Cash):`, margin, currentY);
+        doc.text(formatCurrency(docTotal, settings.defaultCurrency), pageWidth - margin, currentY, { align: 'right' });
+        currentY += 6;
+        doc.text(`Amount Due:`, margin, currentY);
+        doc.text(formatCurrency(0, settings.defaultCurrency), pageWidth - margin, currentY, { align: 'right' });
+    } else {
+        doc.text(`Paid:`, margin, currentY);
+        doc.text(formatCurrency(0, settings.defaultCurrency), pageWidth - margin, currentY, { align: 'right' });
+        currentY += 6;
+        doc.setFont('courier', 'bold');
+        doc.text(`AMOUNT DUE:`, margin, currentY);
+        doc.text(formatCurrency(docTotal, settings.defaultCurrency), pageWidth - margin, currentY, { align: 'right' });
+    }
+    currentY += 6;
+
+    drawDashedLine(currentY);
+    currentY += 10;
+
+    // Footer
+    centerText((settings.receiptFooter || 'THANK YOU FOR YOUR VISIT!').toUpperCase(), currentY, 10, 'bold');
+    currentY += 5;
+    centerText('Please come again!', currentY, 9);
+    
+    currentY += 8;
+    drawDashedLine(currentY);
+    currentY += 5;
+    centerText('Software: LoungeOS', currentY, 8, 'bold');
+    currentY += 4;
+    centerText('Developed by SIGALIX', currentY, 8);
+    currentY += 4;
+    centerText('+237 679 690 703 | sigalix.net', currentY, 7);
+
+    // Final height adjustment - jsPDF doesn't resize the page easily after creation, but we can set it during creation if we knew the height.
+    // For thermal printers, we usually just want the content.
+    
+    // Save PDF
+    doc.save(`Receipt_${editableOrder.id.split('-').pop()}.pdf`);
+    
+    toast({
+        title: "Receipt Downloaded",
+        description: `Receipt for order #${editableOrder.id.split('-').pop()} has been saved.`
+    });
   };
 
 
@@ -108,7 +308,8 @@ export function OrderDetailsDialog({
     }
   }
   
-  const total = editableOrder.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const itemsSubtotal = editableOrder.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const total = itemsSubtotal - (editableOrder.discount || 0) + (editableOrder.tax || 0);
   
   const handlePaymentSuccess = (paymentDetails: PaymentDetails) => {
     if (!user) return;
@@ -125,12 +326,48 @@ export function OrderDetailsDialog({
     });
   }
 
-  const handleSaveChanges = () => {
-    if(JSON.stringify(order) !== JSON.stringify(editableOrder)) {
-        updateOrder(editableOrder)
-        toast({ title: t('toasts.orderUpdated'), description: t('toasts.orderUpdatedDesc', { orderId: editableOrder.id }) })
+
+  const handleCancelConfirm = async (reason: string) => {
+    if (editableOrder && user) {
+        const currentStaff = staff.find(s => s.email === user.email);
+        const userId = currentStaff ? parseInt(currentStaff.id) : undefined;
+
+        await updateOrderStatus(editableOrder.id, 'Canceled', {
+            cancelled_by: userId,
+            reason: reason
+        });
+        
+        await logActivity('cancel_order', `Order ${editableOrder.id} canceled by ${user.name}. Reason: ${reason}`);
+        
+        toast({
+            title: t('toasts.orderCanceled'),
+            description: t('toasts.orderCanceledDesc', { orderId: editableOrder.id }),
+            variant: "destructive"
+        });
+        setCancelOpen(false);
+        onOpenChange(false);
     }
-    onOpenChange(false)
+  }
+
+  const handleSaveChanges = async () => {
+    if(JSON.stringify(order) !== JSON.stringify(editableOrder)) {
+        try {
+            await updateOrder(editableOrder)
+            toast({ 
+                title: t('toasts.orderUpdated'), 
+                description: t('toasts.orderUpdatedDesc', { orderId: editableOrder.id }) 
+            })
+            onOpenChange(false)
+        } catch (error: any) {
+            toast({ 
+                variant: 'destructive', 
+                title: t('toasts.updateFailed'), 
+                description: error.message || t('toasts.orderUpdateError') 
+            })
+        }
+    } else {
+        onOpenChange(false)
+    }
   }
 
   return (
@@ -144,13 +381,31 @@ export function OrderDetailsDialog({
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
-             <div className="flex items-center space-x-4">
-                <p className="font-medium">{t('inventory.status')}:</p>
-                <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge>
-            </div>
+              <div className="flex items-center space-x-4">
+                 <p className="font-medium">{t('inventory.status')}:</p>
+                 <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge>
+             </div>
+             
+             {/* Cancellation Details */}
+             {order.status === 'Canceled' && (
+                 <div className="bg-destructive/10 p-3 rounded-md border border-destructive/20 text-sm">
+                     <p className="font-bold text-destructive flex items-center gap-2">
+                         <AlertCircle className="h-4 w-4" />
+                         {t('orders.orderCanceled') || 'Order Canceled'}
+                     </p>
+                     <div className="mt-2 text-muted-foreground space-y-1">
+                         <p><span className="font-medium">{t('common.by') || 'By'}:</span> {staff.find(s => parseInt(s.id) === order.cancelled_by)?.name || 'Unknown'}</p>
+                         <p><span className="font-medium">{t('common.reason') || 'Reason'}:</span> {order.cancellation_reason}</p>
+                         {order.cancelled_at && (
+                             <p><span className="font-medium">{t('common.time') || 'Time'}:</span> {formatDistanceToNow(new Date(order.cancelled_at), { addSuffix: true })}</p>
+                         )}
+                     </div>
+                 </div>
+             )}
+
              <Separator />
 
-            <div className="space-y-4">
+            <div className={`space-y-4 ${order.status === 'Canceled' || order.status === 'Completed' ? 'opacity-60 pointer-events-none' : ''}`}>
                 {editableOrder.items.map((item, index) => (
                 <div key={`${item.id}-${index}`} className="flex items-center">
                     <div>
@@ -165,6 +420,7 @@ export function OrderDetailsDialog({
                         size="icon"
                         className="h-7 w-7"
                         onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                        disabled={order.status === 'Canceled' || order.status === 'Completed'}
                     >
                         <MinusCircle className="h-4 w-4" />
                     </Button>
@@ -174,6 +430,7 @@ export function OrderDetailsDialog({
                         size="icon"
                         className="h-7 w-7"
                         onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                        disabled={order.status === 'Canceled' || order.status === 'Completed'}
                     >
                         <PlusCircle className="h-4 w-4" />
                     </Button>
@@ -182,6 +439,7 @@ export function OrderDetailsDialog({
                         size="icon"
                         className="h-7 w-7 text-destructive"
                         onClick={() => handleUpdateQuantity(item.id, 0)}
+                        disabled={order.status === 'Canceled' || order.status === 'Completed'}
                     >
                         <Trash2 className="h-4 w-4" />
                     </Button>
@@ -189,19 +447,62 @@ export function OrderDetailsDialog({
                 </div>
                 ))}
             </div>
-             <Separator />
-             <div className="flex w-full justify-between font-bold text-lg">
-                <span>{t('pos.total')}</span>
-                <span>XAF {total.toLocaleString()}</span>
-            </div>
+              <div className="space-y-1 pt-2">
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{t('pos.subtotal')}</span>
+                  <span>{formatCurrency(itemsSubtotal, settings.defaultCurrency)}</span>
+                </div>
+                
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>
+                    {t('pos.discount')}
+                    {editableOrder.discountName ? ` (${editableOrder.discountName})` : ''}
+                  </span>
+                  <span>-{formatCurrency(editableOrder.discount || 0, settings.defaultCurrency)}</span>
+                </div>
+                
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{t('pos.tax')}</span>
+                  <span>{formatCurrency(editableOrder.tax || 0, settings.defaultCurrency)}</span>
+                </div>
+                
+                <Separator className="my-1" />
+                
+                <div className="flex w-full justify-between font-bold text-lg pt-1">
+                    <span>{t('pos.total')}</span>
+                    <span className="text-primary">{formatCurrency(total, settings.defaultCurrency)}</span>
+                </div>
+              </div>
           </div>
           <DialogFooter className="flex-col sm:flex-col sm:space-x-0 gap-2">
             <div className="flex sm:justify-end gap-2 w-full flex-wrap">
-                <Button variant="outline" onClick={handleSaveChanges}>{t('dialogs.saveChanges')}</Button>
-                <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print Invoice</Button>
-                <Button variant="secondary" onClick={() => setSplitOpen(true)}>{t('orders.splitOrder')}</Button>
-                <Button variant="secondary" onClick={() => setMergeOpen(true)}>{t('orders.mergeOrder')}</Button>
-                <Button onClick={() => setPaymentOpen(true)}>{t('pos.chargeOrder')}</Button>
+                {order.status !== 'Canceled' && order.status !== 'Completed' && (
+                    <Button variant="outline" onClick={handleSaveChanges}>{t('dialogs.saveChanges')}</Button>
+                )}
+                <Button variant="outline" onClick={handleDownloadReceipt}><Download className="mr-2 h-4 w-4" /> {t('orders.downloadReceipt')}</Button>
+                
+                {order.status !== 'Canceled' && order.status !== 'Completed' && (
+                    <>
+                        <Button variant="secondary" onClick={() => setSplitOpen(true)}>{t('orders.splitOrder')}</Button>
+                        <Button variant="secondary" onClick={() => setMergeOpen(true)}>{t('orders.mergeOrder')}</Button>
+                        <Button variant="destructive" onClick={() => setCancelOpen(true)}>{t('orders.cancelOrder')}</Button>
+                        <Button onClick={() => setPaymentOpen(true)}>{t('pos.chargeOrder')}</Button>
+                    </>
+                )}
+                
+                {order.status === 'Canceled' && (
+                     <Button 
+                        className="bg-green-600 hover:bg-green-700 text-white" 
+                        onClick={async () => {
+                            await updateOrderStatus(order.id, 'Pending');
+                            await logActivity('reactivate_order', `Order ${order.id} reactivated by ${user?.name}.`);
+                            toast({ title: t('toasts.orderReactivated'), description: t('toasts.orderReactivatedDesc', { orderId: order.id }) });
+                            onOpenChange(false);
+                        }}
+                     >
+                        {t('orders.reactivateOrder') || 'Reactivate Order'}
+                     </Button>
+                )}
             </div>
           </DialogFooter>
         </DialogContent>
@@ -227,6 +528,12 @@ export function OrderDetailsDialog({
                 order={editableOrder}
                 open={isMergeOpen}
                 onOpenChange={setMergeOpen}
+            />
+            <CancelOrderDialog
+                open={isCancelOpen}
+                onOpenChange={setCancelOpen}
+                onConfirm={handleCancelConfirm}
+                orderId={editableOrder.id}
             />
           </>
       )}

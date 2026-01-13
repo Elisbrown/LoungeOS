@@ -1,10 +1,19 @@
-import { NextRequest } from 'next/server'
+
+import { NextRequest, NextResponse } from 'next/server'
 import Database from 'better-sqlite3'
 import path from 'path'
+import { addActivityLog } from '@/lib/db/activity-logs';
+import { getStaffByEmail } from '@/lib/db/staff';
 
 function getDb(): Database.Database {
   const dbPath = path.join(process.cwd(), 'loungeos.db')
   return new Database(dbPath)
+}
+
+async function getActorId(email?: string) {
+    if (!email || email === "system") return null;
+    const user = await getStaffByEmail(email);
+    return user ? Number(user.id) : null;
 }
 
 export async function GET() {
@@ -39,17 +48,17 @@ export async function GET() {
       ORDER BY is_pinned DESC, updated_at DESC
     `)
     
-    const notes = stmt.all().map(note => ({
+    const notes = stmt.all().map((note: any) => ({
       ...note,
       tags: note.tags ? JSON.parse(note.tags) : [],
       id: note.id.toString(),
       is_pinned: Boolean(note.is_pinned)
     }))
 
-    return Response.json(notes)
+    return NextResponse.json(notes)
   } catch (error) {
     console.error('Error fetching notes:', error)
-    return Response.json(
+    return NextResponse.json(
       { error: 'Failed to fetch notes' },
       { status: 500 }
     )
@@ -62,14 +71,17 @@ export async function POST(request: NextRequest) {
   const db = getDb()
   
   try {
-    const { title, content, tags } = await request.json()
+    const body = await request.json()
+    const { title, content, tags, userEmail } = body
 
     if (!title || !content) {
-      return Response.json(
+      return NextResponse.json(
         { error: 'Title and content are required' },
         { status: 400 }
       )
     }
+
+    const actorId = await getActorId(userEmail);
 
     // Create notes table if it doesn't exist
     db.exec(`
@@ -90,23 +102,31 @@ export async function POST(request: NextRequest) {
       VALUES (?, ?, ?, ?)
     `)
     
-    const result = stmt.run(title, content, JSON.stringify(tags || []), 1)
+    const result = stmt.run(title, content, JSON.stringify(tags || []), actorId || 1)
     
     const newNote = {
       id: result.lastInsertRowid.toString(),
       title,
       content,
       tags: tags || [],
-      user_id: 1,
+      user_id: actorId || 1,
       is_pinned: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
 
-    return Response.json(newNote)
+    await addActivityLog(
+        actorId,
+        'NOTE_CREATE',
+        `Created note: ${title}`,
+        title,
+        { tags: tags || [] }
+    );
+
+    return NextResponse.json(newNote)
   } catch (error) {
     console.error('Error creating note:', error)
-    return Response.json(
+    return NextResponse.json(
       { error: 'Failed to create note' },
       { status: 500 }
     )

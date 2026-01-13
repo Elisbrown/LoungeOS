@@ -31,7 +31,9 @@ export type ActivityLog = {
     id: number;
     user_id: number | null;
     action: string;
+    target: string | null;
     details: string | null;
+    metadata: string | null;
     timestamp: string;
     user?: {
         name: string;
@@ -48,7 +50,9 @@ export async function getActivityLogs(limit: number = 1000): Promise<ActivityLog
                 al.id,
                 al.user_id,
                 al.action,
+                al.target,
                 al.details,
+                al.metadata,
                 al.timestamp,
                 u.name as user_name,
                 u.email as user_email,
@@ -63,7 +67,9 @@ export async function getActivityLogs(limit: number = 1000): Promise<ActivityLog
             id: row.id,
             user_id: row.user_id,
             action: row.action,
+            target: row.target,
             details: row.details,
+            metadata: row.metadata,
             timestamp: row.timestamp,
             user: row.user_id ? {
                 name: row.user_name,
@@ -76,23 +82,34 @@ export async function getActivityLogs(limit: number = 1000): Promise<ActivityLog
     }
 }
 
-export async function addActivityLog(userId: number | null, action: string, details: string): Promise<ActivityLog> {
+export async function addActivityLog(
+    userId: number | null, 
+    action: string, 
+    details: string, 
+    target: string | null = null, 
+    metadata: any = null
+): Promise<ActivityLog> {
     const db = getDb();
-    const transaction = db.transaction((uid, act, det) => {
-        const stmt = db.prepare('INSERT INTO activity_logs (user_id, action, details, timestamp) VALUES (?, ?, ?, ?)');
-        const result = stmt.run(uid, act, det, new Date().toISOString());
+    const metadataString = metadata ? JSON.stringify(metadata) : null;
+    
+    const transaction = db.transaction((uid, act, det, targ, meta) => {
+        const stmt = db.prepare('INSERT INTO activity_logs (user_id, action, details, target, metadata, timestamp) VALUES (?, ?, ?, ?, ?, ?)');
+        const timestamp = new Date().toISOString();
+        const result = stmt.run(uid, act, det, targ, meta, timestamp);
         
         return {
             id: result.lastInsertRowid as number,
             user_id: uid,
             action: act,
             details: det,
-            timestamp: new Date().toISOString()
+            target: targ,
+            metadata: meta,
+            timestamp: timestamp
         };
     });
 
     try {
-        return transaction(userId, action, details);
+        return transaction(userId, action, details, target, metadataString);
     } finally {
         // No close
     }

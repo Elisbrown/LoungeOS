@@ -2,6 +2,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
+import { useAuth } from './auth-context';
 
 export type Table = {
   id: string
@@ -24,6 +25,7 @@ const TableContext = createContext<TableContextType | undefined>(undefined);
 
 export const TableProvider = ({ children }: { children: ReactNode }) => {
   const [tables, setTables] = useState<Table[]>([]);
+  const { user } = useAuth();
   
   const fetchTables = useCallback(async () => {
     const response = await fetch('/api/tables');
@@ -43,19 +45,19 @@ export const TableProvider = ({ children }: { children: ReactNode }) => {
     await fetch('/api/tables', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTableData)
+        body: JSON.stringify({ ...newTableData, userEmail: user?.email })
     });
     await fetchTables();
-  }, [fetchTables]);
+  }, [fetchTables, user?.email]);
 
   const updateTable = useCallback(async (updatedTableData: Table) => {
     await fetch(`/api/tables?id=${updatedTableData.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedTableData)
+        body: JSON.stringify({ ...updatedTableData, userEmail: user?.email })
     });
     await fetchTables();
-  }, [fetchTables]);
+  }, [fetchTables, user?.email]);
 
   const updateTableStatus = useCallback(async (tableName: string, status: Table['status']) => {
     const tableToUpdate = tables.find(table => table.name === tableName);
@@ -66,11 +68,11 @@ export const TableProvider = ({ children }: { children: ReactNode }) => {
   }, [tables, updateTable]);
 
   const deleteTable = useCallback(async (tableId: string) => {
-    await fetch(`/api/tables?id=${tableId}`, {
+    await fetch(`/api/tables?id=${tableId}&userEmail=${encodeURIComponent(user?.email || '')}`, {
         method: 'DELETE',
     });
     await fetchTables();
-  }, [fetchTables]);
+  }, [fetchTables, user?.email]);
 
   return (
     <TableContext.Provider value={{ tables, addTable, updateTable, updateTableStatus, deleteTable, fetchTables }}>

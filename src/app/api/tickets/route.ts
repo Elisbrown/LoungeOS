@@ -1,9 +1,17 @@
+
 // src/app/api/tickets/route.ts
 import { NextResponse } from 'next/server';
 import { getTickets, createTicket } from '@/lib/db/tickets';
 import { addActivityLog } from '@/lib/db/activity-logs';
+import { getStaffByEmail } from '@/lib/db/staff';
 
 export const runtime = 'nodejs';
+
+async function getActorId(email?: string) {
+    if (!email || email === "system") return null;
+    const user = await getStaffByEmail(email);
+    return user ? Number(user.id) : null;
+}
 
 export async function GET(request: Request) {
     try {
@@ -28,20 +36,25 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const ticketData = await request.json();
+        const { userEmail, ...data } = ticketData;
         
         const newTicket = createTicket({
-            title: ticketData.title,
-            description: ticketData.description,
-            priority: ticketData.priority || 'Medium',
-            category: ticketData.category,
-            created_by: ticketData.created_by
+            title: data.title,
+            description: data.description,
+            priority: data.priority || 'Medium',
+            category: data.category,
+            created_by: data.created_by
         });
         
+        const actorId = await getActorId(userEmail);
+
         // Log activity
         await addActivityLog(
-            ticketData.created_by,
-            'ticket_created',
-            `Created ticket: ${newTicket.title}`
+            actorId || data.created_by,
+            'TICKET_CREATE',
+            `Created ticket: ${newTicket.title}`,
+            `TICKET-${newTicket.id}`,
+            { priority: newTicket.priority, category: newTicket.category }
         );
         
         return NextResponse.json(newTicket, { status: 201 });

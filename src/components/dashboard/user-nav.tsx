@@ -55,12 +55,6 @@ export function UserNav() {
         <DropdownMenuGroup>
           <Link href="/dashboard/settings" passHref>
             <DropdownMenuItem>
-              {t('userNav.profile')}
-              <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-            </DropdownMenuItem>
-          </Link>
-          <Link href="/dashboard/settings" passHref>
-            <DropdownMenuItem>
               {t('userNav.settings')}
               <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
             </DropdownMenuItem>

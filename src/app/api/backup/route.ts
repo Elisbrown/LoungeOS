@@ -1,3 +1,4 @@
+
 // src/app/api/backup/route.ts
 import { NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
@@ -5,12 +6,20 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { recordBackup } from '@/lib/db/backup';
+import { addActivityLog } from '@/lib/db/activity-logs';
+import { getStaffByEmail } from '@/lib/db/staff';
 
 const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'loungeos.db');
 const backupDir = process.env.BACKUP_DIR || path.join(process.cwd(), 'backups');
 
 if (!fs.existsSync(backupDir)) {
     fs.mkdirSync(backupDir, { recursive: true });
+}
+
+async function getActorId(email?: string) {
+    if (!email || email === "system") return null;
+    const user = await getStaffByEmail(email);
+    return user ? Number(user.id) : null;
 }
 
 function getFormattedTimestamp() {
@@ -24,12 +33,12 @@ function getFormattedTimestamp() {
     return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        const { searchParams } = new URL(request.url);
+        const userEmail = searchParams.get('userEmail');
         const db = new Database(dbPath, { readonly: true });
         
-        // Use the .iter() method to create a backup. This is a built-in feature of better-sqlite3
-        // that safely creates a backup of the live database.
         const backupFilename = `loungeos_backup_${getFormattedTimestamp()}.db`;
         const backupFilePath = path.join(backupDir, backupFilename);
         
@@ -39,9 +48,16 @@ export async function GET() {
         const fileBuffer = fs.readFileSync(backupFilePath);
         const fileSize = fileBuffer.length;
         
-        // Record backup in database
         try {
             recordBackup(backupFilename, fileSize, 'manual');
+            const actorId = await getActorId(userEmail || undefined);
+            await addActivityLog(
+                actorId, 
+                'DB_BACKUP_MANUAL', 
+                `Manual database backup created: ${backupFilename}`, 
+                'DATABASE',
+                { filename: backupFilename, size: fileSize }
+            );
         } catch (error) {
             console.error('Failed to record backup:', error);
         }
@@ -64,13 +80,11 @@ export async function POST(request: Request) {
     try {
         const formData = await request.formData();
         const file = formData.get('backupFile') as File | null;
+        const userEmail = formData.get('userEmail') as string | null;
 
         if (!file) {
             return NextResponse.json({ message: 'No backup file provided' }, { status: 400 });
         }
-
-        // Close existing connections if db is open
-        // In a real app, you'd have a connection manager. For here, we assume it's closed.
         
         const tempPath = path.join(os.tmpdir(), file.name);
         const fileBuffer = Buffer.from(await file.arrayBuffer());
@@ -78,6 +92,15 @@ export async function POST(request: Request) {
 
         // Replace the current database with the backup
         fs.renameSync(tempPath, dbPath);
+
+        const actorId = await getActorId(userEmail || undefined);
+        await addActivityLog(
+            actorId, 
+            'DB_RESTORE', 
+            `Database restored from file: ${file.name}`, 
+            'DATABASE', 
+            { filename: file.name, size: file.size }
+        );
 
         return NextResponse.json({ message: 'Restore successful. Please restart the application.' }, { status: 200 });
 

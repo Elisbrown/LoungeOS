@@ -22,10 +22,11 @@ type OrderSummaryProps = {
   onUpdateQuantity: (id: string, quantity: number) => void
   onClearOrder: () => void
   onPaymentSuccess: (details: PaymentDetails) => void
-  onPlaceOrder: () => void
+  onPlaceOrder: (totals: { subtotal: number, tax: number, discount: number, total: number, discountName?: string }) => void
+  isPlacingOrder?: boolean
 }
 
-export function OrderSummary({ items, onUpdateQuantity, onClearOrder, onPaymentSuccess, onPlaceOrder }: OrderSummaryProps) {
+export function OrderSummary({ items, onUpdateQuantity, onClearOrder, onPaymentSuccess, onPlaceOrder, isPlacingOrder = false }: OrderSummaryProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedDiscountRule, setSelectedDiscountRule] = useState<string>("none")
   const { t } = useTranslation()
@@ -77,73 +78,99 @@ export function OrderSummary({ items, onUpdateQuantity, onClearOrder, onPaymentS
     onClearOrder()
   }
 
+  const handleOnPlaceOrder = () => {
+    onPlaceOrder({
+      subtotal: totals.subtotal,
+      tax: totals.tax,
+      discount: totals.discount,
+      total: totals.total,
+      discountName: selectedDiscount?.name
+    });
+  }
+
   return (
     <>
-    <Card className="flex h-full flex-col border-0 shadow-none">
-      <CardHeader>
-        <CardTitle className="font-headline">{t('pos.currentOrder')}</CardTitle>
+    <Card className="flex h-full flex-col border-0 shadow-none overflow-hidden">
+      <CardHeader className="flex-none pb-2">
+        <CardTitle className="font-headline text-lg">{t('pos.currentOrder')}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 space-y-4 overflow-y-auto pr-2">
+      
+      <CardContent className="flex-1 space-y-4 overflow-y-auto px-4 py-2 scrollbar-thin">
         {items.length === 0 ? (
-          <div className="text-center text-muted-foreground pt-10">
-            <p>{t('pos.noItems')}</p>
+          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground opacity-50">
+            <Trash2 className="h-10 w-10 mb-2" />
+            <p className="font-medium">{t('pos.noItems')}</p>
             <p className="text-sm">{t('pos.getStarted')}</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 pb-4">
             {items.map((item) => (
-              <div key={item.id} className="flex items-center gap-3">
-                <Image src={item.image || "https://placehold.co/150x150.png"} alt={item.name} width={40} height={40} className="rounded-md aspect-square object-cover" />
-                <div className="flex-1">
-                  <p className="font-medium text-sm leading-tight">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">
+              <div key={item.id} className={`flex items-center gap-3 bg-muted/30 p-2 rounded-lg group animate-in fade-in slide-in-from-right-2 duration-200 ${item.isPersisted ? 'opacity-75' : ''}`}>
+                <div className="relative h-12 w-12 flex-none translate-y-0.5">
+                    <Image 
+                      src={item.image || "https://placehold.co/150x150.png"} 
+                      alt={item.name} 
+                      fill
+                      className="rounded-md object-cover" 
+                    />
+                    {item.isPersisted && (
+                        <div className="absolute inset-0 bg-background/50 flex items-center justify-center rounded-md">
+                            <Tag className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                    )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-xs truncate leading-tight uppercase tracking-tight">{item.name}</p>
+                  <p className="text-xs font-medium text-muted-foreground mt-0.5">
                     {formatCurrency(item.price, settings.defaultCurrency)}
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 shrink-0 bg-background/50 rounded-full p-0.5">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
+                    className="h-6 w-6 rounded-full hover:bg-muted"
                     onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                    disabled={item.isPersisted || isPlacingOrder}
                   >
-                    <MinusCircle className="h-4 w-4" />
+                    <MinusCircle className="h-3 w-3" />
                   </Button>
-                  <span>{item.quantity}</span>
+                  <span className="text-xs font-bold w-4 text-center">{item.quantity}</span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
+                    className="h-6 w-6 rounded-full hover:bg-muted"
                     onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                    disabled={isPlacingOrder}
                   >
-                    <PlusCircle className="h-4 w-4" />
+                    <PlusCircle className="h-3 w-3" />
                   </Button>
                 </div>
                  <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-destructive hover:text-destructive"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => onUpdateQuantity(item.id, 0)}
+                    disabled={item.isPersisted || isPlacingOrder}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
               </div>
             ))}
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex-col gap-4">
-        <Separator />
-        
+
+      <CardFooter className="flex-none flex-col gap-3 p-4 bg-muted/10 border-t">
         {/* Discount Selection */}
         {settings.discountEnabled && items.length > 0 && (
-          <div className="w-full space-y-2">
+          <div className="w-full space-y-1.5">
             <div className="flex items-center gap-2">
-              <Tag className="h-4 w-4" />
-              <span className="text-sm font-medium">{t('pos.discount')}</span>
+              <Tag className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[10px] uppercase font-black text-muted-foreground">{t('pos.discount')}</span>
             </div>
-            <Select value={selectedDiscountRule} onValueChange={setSelectedDiscountRule} defaultValue="none">
-              <SelectTrigger className="w-full">
+            <Select value={selectedDiscountRule} onValueChange={setSelectedDiscountRule} disabled={isPlacingOrder}>
+              <SelectTrigger className="w-full h-9 text-xs bg-background">
                 <SelectValue placeholder={t('pos.selectDiscount')} />
               </SelectTrigger>
               <SelectContent>
@@ -161,48 +188,44 @@ export function OrderSummary({ items, onUpdateQuantity, onClearOrder, onPaymentS
         )}
         
         {/* Price Breakdown */}
-        <div className="w-full space-y-2">
-          <div className="flex justify-between text-sm">
+        <div className="w-full space-y-1 pt-1">
+          <div className="flex justify-between text-[11px] font-medium text-muted-foreground">
             <span>{t('pos.subtotal')}</span>
             <span>{formatCurrency(totals.subtotal, settings.defaultCurrency)}</span>
           </div>
           
           {totals.discount > 0 && (
-            <div className="flex justify-between text-sm text-green-600">
-              <span>{t('pos.discount')}</span>
+            <div className="flex justify-between text-[11px] font-bold text-green-600">
+              <span className="flex items-center gap-1"><Tag className="h-2.5 w-2.5" /> {selectedDiscount?.name || t('pos.discount')}</span>
               <span>-{formatCurrency(totals.discount, settings.defaultCurrency)}</span>
             </div>
           )}
           
           {settings.taxEnabled && totals.tax > 0 && (
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-[11px] font-medium text-muted-foreground">
               <span>{t('pos.tax')} ({defaultTaxRate}%)</span>
               <span>{formatCurrency(totals.tax, settings.defaultCurrency)}</span>
             </div>
           )}
           
-          <Separator />
-          
-          <div className="flex justify-between font-bold text-lg">
+          <div className="flex justify-between font-black text-xl pt-1 mt-1 border-t border-muted-foreground/10">
             <span>{t('pos.total')}</span>
-            <span>{formatCurrency(totals.total, settings.defaultCurrency)}</span>
+            <span className="text-primary">{formatCurrency(totals.total, settings.defaultCurrency)}</span>
           </div>
         </div>
         
-        <div className="w-full flex gap-2">
+        <div className="w-full flex gap-2 pt-1">
             <Button 
                 variant="outline"
-                className="w-full" 
-                size="lg" 
-                disabled={isOrderEmpty}
-                onClick={onPlaceOrder}
+                className="flex-1 shadow-sm font-bold uppercase text-[10px] tracking-widest h-12" 
+                disabled={isOrderEmpty || isPlacingOrder}
+                onClick={handleOnPlaceOrder}
             >
-              {t('pos.placeOrder')}
+              {isPlacingOrder ? "Sending..." : t('pos.placeOrder')}
             </Button>
             <Button 
-                className="w-full" 
-                size="lg" 
-                disabled={isOrderEmpty || !canProcessPayment()}
+                className="flex-1 shadow-lg shadow-primary/20 font-bold uppercase text-[10px] tracking-widest h-12" 
+                disabled={isOrderEmpty || !canProcessPayment() || isPlacingOrder}
                 onClick={() => setDialogOpen(true)}
             >
               {t('pos.chargeOrder')}

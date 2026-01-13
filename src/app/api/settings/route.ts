@@ -3,11 +3,16 @@ import { NextResponse } from 'next/server';
 import { getSettings, setSettings, updateSetting, saveImage, deleteImage } from '@/lib/db/settings';
 import { addActivityLog } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
-import { writeFile } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 export const runtime = 'nodejs';
+
+async function getActorId(email?: string) {
+    if (!email || email === "system") return null;
+    const user = await getStaffByEmail(email);
+    return user ? Number(user.id) : null;
+}
 
 export async function GET() {
     try {
@@ -23,31 +28,25 @@ export async function PUT(request: Request) {
         const { searchParams } = new URL(request.url);
         const key = searchParams.get('key');
         const settingsData = await request.json();
+        const actorId = await getActorId(settingsData.userEmail);
         
         if (key) {
-            // Update specific setting
             await updateSetting(key as any, settingsData.value);
-        } else {
-            // Update all settings
-            await setSettings(settingsData.settings);
-        }
-        
-        // Log the activity
-        try {
-            const userEmail = settingsData.userEmail || 'system';
-            let userId: number | null = null;
-            if (userEmail !== 'system') {
-                const user = await getStaffByEmail(userEmail);
-                userId = user ? Number(user.id) : null;
-            }
-            
             await addActivityLog(
-                userId,
-                'update_settings',
-                key ? `Updated setting: ${key}` : 'Updated application settings'
+                actorId,
+                'SETTINGS_UPDATE',
+                `Updated specific setting: ${key}`,
+                key,
+                { value: settingsData.value }
             );
-        } catch (logError) {
-            console.error('Failed to log activity:', logError);
+        } else {
+            await setSettings(settingsData.settings);
+            await addActivityLog(
+                actorId,
+                'SETTINGS_BULK_UPDATE',
+                'Updated multiple application settings',
+                'GLOBAL_SETTINGS'
+            );
         }
         
         return NextResponse.json({ message: 'Settings updated successfully' });
@@ -67,38 +66,25 @@ export async function POST(request: Request) {
             return NextResponse.json({ message: 'No file provided' }, { status: 400 });
         }
         
-        // Validate file type
         if (!file.type.startsWith('image/')) {
             return NextResponse.json({ message: 'File must be an image' }, { status: 400 });
         }
         
-        // Generate unique filename
         const fileExtension = path.extname(file.name);
         const filename = `${type}-${uuidv4()}${fileExtension}`;
-        
-        // Convert file to buffer
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        
-        // Save image to file system
         const imagePath = await saveImage(buffer, filename);
         
-        // Log the activity
-        try {
-            let userId: number | null = null;
-            if (userEmail && userEmail !== 'system') {
-                const user = await getStaffByEmail(userEmail);
-                userId = user ? Number(user.id) : null;
-            }
-            
-            await addActivityLog(
-                userId,
-                'upload_image',
-                `Uploaded ${type} image: ${filename}`
-            );
-        } catch (logError) {
-            console.error('Failed to log activity:', logError);
-        }
+        const actorId = await getActorId(userEmail);
+
+        await addActivityLog(
+            actorId,
+            'IMAGE_UPLOAD',
+            `Uploaded ${type} image: ${filename}`,
+            type.toUpperCase(),
+            { filename, path: imagePath }
+        );
         
         return NextResponse.json({ 
             message: 'Image uploaded successfully',
@@ -119,25 +105,16 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ message: 'Image path is required' }, { status: 400 });
         }
         
-        // Delete image from file system
         await deleteImage(imagePath);
-        
-        // Log the activity
-        try {
-            let userId: number | null = null;
-            if (userEmail && userEmail !== 'system') {
-                const user = await getStaffByEmail(userEmail);
-                userId = user ? Number(user.id) : null;
-            }
-            
-            await addActivityLog(
-                userId,
-                'delete_image',
-                `Deleted image: ${imagePath}`
-            );
-        } catch (logError) {
-            console.error('Failed to log activity:', logError);
-        }
+        const actorId = await getActorId(userEmail || undefined);
+
+        await addActivityLog(
+            actorId,
+            'IMAGE_DELETE',
+            `Deleted image: ${imagePath}`,
+            'IMAGE',
+            { path: imagePath }
+        );
         
         return NextResponse.json({ message: 'Image deleted successfully' });
     } catch (error: any) {

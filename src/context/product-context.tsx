@@ -6,6 +6,7 @@ import type { OrderItem } from './order-context';
 import { useToast } from "@/hooks/use-toast"
 import { useTranslation } from '@/hooks/use-translation';
 import { useNotifications } from './notification-context'; 
+import { useAuth } from './auth-context';
 
 // Represents raw materials
 export type Ingredient = {
@@ -46,7 +47,8 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
   const { t } = useTranslation()
-  const { addNotification } = useNotifications(); // Get addNotification function
+  const { addNotification } = useNotifications();
+  const { user } = useAuth();
 
   const fetchMeals = useCallback(async () => {
     const response = await fetch('/api/products?unified=true');
@@ -82,7 +84,7 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
             fetch('/api/products/update-stock', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ inventoryId: mealId, quantitySold }),
+              body: JSON.stringify({ inventoryId: mealId, quantitySold, userEmail: user?.email }),
             });
           } else {
             // Update regular product
@@ -90,13 +92,13 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
             fetch(`/api/products?id=${mealId}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(updatedMeal),
+              body: JSON.stringify({ ...updatedMeal, userEmail: user?.email }),
             });
           }
       }
       return prevMeals.map(m => m.id === mealId ? {...m, quantity: m.quantity - quantitySold} : m);
     });
-  }, [addNotification, t]);
+  }, [addNotification, t, user?.email]);
   
   const addIngredient = useCallback(async (newIngredientData: Omit<Ingredient, 'status' | 'image'>) => {
     const getStatusForStock = (stock: number): Ingredient['status'] => {
@@ -111,30 +113,22 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
       image: "https://placehold.co/100x100.png"
     };
 
-    // Check if SKU already exists
     const existingIngredient = ingredients.find(ing => ing.sku === newIngredient.sku);
     if (existingIngredient) {
       throw new Error(`Ingredient with SKU ${newIngredient.sku} already exists`);
     }
 
     setIngredients(prev => [...prev, newIngredient]);
-    
-    // TODO: Add API call when backend is ready
-    // await fetch('/api/ingredients', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(newIngredient),
-    // });
   }, [ingredients]);
 
   const addMeal = useCallback(async (mealData: Omit<Meal, 'id'>) => {
     await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mealData),
+        body: JSON.stringify({ ...mealData, userEmail: user?.email }),
     });
     await fetchMeals();
-  }, [fetchMeals]);
+  }, [fetchMeals, user?.email]);
 
   const updateMeal = useCallback(async (updatedMeal: Meal) => {
     const mealBeforeUpdate = meals.find(m => m.id === updatedMeal.id);
@@ -142,7 +136,7 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     await fetch(`/api/products?id=${updatedMeal.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedMeal),
+        body: JSON.stringify({ ...updatedMeal, userEmail: user?.email }),
     });
 
     if (mealBeforeUpdate && updatedMeal.quantity < 10 && mealBeforeUpdate.quantity >= 10) {
@@ -154,14 +148,14 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     }
 
     await fetchMeals();
-  }, [meals, addNotification, t, fetchMeals]);
+  }, [meals, addNotification, t, fetchMeals, user?.email]);
 
   const deleteMeal = useCallback(async (mealId: string) => {
-    await fetch(`/api/products?id=${mealId}`, {
+    await fetch(`/api/products?id=${mealId}&userEmail=${encodeURIComponent(user?.email || '')}`, {
         method: 'DELETE',
     });
     await fetchMeals();
-  }, [fetchMeals]);
+  }, [fetchMeals, user?.email]);
 
 
   return (

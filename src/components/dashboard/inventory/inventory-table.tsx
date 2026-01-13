@@ -35,6 +35,7 @@ import { InventoryMovementsDialog } from "./inventory-movements-dialog";
 import { AddInventoryItemDialog } from "./add-inventory-item-dialog";
 import { EditInventoryItemDialog } from "./edit-inventory-item-dialog";
 import { StockMovementDialog } from "./stock-movement-dialog";
+import { exportInventoryToPDF } from "@/lib/pdf-export";
 
 const statusOptions = ["All", "In Stock", "Low Stock", "Out of Stock"] as const;
 
@@ -162,8 +163,11 @@ export function InventoryTable() {
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", `inventory_export_${new Date().toISOString()}.csv`);
     document.body.appendChild(link);
-    link.click();
     document.body.removeChild(link);
+  };
+
+  const handleExportPDF = () => {
+    exportInventoryToPDF(filteredItems, `Inventory Report - ${statusFilter === 'All' ? 'All Statuses' : statusFilter}`);
   };
 
   const handleDelete = async (item: InventoryItem) => {
@@ -265,9 +269,14 @@ export function InventoryTable() {
                 <Download className="mr-2 h-4 w-4" />
                 {t('inventory.downloadTemplate')}
               </DropdownMenuItem>
+
               <DropdownMenuItem onSelect={handleExportCSV}>
                 <Download className="mr-2 h-4 w-4" />
                 {t('inventory.exportCSV')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleExportPDF}>
+                <File className="mr-2 h-4 w-4" />
+                {t('inventory.exportPDF') || 'Export PDF'}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

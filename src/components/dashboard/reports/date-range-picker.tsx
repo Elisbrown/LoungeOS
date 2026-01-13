@@ -4,6 +4,9 @@ import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { DateRange } from "react-day-picker"
+import { useTranslation } from "@/hooks/use-translation"
+import { useLanguage } from "@/context/language-context"
+import { fr, enUS } from "date-fns/locale"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -17,13 +20,28 @@ import {
 export function DateRangePicker({
   className,
   onDateRangeChange,
+  initialDateRange,
 }: React.HTMLAttributes<HTMLDivElement> & {
   onDateRangeChange?: (dateRange: DateRange | undefined) => void
+  initialDateRange?: DateRange
 }) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(2023, 0, 1),
-    to: new Date(2023, 0, 7),
-  })
+  const { t } = useTranslation();
+  const { language } = useLanguage();
+  const dateLocale = language === 'fr' ? fr : enUS;
+
+  const [date, setDate] = React.useState<DateRange | undefined>(
+    initialDateRange || {
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
+    }
+  )
+
+  // Update internal state when initialDateRange changes
+  React.useEffect(() => {
+    if (initialDateRange) {
+      setDate(initialDateRange)
+    }
+  }, [initialDateRange])
 
   const handleDateChange = (newDate: DateRange | undefined) => {
     setDate(newDate)
@@ -47,14 +65,14 @@ export function DateRangePicker({
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, "LLL dd, y")} -{" "}
-                  {format(date.to, "LLL dd, y")}
+                  {format(date.from, "LLL dd, y", { locale: dateLocale })} -{" "}
+                  {format(date.to, "LLL dd, y", { locale: dateLocale })}
                 </>
               ) : (
-                format(date.from, "LLL dd, y")
+                format(date.from, "LLL dd, y", { locale: dateLocale })
               )
             ) : (
-              <span>Pick a date</span>
+              <span>{t('dashboard.pickADate')}</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -66,6 +84,7 @@ export function DateRangePicker({
             selected={date}
             onSelect={handleDateChange}
             numberOfMonths={2}
+            locale={dateLocale}
           />
         </PopoverContent>
       </Popover>

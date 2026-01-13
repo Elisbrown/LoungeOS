@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -14,27 +14,29 @@ import { Search } from 'lucide-react'
 import { useTranslation } from '@/hooks/use-translation'
 import { useSettings } from '@/context/settings-context'
 import { formatCurrency } from '@/lib/utils'
+import { useCategories } from '@/context/category-context'
 
 type ProductGridProps = {
   onProductClick: (product: Meal) => void;
 }
 
-// Fixed POS categories
-const POS_CATEGORIES = [
-  { id: 'all', name: 'All', label: 'All' },
-  { id: 'food', name: 'Food', label: 'Food' },
-  { id: 'drinks', name: 'Drinks', label: 'Drinks' },
-  { id: 'extras', name: 'Extras', label: 'Extras' },
-  { id: 'packaging', name: 'Packaging', label: 'Packaging' }
-];
-
 export function ProductGrid({ onProductClick }: ProductGridProps) {
   const { meals } = useProducts()
   const { items: inventoryItems } = useInventory()
+  const { categories } = useCategories()
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const { t } = useTranslation();
   const { settings } = useSettings();
+
+  const dynamicCategories = useMemo(() => {
+    const cats = categories.map(c => ({ id: c.name.toLowerCase(), name: c.name, label: c.name }));
+    // Add Packaging if it's not there
+    if (!cats.find(c => c.id === 'packaging')) {
+        cats.push({ id: 'packaging', name: 'Packaging', label: 'Packaging' });
+    }
+    return [{ id: 'all', name: 'All', label: 'All' }, ...cats];
+  }, [categories]);
 
   const getProductDataAiHint = (productName: string) => {
     const hints: { [key: string]: string } = {
@@ -58,38 +60,16 @@ export function ProductGrid({ onProductClick }: ProductGridProps) {
   const getProductCategory = (product: Meal): string => {
     const category = product.category.toLowerCase();
     
-    // Food items
-    if (category.includes('food') || category.includes('meal') || category.includes('dish') || 
-        category.includes('main') || category.includes('appetizer') || category.includes('dessert') ||
-        category.includes('snack') || category.includes('breakfast') || category.includes('lunch') ||
-        category.includes('dinner') || category.includes('burger') || category.includes('pizza') ||
-        category.includes('pasta') || category.includes('salad') || category.includes('soup') ||
-        category.includes('chicken') || category.includes('beef') || category.includes('fish') ||
-        category.includes('rice') || category.includes('bread') || category.includes('cake')) {
-      return 'food';
-    }
-    
-    // Drink items
-    if (category.includes('drink') || category.includes('beverage') || category.includes('beer') ||
-        category.includes('wine') || category.includes('cocktail') || category.includes('juice') ||
-        category.includes('soda') || category.includes('coffee') || category.includes('tea') ||
-        category.includes('water') || category.includes('spirit') || category.includes('liquor') ||
-        category.includes('whiskey') || category.includes('vodka') || category.includes('rum') ||
-        category.includes('gin') || category.includes('brandy') || category.includes('champagne')) {
-      return 'drinks';
-    }
-    
-    // Packaging items
+    // Check if it's a packaging item first (standardized)
     if (category.includes('packaging') || category.includes('container') || category.includes('bag') ||
         category.includes('box') || category.includes('wrapper') || category.includes('paper') ||
         category.includes('plastic') || category.includes('foil') || category.includes('straw') ||
-        category.includes('cup') || category.includes('plate') || category.includes('bowl') ||
-        category.includes('utensil') || category.includes('napkin') || category.includes('tissue')) {
+        category.includes('cup') || category.includes('plate') || category.includes('bowl')) {
       return 'packaging';
     }
     
-    // Extras (everything else)
-    return 'extras';
+    // Return the actual category name (lowercase) to match dynamic categories
+    return category;
   };
 
   // Convert inventory items to Meal format for packaging
@@ -131,9 +111,13 @@ export function ProductGrid({ onProductClick }: ProductGridProps) {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex flex-col gap-4 mb-4">
-            <TabsList className="grid w-full grid-cols-5">
-                {POS_CATEGORIES.map((category) => (
-                <TabsTrigger key={category.id} value={category.id}>
+            <TabsList className="grid w-full grid-cols-5 h-auto flex-wrap gap-1 bg-transparent border-b rounded-none mb-2">
+                {dynamicCategories.map((category) => (
+                <TabsTrigger 
+                  key={category.id} 
+                  value={category.id}
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full text-xs py-1 px-3 h-8 shadow-sm border border-muted hover:bg-muted transition-all"
+                >
                     {category.label}
                 </TabsTrigger>
                 ))}

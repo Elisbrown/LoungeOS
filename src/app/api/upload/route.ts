@@ -1,14 +1,24 @@
+
 // src/app/api/upload/route.ts
 import { NextResponse } from 'next/server';
 import { writeFile } from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
 import path from 'path';
+import { addActivityLog } from '@/lib/db/activity-logs';
+import { getStaffByEmail } from '@/lib/db/staff';
+
+async function getActorId(email?: string) {
+    if (!email || email === "system") return null;
+    const user = await getStaffByEmail(email);
+    return user ? Number(user.id) : null;
+}
 
 export async function POST(request: Request) {
     try {
         const data = await request.formData();
         const file: File | null = data.get('file') as unknown as File;
-        const type: 'staff' | 'meals' = data.get('type') as 'staff' | 'meals';
+        const type: 'staff' | 'meals' | 'logos' = data.get('type') as 'staff' | 'meals' | 'logos';
+        const userEmail = data.get('userEmail') as string | null;
 
         if (!file) {
             return NextResponse.json({ success: false, message: 'No file provided.' }, { status: 400 });
@@ -20,8 +30,8 @@ export async function POST(request: Request) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Define the upload directory and ensure it exists
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', type);
+        // Define the upload directory
+        const uploadDir = path.join(process.cwd(), 'uploads', type);
         if (!existsSync(uploadDir)) {
             mkdirSync(uploadDir, { recursive: true });
         }
@@ -32,10 +42,18 @@ export async function POST(request: Request) {
         
         // Write the file to the server
         await writeFile(filePath, buffer);
-        console.log(`File uploaded to ${filePath}`);
+        
+        const actorId = await getActorId(userEmail || undefined);
+        await addActivityLog(
+            actorId,
+            'FILE_UPLOAD',
+            `Uploaded file: ${file.name} to ${type}`,
+            file.name,
+            { type, size: file.size, filename }
+        );
 
-        // Return the public path to be stored in the database
-        const publicPath = `/uploads/${type}/${filename}`;
+        // Return the API path (will be served via /api/files)
+        const publicPath = `/api/files/${type}/${filename}`;
         return NextResponse.json({ success: true, path: publicPath });
 
     } catch (error: any) {

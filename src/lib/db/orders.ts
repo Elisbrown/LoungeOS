@@ -32,27 +32,48 @@ function getDb(): Database.Database {
 
 
 // Function to get a single order, useful for transactions
-function getOrderById(id: string, db: Database.Database): Order | null {
+export function getOrderById(id: string, db: Database.Database = getDb()): Order | null {
     const row = db.prepare(`
-        SELECT id, table_name, status, timestamp 
+        SELECT id, table_name, status, timestamp, subtotal, discount, discount_name, tax, total, waiter_id,
+               cancelled_by, cancellation_reason, cancelled_at
         FROM orders WHERE id = ?
     `).get(id) as any;
 
     if (!row) return null;
 
     const itemStmt = db.prepare(`
-        SELECT p.id, p.name, oi.quantity, oi.price, p.category, p.image
+        SELECT p.id, p.name, oi.quantity, oi.price, p.category, p.image, oi.item_type
         FROM order_items oi
-        JOIN products p ON oi.product_id = p.id
+        LEFT JOIN products p ON oi.product_id = p.id AND oi.item_type = 'product'
         WHERE oi.order_id = ?
     `);
     
     const items = itemStmt.all(row.id) as any[];
 
-    const mappedItems: OrderItem[] = items.map(item => ({
-        ...item,
-        id: String(item.id) // Ensure product ID is a string
-    }));
+    // If some items are inventory items, we might need to join with inventory_items table
+    // For now, let's just make sure we handle the mapping correctly
+    const mappedItems: OrderItem[] = items.map(item => {
+        if (item.item_type === 'inventory_item') {
+            // Re-fetch from inventory_items if name is null (since we joined with products)
+            if (!item.name) {
+                const invItem = db.prepare('SELECT name, category, image FROM inventory_items WHERE id = ?').get(item.id) as any;
+                if (invItem) {
+                    return {
+                        ...item,
+                        id: `inv_${item.id}`,
+                        name: invItem.name,
+                        category: invItem.category,
+                        image: invItem.image
+                    };
+                }
+            }
+            return { ...item, id: `inv_${item.id}` };
+        }
+        return {
+            ...item,
+            id: String(item.id)
+        };
+    });
 
     return {
         id: row.id,
@@ -60,6 +81,15 @@ function getOrderById(id: string, db: Database.Database): Order | null {
         status: row.status,
         timestamp: new Date(row.timestamp),
         items: mappedItems,
+        subtotal: row.subtotal || 0,
+        discount: row.discount || 0,
+        discountName: row.discount_name,
+        tax: row.tax || 0,
+        total: row.total || 0,
+        waiter_id: row.waiter_id,
+        cancelled_by: row.cancelled_by,
+        cancellation_reason: row.cancellation_reason,
+        cancelled_at: row.cancelled_at ? new Date(row.cancelled_at) : undefined
     };
 }
 
@@ -72,15 +102,29 @@ export async function getOrders(): Promise<Order[]> {
                 o.table_name,
                 o.status,
                 o.timestamp,
-                p.id as product_id,
+                o.subtotal,
+                o.discount,
+                o.discount_name,
+                o.tax,
+                o.total,
+                o.waiter_id,
+                o.cancelled_by,
+                o.cancellation_reason,
+                o.cancelled_at,
+                oi.product_id,
+                oi.item_type,
+                oi.price as item_price,
+                oi.quantity as item_quantity,
                 p.name as product_name,
-                oi.quantity,
-                oi.price,
-                p.category,
-                p.image
+                p.category as product_category,
+                p.image as product_image,
+                ii.name as inv_name,
+                ii.category as inv_category,
+                ii.image as inv_image
             FROM orders o
             LEFT JOIN order_items oi ON o.id = oi.order_id
-            LEFT JOIN products p ON oi.product_id = p.id
+            LEFT JOIN products p ON oi.product_id = p.id AND oi.item_type = 'product'
+            LEFT JOIN inventory_items ii ON oi.product_id = ii.id AND oi.item_type = 'inventory_item'
             ORDER BY o.timestamp DESC
         `).all() as any[];
 
@@ -94,45 +138,80 @@ export async function getOrders(): Promise<Order[]> {
                     status: row.status,
                     timestamp: new Date(row.timestamp),
                     items: [],
+                    subtotal: row.subtotal || 0,
+                    discount: row.discount || 0,
+                    discountName: row.discount_name,
+                    tax: row.tax || 0,
+                    total: row.total || 0,
+                    waiter_id: row.waiter_id,
+                    cancelled_by: row.cancelled_by,
+                    cancellation_reason: row.cancellation_reason,
+                    cancelled_at: row.cancelled_at ? new Date(row.cancelled_at) : undefined
                 });
             }
 
             if (row.product_id) {
                 const order = ordersMap.get(row.order_id)!;
+                const isInv = row.item_type === 'inventory_item';
                 order.items.push({
-                    id: String(row.product_id),
-                    name: row.product_name,
-                    price: row.price,
-                    quantity: row.quantity,
-                    category: row.category,
-                    image: row.image,
+                    id: isInv ? `inv_${row.product_id}` : String(row.product_id),
+                    name: isInv ? row.inv_name : row.product_name,
+                    price: row.item_price,
+                    quantity: row.item_quantity,
+                    category: isInv ? row.inv_category : row.product_category,
+                    image: isInv ? row.inv_image : row.product_image,
                 });
             }
         }
 
         return Array.from(ordersMap.values());
     } finally {
-        // We no longer close the db instance here to allow reuse
+        // No close
     }
 }
 
 
-export async function addOrder(order: Omit<Order, 'id' | 'timestamp'> & { id?: string, timestamp?: Date }): Promise<Order> {
+export async function addOrder(order: Omit<Order, 'id' | 'timestamp'> & { id?: string, timestamp?: Date, waiter_id?: number }): Promise<Order> {
     const db = getDb();
     const transaction = db.transaction((ord) => {
-        const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+        const orderId = ord.id || `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
         const timestamp = (ord.timestamp || new Date()).toISOString();
 
-        const orderStmt = db.prepare('INSERT INTO orders (id, table_name, status, timestamp) VALUES (?, ?, ?, ?)');
-        orderStmt.run(orderId, ord.table, ord.status, timestamp);
+        // Calculate totals if not provided
+        let subtotal = ord.subtotal || 0;
+        let total = ord.total || 0;
+        
+        if (subtotal === 0 && ord.items.length > 0) {
+            subtotal = ord.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+        }
+        if (total === 0) {
+            total = subtotal + (ord.tax || 0) - (ord.discount || 0);
+        }
 
-        const itemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
+        const orderStmt = db.prepare('INSERT INTO orders (id, table_name, status, timestamp, subtotal, discount, discount_name, tax, total, waiter_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        orderStmt.run(orderId, ord.table, ord.status, timestamp, subtotal, ord.discount || 0, ord.discountName || null, ord.tax || 0, total, ord.waiter_id || null);
+
+        const itemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price, item_type) VALUES (?, ?, ?, ?, ?)');
         for (const item of ord.items) {
-            const productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
+            let productId: number;
+            let itemType = 'product';
+
+            if (typeof item.id === 'string' && item.id.startsWith('inv_')) {
+                productId = parseInt(item.id.replace('inv_', ''), 10);
+                itemType = 'inventory_item';
+                
+                // Deduct from inventory_items
+                db.prepare('UPDATE inventory_items SET current_stock = current_stock - ? WHERE id = ?').run(item.quantity, productId);
+            } else {
+                productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
+                
+                // Deduct from products
+                db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(item.quantity, productId);
+            }
+
             if(isNaN(productId)) throw new Error(`Invalid product ID: ${item.id}`);
 
-            itemStmt.run(orderId, productId, item.quantity, item.price);
-            db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(item.quantity, productId);
+            itemStmt.run(orderId, productId, item.quantity, item.price, itemType);
         }
         
         return getOrderById(orderId, db)!;
@@ -146,40 +225,131 @@ export async function addOrder(order: Omit<Order, 'id' | 'timestamp'> & { id?: s
 }
 
 
-export async function updateOrderStatus(orderId: string, status: Order['status']): Promise<Order> {
+export async function updateOrderStatus(
+    orderId: string, 
+    status: Order['status'], 
+    cancelled_by?: number, 
+    cancellation_reason?: string, 
+    cancelled_at?: string | Date
+): Promise<Order> {
     const db = getDb();
-    const transaction = db.transaction((id, newStatus) => {
-        // Update only the order status and timestamp
-        db.prepare('UPDATE orders SET status = ?, timestamp = ? WHERE id = ?')
-          .run(newStatus, new Date().toISOString(), id);
+    const transaction = db.transaction((id, newStatus, cb, cr, ca) => {
+        // Update order status, timestamp and cancellation info if provided
+        db.prepare(`
+            UPDATE orders SET 
+                status = ?, 
+                timestamp = ?, 
+                cancelled_by = COALESCE(?, cancelled_by),
+                cancellation_reason = COALESCE(?, cancellation_reason),
+                cancelled_at = COALESCE(?, cancelled_at)
+            WHERE id = ?
+        `).run(
+            newStatus, 
+            new Date().toISOString(), 
+            cb || null,
+            cr || null,
+            ca ? (ca instanceof Date ? ca.toISOString() : ca) : null,
+            id
+        );
         
         return getOrderById(id, db)!;
     });
 
     try {
-        return transaction(orderId, status);
+        return transaction(orderId, status, cancelled_by, cancellation_reason, cancelled_at);
     } finally {
         // No close
     }
 }
 
-export async function updateOrder(updatedOrder: Order): Promise<Order> {
+export async function updateOrder(updatedOrder: Order & { waiter_id?: number, cancelled_by?: number, cancellation_reason?: string, cancelled_at?: Date }): Promise<Order> {
     const db = getDb();
     const transaction = db.transaction((order) => {
-        // Update order status and timestamp
-        db.prepare('UPDATE orders SET status = ?, timestamp = ? WHERE id = ?')
-          .run(order.status, order.timestamp.toISOString(), order.id);
-
-        // This is a simple update. A more complex one might compare items and adjust stock.
-        // For now, we assume stock was already deducted on creation.
-        // We just update the items in the order.
-        db.prepare('DELETE FROM order_items WHERE order_id = ?').run(order.id);
+        // Build update query dynamically based on what fields are provided
+        const hasFinancials = order.subtotal !== undefined || order.discount !== undefined || order.tax !== undefined || order.total !== undefined;
         
-        const itemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
-        for (const item of order.items) {
-            const productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
-             if(isNaN(productId)) throw new Error(`Invalid product ID: ${item.id}`);
-            itemStmt.run(order.id, productId, item.quantity, item.price);
+        if (hasFinancials) {
+            let subtotal = order.subtotal || 0;
+            let total = order.total || 0;
+
+            if (subtotal === 0 && order.items && order.items.length > 0) {
+                subtotal = order.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+            }
+            if (total === 0) {
+                total = subtotal + (order.tax || 0) - (order.discount || 0);
+            }
+
+            // Update order with all fields including financials and cancellation fields
+            db.prepare(`
+                UPDATE orders SET 
+                    status = ?, 
+                    timestamp = ?, 
+                    subtotal = ?, 
+                    discount = ?, 
+                    discount_name = ?, 
+                    tax = ?, 
+                    total = ?, 
+                    waiter_id = COALESCE(?, waiter_id),
+                    cancelled_by = COALESCE(?, cancelled_by),
+                    cancellation_reason = COALESCE(?, cancellation_reason),
+                    cancelled_at = COALESCE(?, cancelled_at)
+                WHERE id = ?
+            `).run(
+                order.status, 
+                order.timestamp ? (order.timestamp instanceof Date ? order.timestamp.toISOString() : order.timestamp) : new Date().toISOString(), 
+                subtotal, 
+                order.discount || 0, 
+                order.discountName || null, 
+                order.tax || 0, 
+                total, 
+                order.waiter_id || null,
+                order.cancelled_by || null,
+                order.cancellation_reason || null,
+                order.cancelled_at ? (order.cancelled_at instanceof Date ? order.cancelled_at.toISOString() : order.cancelled_at) : null,
+                order.id
+            );
+        } else {
+            // Update status and timestamp along with cancellation info if provided
+            db.prepare(`
+                UPDATE orders SET 
+                    status = ?, 
+                    timestamp = ?, 
+                    waiter_id = COALESCE(?, waiter_id),
+                    cancelled_by = COALESCE(?, cancelled_by),
+                    cancellation_reason = COALESCE(?, cancellation_reason),
+                    cancelled_at = COALESCE(?, cancelled_at)
+                WHERE id = ?
+            `).run(
+                order.status, 
+                order.timestamp ? (order.timestamp instanceof Date ? order.timestamp.toISOString() : order.timestamp) : new Date().toISOString(), 
+                order.waiter_id || null,
+                order.cancelled_by || null,
+                order.cancellation_reason || null,
+                order.cancelled_at ? (order.cancelled_at instanceof Date ? order.cancelled_at.toISOString() : order.cancelled_at) : null,
+                order.id
+            );
+        }
+
+        // Only update items if items array is provided and not empty
+        if (order.items && order.items.length > 0) {
+            // Delete existing items
+            db.prepare('DELETE FROM order_items WHERE order_id = ?').run(order.id);
+            
+            const itemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price, item_type) VALUES (?, ?, ?, ?, ?)');
+            for (const item of order.items) {
+                let productId: number;
+                let itemType = 'product';
+
+                if (typeof item.id === 'string' && item.id.startsWith('inv_')) {
+                    productId = parseInt(item.id.replace('inv_', ''), 10);
+                    itemType = 'inventory_item';
+                } else {
+                    productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
+                }
+
+                if(isNaN(productId)) throw new Error(`Invalid product ID: ${item.id}`);
+                itemStmt.run(order.id, productId, item.quantity, item.price, itemType);
+            }
         }
         return getOrderById(order.id, db)!;
     });
@@ -214,7 +384,7 @@ export async function splitOrder(orderId: string, itemsToSplit: OrderItem[]): Pr
         }
         
         const newOrderId = `ORD-${Date.now()}-SPLIT`;
-        const remainingItems = originalOrder.items.filter(item => !items.find(splitItem => splitItem.id === item.id));
+        const remainingItems = originalOrder.items.filter(item => !items.find((splitItem: any) => splitItem.id === item.id));
 
         // Create the new order with the split items
         const newOrderData: Order = {
@@ -224,8 +394,10 @@ export async function splitOrder(orderId: string, itemsToSplit: OrderItem[]): Pr
             status: 'Pending',
             timestamp: new Date()
         };
-        const newOrderStmt = db.prepare('INSERT INTO orders (id, table_name, status, timestamp) VALUES (?, ?, ?, ?)');
-        newOrderStmt.run(newOrderData.id, newOrderData.table, newOrderData.status, newOrderData.timestamp.toISOString());
+        const newOrderStmt = db.prepare('INSERT INTO orders (id, table_name, status, timestamp, subtotal, discount, discount_name, tax, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        // For split orders, we might need to recalculate totals, but for now initializing to 0 or carrying over proportional values is complex. 
+        // Initializing to 0 for safety, logic should ideally recalculate.
+        newOrderStmt.run(newOrderData.id, newOrderData.table, newOrderData.status, newOrderData.timestamp.toISOString(), 0, 0, null, 0, 0);
         const newItemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
         for (const item of newOrderData.items) {
             const productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
@@ -309,10 +481,9 @@ export async function getOrderStats(): Promise<{
         
         // Get total revenue from completed orders
         const revenueResult = db.prepare(`
-            SELECT SUM(oi.quantity * oi.price) as total
-            FROM order_items oi
-            JOIN orders o ON oi.order_id = o.id
-            WHERE o.status = 'Completed'
+            SELECT SUM(total) as total
+            FROM orders
+            WHERE status = 'Completed'
         `).get() as any;
         
         // Get recent sales (last 10 completed orders)
@@ -321,7 +492,8 @@ export async function getOrderStats(): Promise<{
                 o.id,
                 o.table_name,
                 o.timestamp,
-                SUM(oi.quantity * oi.price) as total_amount,
+                o.timestamp,
+                o.total as total_amount,
                 COUNT(oi.id) as item_count
             FROM orders o
             JOIN order_items oi ON o.id = oi.order_id

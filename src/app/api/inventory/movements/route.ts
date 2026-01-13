@@ -1,8 +1,17 @@
+
 // src/app/api/inventory/movements/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getInventoryMovements, addInventoryMovement } from '@/lib/db/inventory';
+import { getInventoryMovements, addInventoryMovement, getInventoryItemById } from '@/lib/db/inventory';
+import { addActivityLog } from '@/lib/db/activity-logs';
+import { getStaffByEmail } from '@/lib/db/staff';
 
 export const runtime = 'nodejs';
+
+async function getActorId(email?: string) {
+    if (!email || email === "system") return null;
+    const user = await getStaffByEmail(email);
+    return user ? Number(user.id) : null;
+}
 
 export async function GET(request: NextRequest) {
     try {
@@ -28,22 +37,43 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { movementData } = body;
+        // Support both nested and flattened format for backward compatibility during transition
+        const userEmail = body.userEmail || body.movementData?.userEmail;
+        const movementData = body.item_id ? body : body.movementData;
 
-        if (!movementData) {
+        if (!movementData || !movementData.item_id) {
             return NextResponse.json(
-                { error: 'Movement data is required' },
+                { error: 'Invalid movement data' },
                 { status: 400 }
             );
         }
 
+        const actorId = await getActorId(userEmail);
         const newMovement = await addInventoryMovement(movementData);
+        const item = await getInventoryItemById(movementData.item_id);
+
+        let action = 'STOCK_ADJUSTMENT';
+        if (movementData.movement_type === 'IN') action = 'STOCK_IN';
+        if (movementData.movement_type === 'OUT') action = 'STOCK_OUT';
+
+        await addActivityLog(
+            actorId,
+            action,
+            `${action.replace('_', ' ')} for item: ${item?.name || 'Unknown'}`,
+            item?.sku || String(movementData.item_id),
+            { 
+                quantity: movementData.quantity, 
+                type: movementData.reference_type, 
+                notes: movementData.notes 
+            }
+        );
+
         return NextResponse.json(newMovement, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error adding inventory movement:', error);
         return NextResponse.json(
-            { error: 'Failed to add inventory movement' },
+            { error: 'Failed to add inventory movement', message: error.message },
             { status: 500 }
         );
     }
-} 
+}

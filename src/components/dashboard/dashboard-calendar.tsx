@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ChevronLeft, ChevronRight, Plus, Calendar, Clock, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from '@/hooks/use-translation'
+import { useLanguage } from '@/context/language-context'
 
 type Event = {
   id: string;
@@ -23,6 +25,10 @@ export function DashboardCalendar() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const { language } = useLanguage();
+
+  const locale = language === 'fr' ? 'fr-FR' : 'en-US';
 
   // Fetch events from database
   const fetchEvents = async () => {
@@ -39,8 +45,8 @@ export function DashboardCalendar() {
       console.error('Failed to fetch events:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to load events"
+        title: t('common.error') || "Error",
+        description: t('dashboard.loadingEvents') || "Failed to load events"
       });
     } finally {
       setLoading(false);
@@ -90,7 +96,7 @@ export function DashboardCalendar() {
   };
 
   const getMonthName = (date: Date) => {
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return date.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
   };
 
   const goToPreviousMonth = () => {
@@ -121,7 +127,15 @@ export function DashboardCalendar() {
   };
 
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const daysOfWeek = [
+    t('dashboard.calendar.sun') || 'Sun',
+    t('dashboard.calendar.mon') || 'Mon',
+    t('dashboard.calendar.tue') || 'Tue',
+    t('dashboard.calendar.wed') || 'Wed',
+    t('dashboard.calendar.thu') || 'Thu',
+    t('dashboard.calendar.fri') || 'Fri',
+    t('dashboard.calendar.sat') || 'Sat'
+  ];
 
   const renderCalendarDays = () => {
     const days = [];
@@ -176,7 +190,7 @@ export function DashboardCalendar() {
           </Button>
         </div>
         <Button variant="outline" size="sm" onClick={goToToday}>
-          Today
+          {t('periods.today')}
         </Button>
       </div>
 
@@ -205,11 +219,11 @@ export function DashboardCalendar() {
           onClick={() => window.location.href = '/dashboard/events'}
         >
           <Plus className="h-3 w-3" />
-          Add Event
+          {t('dashboard.addEvent')}
         </Button>
         {selectedDate && (
           <div className="text-sm text-muted-foreground">
-            Selected: {selectedDate.toLocaleDateString()}
+            {t('dashboard.selected')}: {selectedDate.toLocaleDateString(locale)}
           </div>
         )}
       </div>
@@ -217,11 +231,11 @@ export function DashboardCalendar() {
       {/* Upcoming Events */}
       <Card>
         <CardContent className="p-4">
-          <h4 className="font-medium mb-2">Upcoming Events</h4>
+          <h4 className="font-medium mb-2">{t('dashboard.upcomingEvents')}</h4>
           {loading ? (
-            <div className="text-sm text-muted-foreground">Loading events...</div>
+            <div className="text-sm text-muted-foreground">{t('dashboard.loadingEvents')}</div>
           ) : getUpcomingEvents().length === 0 ? (
-            <div className="text-sm text-muted-foreground">No events scheduled</div>
+            <div className="text-sm text-muted-foreground">{t('dashboard.noEvents')}</div>
           ) : (
             <div className="space-y-2">
               {getUpcomingEvents().slice(0, 3).map(event => (
@@ -231,7 +245,7 @@ export function DashboardCalendar() {
                     <div className="font-medium text-sm">{event.title}</div>
                     <div className="text-xs text-muted-foreground flex items-center gap-2">
                       <Clock className="h-3 w-3" />
-                      {new Date(event.start_date).toLocaleDateString('en-US', {
+                      {new Date(event.start_date).toLocaleDateString(locale, {
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
@@ -249,7 +263,7 @@ export function DashboardCalendar() {
               ))}
               {getUpcomingEvents().length > 3 && (
                 <div className="text-xs text-muted-foreground text-center">
-                  +{getUpcomingEvents().length - 3} more events
+                  {t('dashboard.moreEvents', { count: getUpcomingEvents().length - 3 })}
                 </div>
               )}
             </div>

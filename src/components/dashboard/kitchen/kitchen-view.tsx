@@ -9,13 +9,16 @@ import { useTranslation } from '@/hooks/use-translation'
 import { useNotifications } from '@/context/notification-context'
 import { DroppableColumn } from '@/components/dnd/dnd-components'
 import { CancelDropZone } from '@/components/dnd/cancel-drop-zone'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { CancelOrderDialog } from '@/components/dashboard/cancel-order-dialog'
+import { useActivityLog } from '@/context/activity-log-context'
+import { useStaff } from '@/context/staff-context'
+import { useAuth } from '@/context/auth-context'
 import type { Order, OrderStatus } from '@/context/order-context'
-import React from 'react'
 
-export function KitchenView({ orderToCancel, setOrderToCancel }: { 
+export function KitchenView({ orderToCancel, setOrderToCancel, activeId }: { 
   orderToCancel: Order | null; 
-  setOrderToCancel: (order: Order | null) => void 
+  setOrderToCancel: (order: Order | null) => void;
+  activeId: string | null;
 }) {
   const { orders, updateOrderStatus } = useOrders()
   const { categories } = useCategories()
@@ -56,9 +59,23 @@ export function KitchenView({ orderToCancel, setOrderToCancel }: {
     }
   }
 
-  const handleCancelConfirm = () => {
+  const { logActivity } = useActivityLog()
+  const { user } = useAuth()
+  const { staff } = useStaff()
+
+  const handleCancelConfirm = async (reason: string) => {
     if (orderToCancel) {
-        updateOrderStatus(orderToCancel.id, 'Canceled');
+        // Find user ID
+        const currentStaff = staff.find(s => s.email === user?.email);
+        const userId = currentStaff ? parseInt(currentStaff.id) : undefined;
+
+        await updateOrderStatus(orderToCancel.id, 'Canceled', {
+            cancelled_by: userId,
+            reason: reason
+        });
+        
+        await logActivity('cancel_order', `Order ${orderToCancel.id} canceled by ${user?.name}. Reason: ${reason}`);
+        
         toast({
             title: t('toasts.orderCanceled'),
             description: t('toasts.orderCanceledDesc', { orderId: orderToCancel.id }),
@@ -94,25 +111,15 @@ export function KitchenView({ orderToCancel, setOrderToCancel }: {
             t={t} 
           />
         </div>
-        <CancelDropZone activeId={orderToCancel?.id || null} />
+        <CancelDropZone activeId={activeId} />
       </div>
 
-      <AlertDialog open={!!orderToCancel} onOpenChange={() => setOrderToCancel(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('kitchen.cancelOrder')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('kitchen.cancelOrderDesc', { orderId: orderToCancel?.id || '' })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('dialogs.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancelConfirm}>
-              {t('kitchen.confirmCancel')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CancelOrderDialog 
+        open={!!orderToCancel} 
+        onOpenChange={(open) => !open && setOrderToCancel(null)}
+        onConfirm={handleCancelConfirm}
+        orderId={orderToCancel?.id || ''}
+      />
     </>
   )
 }

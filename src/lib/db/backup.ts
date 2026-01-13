@@ -81,6 +81,14 @@ export function getBackupHistory(limit = 10): BackupRecord[] {
     return backups;
 }
 
+// Get single backup by ID
+export function getBackupById(id: number): BackupRecord | undefined {
+    const db = new Database(dbPath, { readonly: true });
+    const backup = db.prepare('SELECT * FROM backups WHERE id = ?').get(id) as BackupRecord | undefined;
+    db.close();
+    return backup;
+}
+
 // Record a backup
 export function recordBackup(
     filename: string,
@@ -134,9 +142,17 @@ export function deleteBackupRecord(id: number): boolean {
 // Get backup settings
 export function getBackupSettings(): BackupSettings {
     const db = new Database(dbPath, { readonly: true });
-    const settings = db.prepare('SELECT * FROM backup_settings WHERE id = 1').get() as BackupSettings;
+    const settings = db.prepare('SELECT * FROM backup_settings WHERE id = 1').get() as any;
     db.close();
     
+    if (!settings) {
+        return {
+            id: 1,
+            frequency: 'daily',
+            enabled: false
+        };
+    }
+
     // Convert SQLite integer to boolean
     return {
         ...settings,
@@ -160,7 +176,7 @@ export function updateBackupSettings(
         WHERE id = 1
     `).run(frequency, enabled ? 1 : 0, nextBackup);
     
-    const settings = db.prepare('SELECT * FROM backup_settings WHERE id = 1').get() as BackupSettings;
+    const settings = db.prepare('SELECT * FROM backup_settings WHERE id = 1').get() as any;
     db.close();
     
     return {

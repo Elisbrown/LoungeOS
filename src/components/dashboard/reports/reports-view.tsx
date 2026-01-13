@@ -3,6 +3,7 @@
 
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { DateRange } from "react-day-picker"
 import {
   Table,
   TableBody,
@@ -59,45 +60,47 @@ const salesChartConfig = {
 
 export function ReportsView() {
   const { t } = useTranslation()
-  const [staffPerformance, setStaffPerformance] = React.useState<any[]>([])
   const [isGenerating, setIsGenerating] = React.useState(false)
-  const [dateRange, setDateRange] = React.useState<{ from: Date; to: Date } | undefined>()
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
+    from: new Date(new Date().setDate(new Date().getDate() - 7)),
+    to: new Date()
+  })
+  const [data, setData] = React.useState<any>(null)
+  const [loading, setLoading] = React.useState(true)
+
+  const fetchData = React.useCallback(async () => {
+    if (!dateRange?.from || !dateRange?.to) return;
+    
+    setLoading(true)
+    try {
+      const from = dateRange.from.toISOString();
+      const to = dateRange.to.toISOString();
+      const response = await fetch(`/api/dashboard-stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+      if (!response.ok) throw new Error('Failed to fetch data');
+      const result = await response.json();
+      setData(result);
+    } catch (error) {
+      console.error('Error fetching report data:', error);
+    } finally {
+      setLoading(false)
+    }
+  }, [dateRange])
 
   React.useEffect(() => {
-    async function fetchData() {
-        // This should be fetched from an API route in a real app
-        // const perfData = await getStaffPerformance() 
-        // setStaffPerformance(perfData)
-    }
     fetchData()
-  }, [])
+  }, [fetchData])
 
   const handleGenerateReport = async () => {
     setIsGenerating(true)
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // In a real app, this would call the API with the date range
-      // const reportData = await fetch('/api/reports/generate', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ dateRange })
-      // })
-      
-      // For now, just show a success message
-      console.log('Report generated for date range:', dateRange)
-    } catch (error) {
-      console.error('Failed to generate report:', error)
-    } finally {
-      setIsGenerating(false)
-    }
+    await fetchData();
+    setIsGenerating(false)
   }
 
   const handleExportReport = () => {
-    // Export functionality
+    if (!data?.chartData?.sales) return;
+    
     const csvContent = "data:text/csv;charset=utf-8,Date,Sales\n" + 
-      salesOverTimeData.map(row => `${row.date},${row.sales}`).join('\n')
+      data.chartData.sales.map((row: any) => `${row.label},${row.current}`).join('\n')
     
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement("a")
@@ -107,6 +110,20 @@ export function ReportsView() {
     link.click()
     document.body.removeChild(link)
   }
+
+  const salesOverTimeData = data?.chartData?.sales?.map((d: any) => ({
+    date: d.label,
+    sales: d.current
+  })) || []
+
+  const salesByCategoryData = data?.categorySales?.map((c: any) => ({
+    name: c.category,
+    value: c.sales,
+    color: c.color
+  })) || []
+
+  const staffPerformance = data?.staffPerformance || []
+  const recentTransactionsData = data?.recentSales || []
 
 
   return (
@@ -195,7 +212,7 @@ export function ReportsView() {
               <PieChart>
                 <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                 <Pie data={salesByCategoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                     {salesByCategoryData.map((entry, index) => (
+                     {salesByCategoryData.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                 </Pie>
@@ -221,7 +238,7 @@ export function ReportsView() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {staffPerformance.map((staff) => (
+                            {staffPerformance.map((staff: any) => (
                                 <TableRow key={staff.email}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
@@ -233,7 +250,7 @@ export function ReportsView() {
                                         </div>
                                     </TableCell>
                                     <TableCell>{staff.role}</TableCell>
-                                    <TableCell className="text-right">XAF {staff.totalSales.toLocaleString()}</TableCell>
+                                    <TableCell className="text-right">XAF {staff.total_revenue.toLocaleString()}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -257,12 +274,12 @@ export function ReportsView() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {recentTransactionsData.map((trx) => (
+                        {recentTransactionsData.map((trx: any) => (
                         <TableRow key={trx.id}>
                             <TableCell className="font-medium">{trx.id}</TableCell>
                             <TableCell>{trx.table}</TableCell>
-                            <TableCell>{trx.cashier}</TableCell>
-                            <TableCell className="text-right">XAF {trx.amount.toLocaleString()}</TableCell>
+                            <TableCell>{trx.cashier || 'System'}</TableCell>
+                            <TableCell className="text-right">XAF {trx.total_amount.toLocaleString()}</TableCell>
                         </TableRow>
                         ))}
                     </TableBody>

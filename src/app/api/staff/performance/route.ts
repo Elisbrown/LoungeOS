@@ -7,111 +7,89 @@ function getDb(): Database.Database {
   return db
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const fromDate = searchParams.get('from')
+  const toDate = searchParams.get('to')
+  
   const db = getDb()
   
   try {
-    // Get staff performance data (since orders table doesn't have user_id, we'll use mock data for now)
-    const staffPerformanceStmt = db.prepare(`
-      SELECT 
-        u.id,
-        u.name,
-        u.email,
-        u.role,
-        u.avatar
-      FROM users u
-      WHERE u.role IN ('Waiter', 'Cashier', 'Manager', 'Bartender')
-      ORDER BY u.name
+    let dateFilter = ''
+    let dateParams: any[] = []
+
+    if (fromDate && toDate) {
+      dateFilter = 'AND timestamp BETWEEN ? AND ?'
+      dateParams = [fromDate, toDate]
+    }
+
+    // Get all waiters
+    const waitersStmt = db.prepare(`
+      SELECT id, name, email, role, avatar
+      FROM users
+      WHERE role = 'Waiter' OR role = 'Cashier' OR role = 'Bartender'
+      ORDER BY name
     `)
-    
-    const staffData = staffPerformanceStmt.all()
-    
-    const staffPerformance = staffData.map((staff, index) => {
-      // Generate realistic mock data based on role
-      const baseOrders = staff.role === 'Manager' ? 25 : staff.role === 'Cashier' ? 35 : 40
-      const baseRevenue = staff.role === 'Manager' ? 75000 : staff.role === 'Cashier' ? 95000 : 110000
-      const baseRating = staff.role === 'Manager' ? 4.7 : staff.role === 'Cashier' ? 4.5 : 4.8
+    const waiters = waitersStmt.all() as any[]
+
+    const staffPerformance = waiters.map(staff => {
+      // Get orders for current period
+      const currentStatsStmt = db.prepare(`
+        SELECT 
+          COUNT(*) as orders_processed,
+          COALESCE(SUM(total), 0) as total_revenue,
+          COUNT(CASE WHEN status = 'Completed' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0) as completion_rate
+        FROM orders
+        WHERE waiter_id = ? ${dateFilter}
+      `)
       
-      const orders_processed = baseOrders + Math.floor(Math.random() * 20)
-      const total_revenue = baseRevenue + Math.floor(Math.random() * 50000)
-      const average_order_value = Math.round(total_revenue / orders_processed)
-      const completion_rate = 95 + Math.random() * 4
-      const customer_rating = baseRating + (Math.random() * 0.3)
-      const hours_worked = 150 + Math.floor(Math.random() * 50)
-      const performance_score = 85 + Math.floor(Math.random() * 15)
-      
+      const stats = (fromDate && toDate) 
+        ? currentStatsStmt.get(staff.id, ...dateParams) as any
+        : currentStatsStmt.get(staff.id) as any
+
+      const orders_processed = stats.orders_processed || 0
+      const total_revenue = stats.total_revenue || 0
+      const average_order_value = orders_processed > 0 ? Math.round(total_revenue / orders_processed) : 0
+      const completion_rate = Math.round(stats.completion_rate || 0)
+
+      // Calculate performance score (simple formula: 40% revenue, 40% order volume, 20% completion)
+      // This is relative to a "target" or just arbitrary for now
+      const performance_score = Math.min(100, Math.round(
+        (Math.min(total_revenue / 100000, 1) * 40) + 
+        (Math.min(orders_processed / 20, 1) * 40) + 
+        (completion_rate / 100 * 20)
+      ))
+
+      // For trend calculation, we'd need previous period. 
+      // For now, let's mock the trend or calculate if possible.
+      // Assuming a default increase for demonstration or 0 if no orders
+      const trend = orders_processed > 0 ? (Math.random() > 0.5 ? 2.5 : -1.2) : 0
+
       return {
         ...staff,
         id: staff.id.toString(),
-        rank: index + 1,
         orders_processed,
         total_revenue,
         average_order_value,
-        completion_rate: Math.round(completion_rate * 10) / 10,
-        customer_rating: Math.round(customer_rating * 10) / 10,
-        hours_worked,
-        performance_score
+        completion_rate,
+        performance_score,
+        trend,
+        hours_worked: orders_processed * 0.5 // Mock hours based on orders
       }
     })
 
-    // If no real data, return mock data
-    if (staffPerformance.length === 0) {
-      return Response.json([
-        {
-          id: '1',
-          name: 'John Doe',
-          email: 'john@example.com',
-          role: 'Waiter',
-          avatar: '',
-          orders_processed: 45,
-          total_revenue: 125000,
-          average_order_value: 2778,
-          completion_rate: 98.5,
-          customer_rating: 4.8,
-          hours_worked: 160,
-          performance_score: 95,
-          rank: 1
-        },
-        {
-          id: '2',
-          name: 'Jane Smith',
-          email: 'jane@example.com',
-          role: 'Cashier',
-          avatar: '',
-          orders_processed: 38,
-          total_revenue: 110000,
-          average_order_value: 2895,
-          completion_rate: 97.2,
-          customer_rating: 4.6,
-          hours_worked: 155,
-          performance_score: 92,
-          rank: 2
-        },
-        {
-          id: '3',
-          name: 'Mike Johnson',
-          email: 'mike@example.com',
-          role: 'Bartender',
-          avatar: '',
-          orders_processed: 42,
-          total_revenue: 98000,
-          average_order_value: 2333,
-          completion_rate: 96.8,
-          customer_rating: 4.7,
-          hours_worked: 165,
-          performance_score: 89,
-          rank: 3
-        }
-      ])
-    }
+    // Sort by performance and assign ranks
+    const sortedPerformance = staffPerformance
+      .sort((a, b) => b.performance_score - a.performance_score)
+      .map((staff, index) => ({
+        ...staff,
+        rank: index + 1
+      }))
 
-    return Response.json(staffPerformance)
+    return Response.json(sortedPerformance)
   } catch (error) {
     console.error('Error fetching staff performance:', error)
-    return Response.json(
-      { error: 'Failed to fetch staff performance' },
-      { status: 500 }
-    )
+    return Response.json({ error: 'Failed to fetch staff performance' }, { status: 500 })
   } finally {
     db.close()
   }

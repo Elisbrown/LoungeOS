@@ -1,3 +1,4 @@
+// src/app/api/activity-logs/route.ts
 import { NextResponse } from 'next/server';
 import { getActivityLogs, addActivityLog, clearActivityLogs } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
@@ -15,7 +16,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const { userId, action, details, userEmail } = await request.json();
+        const { userId, action, details, target, metadata, userEmail } = await request.json();
         
         if (!action) {
             return NextResponse.json({ message: 'Action is required' }, { status: 400 });
@@ -23,13 +24,19 @@ export async function POST(request: Request) {
 
         let finalUserId = userId;
         
-        // If no userId provided but userEmail is, get the user ID from the database
-        if (!userId && userEmail) {
+        // Resolve user ID from email if not provided
+        if (!finalUserId && userEmail && userEmail !== 'system') {
             const user = await getStaffByEmail(userEmail);
             finalUserId = user ? parseInt(user.id) : null;
         }
 
-        const newLog = await addActivityLog(finalUserId, action, details || '');
+        const newLog = await addActivityLog(
+            finalUserId, 
+            action, 
+            details || '', 
+            target || null, 
+            metadata || null
+        );
         return NextResponse.json(newLog, { status: 201 });
     } catch (error: any) {
         return NextResponse.json({ message: 'Failed to add activity log', error: error.message }, { status: 500 });

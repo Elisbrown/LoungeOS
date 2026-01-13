@@ -169,7 +169,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         setSettingsState(newSettings);
         try {
             // Get current user email from localStorage or context
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -190,7 +191,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         setSettingsState(newSettings);
         try {
             // Get current user email from localStorage or context
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch(`/api/settings?key=${key}`, {
@@ -211,7 +213,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         setSettingsState(newSettings);
         try {
             // Get current user email from localStorage or context
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -237,7 +240,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         setSettingsState(newSettings);
         try {
             // Get current user email from localStorage or context
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -262,7 +266,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         const newSettings = { ...settings, defaultCurrency: currency };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -285,7 +290,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -312,7 +318,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -333,7 +340,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         const newSettings = { ...settings, taxEnabled: enabled };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -357,7 +365,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -382,7 +391,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -405,7 +415,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -431,7 +442,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -452,7 +464,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         const newSettings = { ...settings, discountEnabled: enabled };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -476,7 +489,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -501,7 +515,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -524,7 +539,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {
@@ -549,7 +565,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         };
         setSettingsState(newSettings);
         try {
-            const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || '{}') : {};
+            const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
+            const currentUser = storedUser ? JSON.parse(storedUser) : {};
             const userEmail = currentUser.email || 'system';
             
             await fetch('/api/settings', {

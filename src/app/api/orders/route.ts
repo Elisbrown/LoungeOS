@@ -1,10 +1,16 @@
 // src/app/api/orders/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrders, addOrder, updateOrder, updateOrderStatus, deleteOrder } from '@/lib/db/orders';
+import { getOrders, addOrder, updateOrder, updateOrderStatus, deleteOrder, getOrderById } from '@/lib/db/orders';
 import { addActivityLog } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
 
 export const runtime = 'nodejs';
+
+async function getActorId(email?: string) {
+    if (!email || email === "system") return null;
+    const user = await getStaffByEmail(email);
+    return user ? Number(user.id) : null;
+}
 
 export async function GET(request: NextRequest) {
     try {
@@ -13,16 +19,13 @@ export async function GET(request: NextRequest) {
         
         const allOrders = await getOrders();
         
-        // Filter by status if provided
         if (statusParam) {
             if (statusParam.toLowerCase() === 'pending') {
-                // For pending orders, return only Pending, In Progress, and Ready statuses
                 const pendingOrders = allOrders.filter(order => 
                     order.status === 'Pending' || order.status === 'In Progress' || order.status === 'Ready'
                 );
                 return NextResponse.json(pendingOrders);
             } else {
-                // Filter by exact status match
                 const filteredOrders = allOrders.filter(order => 
                     order.status.toLowerCase() === statusParam.toLowerCase()
                 );
@@ -30,7 +33,6 @@ export async function GET(request: NextRequest) {
             }
         }
         
-        // Return all orders if no status filter
         return NextResponse.json(allOrders);
     } catch (error: any) {
         console.error('Failed to fetch orders:', error);
@@ -42,13 +44,15 @@ export async function POST(request: Request) {
     try {
         const orderData = await request.json();
         const newOrder = await addOrder(orderData);
+        const actorId = await getActorId(orderData.userEmail);
         
-        // Log the activity
-        try {
-            await addActivityLog(null, 'add_order', `Order for table ${orderData.table} added.`);
-        } catch (logError) {
-            console.error('Failed to log activity:', logError);
-        }
+        await addActivityLog(
+            actorId, 
+            'ORDER_CREATE', 
+            `Order for table ${orderData.table} created.`,
+            newOrder.id,
+            { total: newOrder.total, itemsCount: orderData.items?.length }
+        );
         
         return NextResponse.json(newOrder, { status: 201 });
     } catch (error: any) {
@@ -65,31 +69,60 @@ export async function PUT(request: Request) {
         }
         
         const orderData = await request.json();
+        const oldOrder = await getOrderById(id);
+        const actorId = await getActorId(orderData.userEmail);
         
-        // Check if this is a status-only update
-        if (orderData.status && Object.keys(orderData).length === 3 && orderData.id && orderData.timestamp) {
-            // This is a status-only update (id, status, timestamp)
-            const updatedOrder = await updateOrderStatus(id, orderData.status);
+        if (orderData.status && !orderData.items) {
+            if (orderData.total !== undefined || orderData.discount !== undefined) {
+                 const updatedOrder = await updateOrder({ ...orderData, id });
+                 await addActivityLog(
+                    actorId, 
+                    'ORDER_UPDATE', 
+                    `Order ${id} details updated.`,
+                    id,
+                    { total: orderData.total, discount: orderData.discount }
+                );
+                 return NextResponse.json(updatedOrder);
+            }
             
-            // Log the activity
-            try {
-                await addActivityLog(null, 'update_order_status', `Order ${id} status updated to ${orderData.status}.`);
-            } catch (logError) {
-                console.error('Failed to log activity:', logError);
+            const updatedOrder = await updateOrderStatus(
+                id, 
+                orderData.status,
+                orderData.cancelled_by,
+                orderData.cancellation_reason,
+                orderData.cancelled_at
+            );
+            
+            if (orderData.status === 'Canceled') {
+                 await addActivityLog(
+                    orderData.cancelled_by ? Number(orderData.cancelled_by) : actorId, 
+                    'ORDER_VOID', 
+                    `Order ${id} voided. Reason: ${orderData.cancellation_reason || 'No reason provided'}`,
+                    id,
+                    { reason: orderData.cancellation_reason, total: oldOrder?.total }
+                );
+            } else if (orderData.status === 'Completed' && oldOrder?.status !== 'Completed') {
+                await addActivityLog(actorId, 'ORDER_COMPLETE', `Order ${id} marked as completed.`, id, { total: oldOrder?.total });
+            } else {
+                await addActivityLog(
+                    actorId, 
+                    'ORDER_STATUS_UPDATE', 
+                    `Order ${id} status: ${oldOrder?.status} -> ${orderData.status}`,
+                    id,
+                    { from: oldOrder?.status, to: orderData.status }
+                );
             }
             
             return NextResponse.json(updatedOrder);
         } else {
-            // This is a full order update
             const updatedOrder = await updateOrder({ ...orderData, id });
-            
-            // Log the activity
-            try {
-                await addActivityLog(null, 'update_order', `Order ${id} updated.`);
-            } catch (logError) {
-                console.error('Failed to log activity:', logError);
-            }
-            
+            await addActivityLog(
+                actorId, 
+                'ORDER_UPDATE', 
+                `Order ${id} updated by staff.`,
+                id,
+                { old_total: oldOrder?.total, new_total: updatedOrder.total }
+            );
             return NextResponse.json(updatedOrder);
         }
     } catch (error: any) {
@@ -101,17 +134,22 @@ export async function DELETE(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
+        const userEmail = searchParams.get('userEmail');
         if (!id) {
             return NextResponse.json({ message: 'ID query parameter is required' }, { status: 400 });
         }
+        
+        const order = await getOrderById(id);
+        const actorId = await getActorId(userEmail || undefined);
         await deleteOrder(id);
         
-        // Log the activity
-        try {
-            await addActivityLog(null, 'delete_order', `Order ${id} deleted.`);
-        } catch (logError) {
-            console.error('Failed to log activity:', logError);
-        }
+        await addActivityLog(
+            actorId, 
+            'ORDER_DELETE', 
+            `Order ${id} permanently deleted from system.`,
+            id,
+            { table: order?.table, total: order?.total }
+        );
         
         return NextResponse.json({ message: 'Order deleted successfully' });
     } catch (error: any) {

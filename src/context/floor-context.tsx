@@ -2,6 +2,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { useAuth } from './auth-context';
 
 type FloorContextType = {
   floors: string[];
@@ -14,6 +15,7 @@ const FloorContext = createContext<FloorContextType | undefined>(undefined);
 
 export const FloorProvider = ({ children }: { children: ReactNode }) => {
   const [floors, setFloors] = useState<string[]>([]);
+  const { user } = useAuth();
   
   const fetchFloors = useCallback(async () => {
     const response = await fetch('/api/floors');
@@ -33,13 +35,13 @@ export const FloorProvider = ({ children }: { children: ReactNode }) => {
     await fetch('/api/floors', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: floorName })
+        body: JSON.stringify({ name: floorName, userEmail: user?.email })
     });
     await fetchFloors();
   };
 
   const deleteFloor = async (floorNameToDelete: string) => {
-    await fetch(`/api/floors?name=${encodeURIComponent(floorNameToDelete)}`, {
+    await fetch(`/api/floors?name=${encodeURIComponent(floorNameToDelete)}&userEmail=${encodeURIComponent(user?.email || '')}`, {
         method: 'DELETE'
     });
     await fetchFloors();

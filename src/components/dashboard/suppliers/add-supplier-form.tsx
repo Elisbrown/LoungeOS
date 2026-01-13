@@ -32,13 +32,14 @@ import { useTranslation } from "@/hooks/use-translation"
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Supplier name is required." }),
-  contactPerson: z.string().optional(),
+  contact_person: z.string().optional(),
   phone: z.string().min(1, { message: "Phone number is required." }),
-  email: z.string().email({ message: "A valid email is required." }).optional(),
+  email: z.string().email({ message: "A valid email is required." }).optional().or(z.literal("")),
+  address: z.string().optional(),
 })
 
 type AddSupplierFormProps = {
-  onAddSupplier: (supplier: Omit<Supplier, 'id'>) => void
+  onAddSupplier: (supplier: any) => void
 }
 
 export function AddSupplierForm({ onAddSupplier }: AddSupplierFormProps) {
@@ -50,9 +51,10 @@ export function AddSupplierForm({ onAddSupplier }: AddSupplierFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      contactPerson: "",
+      contact_person: "",
       phone: "",
       email: "",
+      address: "",
     },
   })
 
@@ -98,7 +100,7 @@ export function AddSupplierForm({ onAddSupplier }: AddSupplierFormProps) {
             />
              <FormField
               control={form.control}
-              name="contactPerson"
+              name="contact_person"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('suppliers.contactPerson')}</FormLabel>
@@ -130,6 +132,19 @@ export function AddSupplierForm({ onAddSupplier }: AddSupplierFormProps) {
                   <FormLabel>{t('suppliers.email')}</FormLabel>
                    <FormControl>
                     <Input type="email" placeholder="contact@supplier.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('suppliers.address')}</FormLabel>
+                   <FormControl>
+                    <Input placeholder="123 Street, City" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

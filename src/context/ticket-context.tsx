@@ -1,7 +1,9 @@
+
 "use client"
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import type { Ticket } from '@/lib/db/tickets';
+import { useAuth } from './auth-context';
 
 type TicketContextType = {
   tickets: Ticket[];
@@ -10,6 +12,7 @@ type TicketContextType = {
   updateTicket: (id: number, ticketData: Partial<Ticket>) => Promise<void>;
   deleteTicket: (id: number) => Promise<void>;
   fetchTickets: () => Promise<void>;
+  addComment: (ticketId: number, commentData: any) => Promise<void>;
 }
 
 const TicketContext = createContext<TicketContextType | undefined>(undefined);
@@ -17,6 +20,7 @@ const TicketContext = createContext<TicketContextType | undefined>(undefined);
 export const TicketProvider = ({ children }: { children: ReactNode }) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
   
   const fetchTickets = useCallback(async () => {
     setLoading(true);
@@ -42,7 +46,7 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
       const response = await fetch('/api/tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ticketData)
+        body: JSON.stringify({ ...ticketData, userEmail: user?.email })
       });
       
       if (response.ok) {
@@ -52,14 +56,14 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
       console.error('Failed to add ticket:', error);
       throw error;
     }
-  }, [fetchTickets]);
+  }, [fetchTickets, user?.email]);
 
   const updateTicket = useCallback(async (id: number, ticketData: Partial<Ticket>) => {
     try {
       const response = await fetch(`/api/tickets/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ticketData)
+        body: JSON.stringify({ ...ticketData, userEmail: user?.email })
       });
       
       if (response.ok) {
@@ -69,11 +73,11 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
       console.error('Failed to update ticket:', error);
       throw error;
     }
-  }, [fetchTickets]);
+  }, [fetchTickets, user?.email]);
   
   const deleteTicket = useCallback(async (id: number) => {
     try {
-      const response = await fetch(`/api/tickets/${id}`, {
+      const response = await fetch(`/api/tickets/${id}?userEmail=${user?.email || ''}`, {
         method: 'DELETE'
       });
       
@@ -84,10 +88,27 @@ export const TicketProvider = ({ children }: { children: ReactNode }) => {
       console.error('Failed to delete ticket:', error);
       throw error;
     }
-  }, [fetchTickets]);
+  }, [fetchTickets, user?.email]);
+
+  const addComment = useCallback(async (ticketId: number, commentData: any) => {
+    try {
+      const response = await fetch(`/api/tickets/comments?id=${ticketId}&userEmail=${user?.email || ''}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(commentData)
+      });
+      
+      if (response.ok) {
+        await fetchTickets();
+      }
+    } catch (error) {
+      console.error('Failed to add comment:', error);
+      throw error;
+    }
+  }, [fetchTickets, user?.email]);
 
   return (
-    <TicketContext.Provider value={{ tickets, loading, addTicket, updateTicket, deleteTicket, fetchTickets }}>
+    <TicketContext.Provider value={{ tickets, loading, addTicket, updateTicket, deleteTicket, fetchTickets, addComment }}>
       {children}
     </TicketContext.Provider>
   );

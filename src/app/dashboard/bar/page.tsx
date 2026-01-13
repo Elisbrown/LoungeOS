@@ -14,15 +14,16 @@ import { DragOverlay } from '@dnd-kit/core'
 import { OrderCard } from '@/components/dnd/dnd-components'
 import type { Order, OrderStatus } from '@/context/order-context'
 
-function BarPageContent({ orderToCancel, setOrderToCancel }: { 
+function BarPageContent({ orderToCancel, setOrderToCancel, activeId }: { 
   orderToCancel: Order | null; 
-  setOrderToCancel: (order: Order | null) => void 
+  setOrderToCancel: (order: Order | null) => void;
+  activeId: string | null;
 }) {
   return (
     <div className="flex min-h-screen w-full flex-col">
       <Header title="Bar" />
       <main className="flex flex-1 flex-col p-4 md:p-8">
-        <BarView orderToCancel={orderToCancel} setOrderToCancel={setOrderToCancel} />
+        <BarView orderToCancel={orderToCancel} setOrderToCancel={setOrderToCancel} activeId={activeId} />
       </main>
     </div>
   )
@@ -90,7 +91,7 @@ export default function BarPage() {
 
   return (
     <DndProvider onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <BarPageContent orderToCancel={orderToCancel} setOrderToCancel={setOrderToCancel} />
+      <BarPageContent orderToCancel={orderToCancel} setOrderToCancel={setOrderToCancel} activeId={activeId} />
       <DragOverlay>
         {activeOrder ? <OrderCard order={activeOrder} isDragging /> : null}
       </DragOverlay>

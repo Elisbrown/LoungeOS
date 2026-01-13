@@ -1,31 +1,49 @@
-// src/app/api/auth/[...action]/route.ts
-
 import { NextResponse } from 'next/server';
 import { getStaffByEmail, verifyPassword, updatePassword as dbUpdatePassword } from '@/lib/db/staff';
+import { addActivityLog } from '@/lib/db/activity-logs';
 
 export const runtime = 'nodejs';
 
 async function handleLogin(request: Request) {
+    let emailForLog = 'unknown';
     try {
-        const { email, password } = await request.json();
+        const body = await request.json();
+        const { email, password } = body;
+        emailForLog = email || 'unknown';
+
         if (!email || !password) {
             return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
         }
         
         const user = await getStaffByEmail(email);
+        const forwarded = request.headers.get('x-forwarded-for');
+        const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
+
         if (!user) {
+            await addActivityLog(null, 'LOGIN_FAILED', `Login attempt with non-existent email: ${email}`, email, { ip, reason: 'user_not_found' });
             return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
+        }
+
+        if (user.status === 'Inactive') {
+            await addActivityLog(Number(user.id), 'LOGIN_FAILED', `Login attempt for inactive account: ${email}`, email, { ip, reason: 'account_inactive' });
+            return NextResponse.json({ 
+                message: 'Account is deactivated. contact your Supervisor or Manager.' 
+            }, { status: 403 });
         }
 
         const isCorrectPassword = await verifyPassword(email, password);
         if (!isCorrectPassword) {
+            await addActivityLog(Number(user.id), 'LOGIN_FAILED', `Invalid password attempt for: ${email}`, email, { ip, reason: 'invalid_password' });
             return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
         }
+
+        await addActivityLog(Number(user.id), 'LOGIN_SUCCESS', `User logged in: ${email}`, 'SYSTEM', { ip });
 
         const { ...userWithoutPassword } = user;
         return NextResponse.json(userWithoutPassword);
 
     } catch (error: any) {
+        console.error('Login Error:', error);
         return NextResponse.json({ message: 'Login failed', error: error.message }, { status: 500 });
     }
 }
@@ -49,10 +67,13 @@ async function handleVerifyPassword(request: Request) {
 
 async function handlePasswordReset(request: Request) {
     try {
-        const { email, newPassword } = await request.json();
+        const { email, newPassword, changerEmail } = await request.json();
         if (!email || !newPassword) {
             return NextResponse.json({ message: 'Email and new password are required' }, { status: 400 });
         }
+        
+        const user = await getStaffByEmail(email);
+        const changer = changerEmail ? await getStaffByEmail(changerEmail) : null;
         
         await dbUpdatePassword(email, newPassword);
 
@@ -60,6 +81,13 @@ async function handlePasswordReset(request: Request) {
         if (!updatedUser) {
              return NextResponse.json({ message: 'User not found after password update' }, { status: 404 });
         }
+
+        await addActivityLog(
+            changer ? Number(changer.id) : Number(user?.id), 
+            'PASSWORD_RESET', 
+            changerEmail ? `Admin reset password for: ${email}` : `User reset their own password: ${email}`, 
+            email
+        );
 
         return NextResponse.json(updatedUser);
 

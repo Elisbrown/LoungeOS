@@ -1,9 +1,16 @@
-
 // src/app/api/products/route.ts
 import { NextResponse } from 'next/server';
-import { getMeals, getUnifiedProducts, addMeal, updateMeal, deleteMeal } from '@/lib/db/products';
+import { getMeals, getUnifiedProducts, addMeal, updateMeal, deleteMeal, getMealById } from '@/lib/db/products';
+import { addActivityLog } from '@/lib/db/activity-logs';
+import { getStaffByEmail } from '@/lib/db/staff';
 
 export const runtime = 'nodejs';
+
+async function getActorId(email?: string) {
+    if (!email || email === "system") return null;
+    const user = await getStaffByEmail(email);
+    return user ? Number(user.id) : null;
+}
 
 export async function GET(request: Request) {
     try {
@@ -26,6 +33,16 @@ export async function POST(request: Request) {
     try {
         const mealData = await request.json();
         const newMeal = await addMeal(mealData);
+        const actorId = await getActorId(mealData.userEmail);
+
+        await addActivityLog(
+            actorId,
+            'MENU_ITEM_CREATE',
+            `Added new menu item: ${newMeal.name}`,
+            newMeal.name,
+            { category: newMeal.category, price: newMeal.price }
+        );
+
         return NextResponse.json(newMeal, { status: 201 });
     } catch (error: any) {
         return NextResponse.json({ message: 'Failed to add meal', error: error.message }, { status: 500 });
@@ -40,7 +57,23 @@ export async function PUT(request: Request) {
             return NextResponse.json({ message: 'ID query parameter is required' }, { status: 400 });
         }
         const mealData = await request.json();
+        const oldMeal = await getMealById(id);
         const updatedMeal = await updateMeal(mealData);
+        const actorId = await getActorId(mealData.userEmail);
+
+        await addActivityLog(
+            actorId,
+            'MENU_ITEM_UPDATE',
+            `Updated menu item: ${updatedMeal.name}`,
+            updatedMeal.name,
+            { 
+                changes: {
+                    price: oldMeal?.price !== updatedMeal.price ? { old: oldMeal?.price, new: updatedMeal.price } : undefined,
+                    category: oldMeal?.category !== updatedMeal.category ? { old: oldMeal?.category, new: updatedMeal.category } : undefined
+                }
+            }
+        );
+
         return NextResponse.json(updatedMeal);
     } catch (error: any) {
         return NextResponse.json({ message: 'Failed to update meal', error: error.message }, { status: 500 });
@@ -51,10 +84,22 @@ export async function DELETE(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
+        const userEmail = searchParams.get('userEmail');
         if (!id) {
             return NextResponse.json({ message: 'ID query parameter is required' }, { status: 400 });
         }
+
+        const meal = await getMealById(id);
         await deleteMeal(id);
+        const actorId = await getActorId(userEmail || undefined);
+
+        await addActivityLog(
+            actorId,
+            'MENU_ITEM_DELETE',
+            `Deleted menu item: ${meal?.name || 'Unknown'}`,
+            meal?.name || id
+        );
+
         return NextResponse.json({ message: 'Meal deleted successfully' });
     } catch (error: any) {
         return NextResponse.json({ message: 'Failed to delete meal', error: error.message }, { status: 500 });

@@ -15,14 +15,14 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatCurrency(amount: number, currency: Currency, locale: string = 'en-US'): string {
   const formattedAmount = new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount)
 
   if (currency.position === 'before') {
-    return `${currency.symbol}${formattedAmount}`
+    return `${currency.symbol} ${formattedAmount}`
   } else {
-    return `${formattedAmount}${currency.symbol}`
+    return `${formattedAmount} ${currency.symbol}`
   }
 }
 

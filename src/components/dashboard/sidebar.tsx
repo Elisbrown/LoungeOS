@@ -52,6 +52,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { cn } from '@/lib/utils'
 
 
+
 const allMenuItems = [
   { href: '/dashboard', labelKey: 'sidebar.dashboard', icon: LayoutDashboard, roles: ["Manager", "Super Admin", "Accountant"] },
   { href: '/dashboard/pos', labelKey: 'sidebar.pos', icon: Laptop, roles: ["Waiter", "Cashier", "Manager", "Super Admin", "Bartender"] },
@@ -65,6 +66,7 @@ const allMenuItems = [
     subItems: [
       { href: '/dashboard/accounting', labelKey: 'sidebar.accountingDashboard', icon: LayoutDashboard },
       { href: '/dashboard/accounting/journals', labelKey: 'sidebar.journals', icon: BookOpen },
+      { href: '/dashboard/accounting/expenses', labelKey: 'sidebar.expenses', icon: Banknote },
       { href: '/dashboard/accounting/reports', labelKey: 'sidebar.financialReports', icon: BarChart3 },
     ]
   },
@@ -77,7 +79,6 @@ const allMenuItems = [
       { href: '/dashboard/inventory/suppliers', labelKey: 'sidebar.inventorySuppliers', icon: Truck },
     ]
   },
-  { href: '/dashboard/suppliers', labelKey: 'sidebar.suppliers', icon: Truck, roles: ["Stock Manager", "Manager", "Super Admin"] },
   { href: '/dashboard/categories', labelKey: 'sidebar.categories', icon: Folder, roles: ["Manager", "Super Admin"] },
   { href: '/dashboard/staff', labelKey: 'sidebar.staff', icon: Users2, roles: ["Manager", "Super Admin"] },
   { href: '/dashboard/reports', labelKey: 'sidebar.reports', icon: BarChart3, roles: ["Manager", "Super Admin", "Accountant"] },
@@ -96,7 +97,7 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
   const { user } = useAuth()
   const { t } = useTranslation()
   const { settings } = useSettings()
-  const { state: sidebarState } = useSidebar() // Use the sidebar state
+  const { state: sidebarState, isMobile, setOpen } = useSidebar() // Use the sidebar state
   const [isClient, setIsClient] = useState(false)
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
     'sidebar.accounting': pathname.startsWith('/dashboard/accounting'),
@@ -116,7 +117,22 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
   }, [pathname]);
 
   const toggleMenu = (labelKey: string) => {
-    setOpenMenus(prev => ({ ...prev, [labelKey]: !prev[labelKey] }))
+    if (sidebarState === 'collapsed' && !isMobile) {
+        setOpen(true)
+        // Small delay to allow expansion animation before opening menu
+        setTimeout(() => {
+            setOpenMenus(prev => ({ ...prev, [labelKey]: !prev[labelKey] }))
+        }, 150)
+    } else {
+        setOpenMenus(prev => ({ ...prev, [labelKey]: !prev[labelKey] }))
+    }
+  }
+
+  const handleItemClick = () => {
+    if (sidebarState === 'collapsed' && !isMobile) {
+        setOpen(true)
+    }
+    onLinkClick && onLinkClick()
   }
 
 
@@ -129,20 +145,60 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
   return (
     <>
       <SidebarHeader>
-        <Link href="/dashboard" className="flex items-center gap-2">
-            {isClient ? (
-                <>
-                    <Image src={settings.platformLogo || '/logo.png'} alt="logo" width={24} height={24} className="h-6 w-6 object-contain rounded-sm aspect-square" />
-                    {sidebarState === 'expanded' && (
-                      <span className="font-bold text-lg text-primary-foreground font-headline">{settings.platformName}</span>
-                    )}
-                </>
-            ) : (
-                <>
-                    <Skeleton className="h-6 w-6" />
-                    {sidebarState === 'expanded' && <Skeleton className="h-6 w-24" />}
-                </>
-            )}
+        <Link href="/dashboard" className="flex items-center gap-2 px-2 py-3" onClick={onLinkClick}>
+          {isClient ? (
+            <>
+              {settings.platformLogo ? (
+                  sidebarState === 'collapsed' ? (
+                  // Collapsed: Show only icon
+                  <div className="w-full flex justify-center">
+                    <Image 
+                      src={settings.platformLogo} 
+                      alt="Logo" 
+                      width={37} 
+                      height={37} 
+                      className="object-contain" 
+                    />
+                  </div>
+                ) : (
+                  // Expanded: Show icon + name
+                  <>
+                    <Image 
+                      src={settings.platformLogo} 
+                      alt="Logo" 
+                      width={32} 
+                      height={32} 
+                      className="object-contain shrink-0" 
+                    />
+                    <div>
+                      <h2 className="text-lg font-bold font-headline">{settings.platformName || 'LoungeOS'}</h2>
+                    </div>
+                  </>
+                )
+              ) : (
+                sidebarState === 'collapsed' ? (
+                  // Collapsed: Show only icon placeholder
+                  <div className="w-full flex justify-center">
+                    <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold">
+                      {(settings.platformName || 'LoungeOS').charAt(0)}
+                    </div>
+                  </div>
+                ) : (
+                  // Expanded: Show icon + name
+                  <>
+                    <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">
+                      {(settings.platformName || 'LoungeOS').charAt(0)}
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold font-headline">{settings.platformName || 'LoungeOS'}</h2>
+                    </div>
+                  </>
+                )
+              )}
+            </>
+          ) : (
+            <Skeleton className="h-8 w-full" />
+          )}
         </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -159,22 +215,22 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
                         >
                         <div className="flex items-center gap-2">
                             <item.icon />
-                            <span>{t(item.labelKey)}</span>
+                            {(sidebarState === 'expanded' || isMobile) && <span>{t(item.labelKey)}</span>}
                         </div>
-                        {openMenus[item.labelKey] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        {(sidebarState === 'expanded' || isMobile) && (openMenus[item.labelKey] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />)}
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                 </SidebarMenuItem>
                 <CollapsibleContent className="space-y-1 ml-6 border-l-2 border-muted-foreground/20 pl-2 mt-1">
                     {item.subItems.map(subItem => (
-                        <SidebarMenuItem key={subItem.href} onClick={onLinkClick}>
+                        <SidebarMenuItem key={subItem.href} onClick={handleItemClick}>
                             <Link href={subItem.href} className="w-full">
                                 <SidebarMenuButton
                                 isActive={pathname === subItem.href}
                                 tooltip={t(subItem.labelKey)}
                                 >
                                 <subItem.icon />
-                                <span>{t(subItem.labelKey)}</span>
+                                {(sidebarState === 'expanded' || isMobile) && <span>{t(subItem.labelKey)}</span>}
                                 </SidebarMenuButton>
                             </Link>
                         </SidebarMenuItem>
@@ -182,14 +238,14 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
                 </CollapsibleContent>
               </Collapsible>
             ) : (
-                <SidebarMenuItem key={item.href} onClick={onLinkClick}>
+                <SidebarMenuItem key={item.href} onClick={handleItemClick}>
                 <Link href={item.href!} className="w-full">
                     <SidebarMenuButton
                     isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href!))}
                     tooltip={t(item.labelKey)}
                     >
                     <item.icon />
-                    <span>{t(item.labelKey)}</span>
+                    {(sidebarState === 'expanded' || isMobile) && <span>{t(item.labelKey)}</span>}
                     </SidebarMenuButton>
                 </Link>
                 </SidebarMenuItem>
@@ -199,36 +255,36 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem onClick={onLinkClick}>
+          <SidebarMenuItem onClick={handleItemClick}>
             <Link href="/dashboard/knowledge-base" className="w-full">
               <SidebarMenuButton isActive={pathname.startsWith('/dashboard/knowledge-base')} tooltip={t('sidebar.knowledgeBase')}>
                 <BookOpen />
-                <span>{t('sidebar.knowledgeBase')}</span>
+                {(sidebarState === 'expanded' || isMobile) && <span>{t('sidebar.knowledgeBase')}</span>}
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
-          <SidebarMenuItem onClick={onLinkClick}>
+          <SidebarMenuItem onClick={handleItemClick}>
              <Link href="/dashboard/support" className="w-full">
               <SidebarMenuButton isActive={pathname.startsWith('/dashboard/support')} tooltip={t('sidebar.support')}>
                 <LifeBuoy />
-                <span>{t('sidebar.support')}</span>
+                {(sidebarState === 'expanded' || isMobile) && <span>{t('sidebar.support')}</span>}
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
           <SidebarSeparator />
-          <SidebarMenuItem onClick={onLinkClick}>
+          <SidebarMenuItem onClick={handleItemClick}>
             <Link href="/dashboard/settings" className="w-full">
               <SidebarMenuButton isActive={pathname.startsWith('/dashboard/settings')} tooltip={t('sidebar.settings')}>
                 <Settings />
-                <span>{t('sidebar.settings')}</span>
+                {(sidebarState === 'expanded' || isMobile) && <span>{t('sidebar.settings')}</span>}
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
-           <SidebarMenuItem onClick={onLinkClick}>
+          <SidebarMenuItem onClick={handleItemClick}>
             <Link href="/dashboard/credits" className="w-full">
               <SidebarMenuButton isActive={pathname.startsWith('/dashboard/credits')} tooltip={t('sidebar.credits')}>
                 <GraduationCap />
-                <span>{t('sidebar.credits')}</span>
+                {(sidebarState === 'expanded' || isMobile) && <span>{t('sidebar.credits')}</span>}
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>

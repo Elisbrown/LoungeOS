@@ -143,6 +143,7 @@ export default function SettingsPage() {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('type', 'staff');
+        formData.append('userEmail', user.email);
 
         try {
             const response = await fetch('/api/upload', {
@@ -181,7 +182,7 @@ export default function SettingsPage() {
                     <AvatarImage src={profileForm.watch("avatar") || "https://placehold.co/128x128.png"} alt={user?.name} data-ai-hint="person portrait" />
                     <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <Button onClick={handlePictureUpload} size="icon" className="absolute bottom-1 right-1 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button onClick={handlePictureUpload} size="icon" className="absolute bottom-0 right-0 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Edit profile picture</span>
                   </Button>

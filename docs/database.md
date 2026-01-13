@@ -22,12 +22,15 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     role TEXT NOT NULL CHECK(role IN ('Super Admin', 'Manager', 'Accountant', 'Stock Manager', 'Chef', 'Waiter', 'Cashier', 'Bartender')),
-    status TEXT NOT NULL DEFAULT 'Active' CHECK(status IN ('Active', 'Away')),
+    status TEXT NOT NULL DEFAULT 'Active' CHECK(status IN ('Active', 'Away', 'Inactive')),
     avatar TEXT,
     floor TEXT,
     phone TEXT,
     hire_date DATE,
-    force_password_change INTEGER DEFAULT 1
+    force_password_change INTEGER DEFAULT 1,
+    emergency_contact_name TEXT,
+    emergency_contact_relationship TEXT,
+    emergency_contact_phone TEXT
 );
 
 -- Products/Meals Table
@@ -54,8 +57,17 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY, -- e.g., ORD-XYZ123
     table_name TEXT NOT NULL,
-    status TEXT NOT NULL CHECK(status IN ('Pending', 'In Progress', 'Ready', 'Completed')),
-    timestamp DATETIME NOT NULL
+    status TEXT NOT NULL CHECK(status IN ('Pending', 'In Progress', 'Ready', 'Completed', 'Canceled')),
+    timestamp DATETIME NOT NULL,
+    subtotal REAL DEFAULT 0,
+    discount REAL DEFAULT 0,
+    discount_name TEXT,
+    tax REAL DEFAULT 0,
+    total REAL DEFAULT 0,
+    waiter_id INTEGER REFERENCES users(id),
+    cancelled_by INTEGER REFERENCES users(id),
+    cancellation_reason TEXT,
+    cancelled_at DATETIME
 );
 
 -- Order Items Table
@@ -133,7 +145,9 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     action TEXT NOT NULL,
+    target TEXT,
     details TEXT,
+    metadata TEXT, -- JSON string for additional context (e.g., prev/new values)
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
@@ -220,12 +234,12 @@ You would replace the mock function with a real database query like this:
 ```typescript
 // Example: src/lib/db/products.ts
 
-import Database from 'better-sqlite3';
-const db = new Database('loungeos.db');
+import Database from "better-sqlite3";
+const db = new Database("loungeos.db");
 
 export async function getMeals() {
   // This should query the 'products' table
-  const stmt = db.prepare('SELECT * FROM products');
+  const stmt = db.prepare("SELECT * FROM products");
   return stmt.all();
 }
 

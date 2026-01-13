@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -7,9 +8,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useToast } from '@/hooks/use-toast'
 import { useTranslation } from '@/hooks/use-translation'
-import { Calendar, Clock, MapPin, Users, Plus } from 'lucide-react'
+import { Calendar, Clock, MapPin, Users, Plus, MoreVertical, Edit, Trash2 } from 'lucide-react'
+import { EditEventDialog } from './edit-event-dialog'
+import { useAuth } from '@/context/auth-context'
 
 type Event = {
   id: string;
@@ -26,7 +31,10 @@ type Event = {
 export function EventsView() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
@@ -37,6 +45,7 @@ export function EventsView() {
   });
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const fetchEvents = async () => {
     try {
@@ -58,18 +67,41 @@ export function EventsView() {
   };
 
   const createEvent = async () => {
+    // Basic validation
+    if (!newEvent.title.trim()) {
+      toast({
+        variant: "destructive",
+        title: t('common.error') || "Error",
+        description: t('dashboard.titleRequired') || "Title is required"
+      });
+      return;
+    }
+    if (!newEvent.start_date || !newEvent.end_date) {
+      toast({
+        variant: "destructive",
+        title: t('common.error') || "Error",
+        description: t('dashboard.datesRequired') || "Start and end dates are required"
+      });
+      return;
+    }
+
+    setCreating(true);
     try {
       const response = await fetch('/api/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newEvent),
+        body: JSON.stringify({
+          ...newEvent,
+          userEmail: user?.email
+        }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const createdEvent = await response.json();
-        setEvents([createdEvent, ...events]);
+        setEvents([data, ...events]);
         setIsDialogOpen(false);
         setNewEvent({
           title: '',
@@ -80,18 +112,56 @@ export function EventsView() {
           capacity: 0
         });
         toast({
-          title: "Success",
-          description: "Event created successfully"
+          title: t('common.success') || "Success",
+          description: t('dashboard.eventCreated') || "Event created successfully"
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: t('common.error') || "Error",
+          description: data.error || t('dashboard.eventCreateFailed') || "Failed to create event"
         });
       }
     } catch (error) {
       console.error('Failed to create event:', error);
       toast({
         variant: "destructive",
+        title: t('common.error') || "Error",
+        description: t('dashboard.eventCreateFailed') || "Failed to create event"
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const deleteEvent = async () => {
+    if (!deletingEvent) return;
+
+    try {
+      const response = await fetch(`/api/events/${deletingEvent.id}?userEmail=${user?.email || ''}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setEvents(events.filter(e => e.id !== deletingEvent.id));
+        setDeletingEvent(null);
+        toast({
+          title: "Success",
+          description: "Event deleted successfully"
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete event:', error);
+      toast({
+        variant: "destructive",
         title: "Error",
-        description: "Failed to create event"
+        description: "Failed to delete event"
       });
     }
+  };
+
+  const handleEventUpdated = (updatedEvent: Event) => {
+    setEvents(events.map(e => e.id === updatedEvent.id ? updatedEvent : e));
   };
 
   useEffect(() => {
@@ -181,8 +251,8 @@ export function EventsView() {
                   onChange={(e) => setNewEvent({ ...newEvent, capacity: parseInt(e.target.value) || 0 })}
                 />
               </div>
-              <Button onClick={createEvent} className="w-full">
-                Create Event
+              <Button onClick={createEvent} className="w-full" disabled={creating}>
+                {creating ? (t('common.saving') || 'Creating...') : (t('dashboard.createEvent') || 'Create Event')}
               </Button>
             </div>
           </DialogContent>
@@ -192,8 +262,28 @@ export function EventsView() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {events.map((event) => (
           <Card key={event.id}>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-start justify-between space-y-0">
               <CardTitle className="text-lg">{event.title}</CardTitle>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setEditingEvent(event)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="text-destructive"
+                    onClick={() => setDeletingEvent(event)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">{event.description}</p>
@@ -229,6 +319,32 @@ export function EventsView() {
           No events found. Create your first event to get started.
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <EditEventDialog
+        event={editingEvent}
+        open={!!editingEvent}
+        onOpenChange={(open) => !open && setEditingEvent(null)}
+        onEventUpdated={handleEventUpdated}
+      />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingEvent} onOpenChange={() => setDeletingEvent(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the event "{deletingEvent?.title}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteEvent} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
-} 
+}

@@ -1,8 +1,10 @@
+
 // src/context/inventory-context.tsx
 "use client"
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import type { InventoryItem, InventoryMovement, InventoryCategory, InventorySupplier } from '@/lib/db/inventory';
+import { useAuth } from './auth-context';
 
 type InventoryContextType = {
     // Items
@@ -57,6 +59,7 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
     const [categories, setCategories] = useState<InventoryCategory[]>([]);
     const [suppliers, setSuppliers] = useState<InventorySupplier[]>([]);
     const [stats, setStats] = useState<InventoryContextType['stats']>(null);
+    const { user } = useAuth();
     const [loading, setLoading] = useState({
         items: false,
         movements: false,
@@ -66,7 +69,7 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
     });
 
     // Fetch items
-    const fetchItems = async () => {
+    const fetchItems = useCallback(async () => {
         setLoading(prev => ({ ...prev, items: true }));
         try {
             const response = await fetch('/api/inventory');
@@ -79,7 +82,7 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setLoading(prev => ({ ...prev, items: false }));
         }
-    };
+    }, []);
 
     // Add item
     const addItem = async (itemData: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'status' | 'supplier'>) => {
@@ -87,10 +90,12 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
             const response = await fetch('/api/inventory', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(itemData)
+                body: JSON.stringify({ ...itemData, userEmail: user?.email })
             });
             if (response.ok) {
                 await fetchItems();
+            } else {
+                throw new Error('Failed to add item');
             }
         } catch (error) {
             console.error('Error adding inventory item:', error);
@@ -104,10 +109,12 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
             const response = await fetch('/api/inventory', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, ...itemData })
+                body: JSON.stringify({ id, ...itemData, userEmail: user?.email })
             });
             if (response.ok) {
                 await fetchItems();
+            } else {
+                throw new Error('Failed to update item');
             }
         } catch (error) {
             console.error('Error updating inventory item:', error);
@@ -118,10 +125,8 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
     // Delete item
     const deleteItem = async (id: number) => {
         try {
-            const response = await fetch('/api/inventory', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
+            const response = await fetch(`/api/inventory?id=${id}&userEmail=${encodeURIComponent(user?.email || '')}`, {
+                method: 'DELETE'
             });
             if (response.ok) {
                 await fetchItems();
@@ -155,11 +160,14 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
             const response = await fetch('/api/inventory/movements', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(movementData)
+                body: JSON.stringify({ ...movementData, userEmail: user?.email })
             });
             if (response.ok) {
                 await fetchMovements();
                 await fetchItems(); // Refresh items to update stock levels
+            } else {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to add movement');
             }
         } catch (error) {
             console.error('Error adding inventory movement:', error);
@@ -168,7 +176,7 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // Fetch categories
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         setLoading(prev => ({ ...prev, categories: true }));
         try {
             const response = await fetch('/api/categories');
@@ -181,7 +189,7 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setLoading(prev => ({ ...prev, categories: false }));
         }
-    };
+    }, []);
 
     // Add category
     const addCategory = async (categoryData: Omit<InventoryCategory, 'id' | 'created_at'>) => {
@@ -189,7 +197,7 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
             const response = await fetch('/api/categories', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(categoryData)
+                body: JSON.stringify({ ...categoryData, userEmail: user?.email })
             });
             if (response.ok) {
                 await fetchCategories();
@@ -201,7 +209,7 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // Fetch suppliers
-    const fetchSuppliers = async () => {
+    const fetchSuppliers = useCallback(async () => {
         setLoading(prev => ({ ...prev, suppliers: true }));
         try {
             const response = await fetch('/api/suppliers');
@@ -214,7 +222,7 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setLoading(prev => ({ ...prev, suppliers: false }));
         }
-    };
+    }, []);
 
     // Add supplier
     const addSupplier = async (supplierData: Omit<InventorySupplier, 'id' | 'created_at'>) => {
@@ -222,7 +230,7 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
             const response = await fetch('/api/suppliers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(supplierData)
+                body: JSON.stringify({ ...supplierData, userEmail: user?.email })
             });
             if (response.ok) {
                 await fetchSuppliers();
@@ -239,7 +247,7 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
             const response = await fetch('/api/suppliers', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(supplierData)
+                body: JSON.stringify({ ...supplierData, userEmail: user?.email })
             });
             if (response.ok) {
                 await fetchSuppliers();
@@ -253,10 +261,8 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
     // Delete supplier
     const deleteSupplier = async (supplierId: string) => {
         try {
-            const response = await fetch('/api/suppliers', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: supplierId })
+            const response = await fetch(`/api/suppliers?id=${supplierId}&userEmail=${encodeURIComponent(user?.email || '')}`, {
+                method: 'DELETE'
             });
             if (response.ok) {
                 await fetchSuppliers();
@@ -290,7 +296,7 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
         fetchCategories();
         fetchSuppliers();
         fetchStats();
-    }, []);
+    }, [fetchItems, fetchCategories, fetchSuppliers]);
 
     const value: InventoryContextType = {
         items,
@@ -327,4 +333,4 @@ export const useInventory = () => {
         throw new Error('useInventory must be used within an InventoryProvider');
     }
     return context;
-}; 
+};

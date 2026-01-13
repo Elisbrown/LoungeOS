@@ -44,12 +44,14 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
   }
 
   const handleExportCSV = () => {
-    const headers = ["User", "Email", "Action", "Details", "Timestamp"];
+    const headers = ["User", "Email", "Action", "Target", "Details", "Metadata", "Timestamp"];
     const rows = logs.map(log => [
       log.user?.name || 'Unknown',
       log.user?.email || 'Unknown',
       log.action,
+      log.target || '',
       log.details || '',
+      log.metadata ? JSON.stringify(log.metadata) : '',
       format(new Date(log.timestamp), "yyyy-MM-dd HH:mm:ss")
     ]);
 
@@ -75,7 +77,9 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
       (log.user?.name?.toLowerCase().includes(search)) ||
       (log.user?.email?.toLowerCase().includes(search)) ||
       (log.action?.toLowerCase().includes(search)) ||
-      (log.details?.toLowerCase().includes(search))
+      (log.target?.toLowerCase().includes(search)) ||
+      (log.details?.toLowerCase().includes(search)) ||
+      (log.metadata && JSON.stringify(log.metadata).toLowerCase().includes(search))
     );
   }, [logs, searchTerm]);
 
@@ -139,6 +143,7 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
           <TableRow>
             <TableHead>{t('activity.user')}</TableHead>
             <TableHead>{t('activity.action')}</TableHead>
+            <TableHead>{t('activity.target')}</TableHead>
             <TableHead>{t('activity.details')}</TableHead>
             <TableHead>{t('activity.timestamp')}</TableHead>
           </TableRow>
@@ -151,7 +156,7 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
               const userAvatar = log.user?.avatar || "https://placehold.co/100x100.png";
               
               return (
-                <TableRow key={log.id}>
+                <TableRow key={log.id} className="group">
                   <TableCell>
                      <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
@@ -159,20 +164,34 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
                           <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <p className="font-medium">{userName}</p>
-                            <p className="text-xs text-muted-foreground">{userEmail}</p>
+                            <p className="font-medium text-sm">{userName}</p>
+                            <p className="text-[10px] text-muted-foreground">{userEmail}</p>
                         </div>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{log.action}</TableCell>
-                  <TableCell>{log.details || ''}</TableCell>
-                  <TableCell>{format(new Date(log.timestamp), "yyyy-MM-dd HH:mm:ss")}</TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium ring-1 ring-inset ring-gray-500/10">
+                        {log.action}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-xs font-mono">{log.target || '-'}</TableCell>
+                  <TableCell className="max-w-[300px]">
+                    <p className="text-sm truncate" title={log.details || ''}>{log.details || ''}</p>
+                    {log.metadata && (
+                        <p className="text-[10px] text-muted-foreground mt-1 truncate max-w-[200px]">
+                            {typeof log.metadata === 'string' ? log.metadata : JSON.stringify(log.metadata)}
+                        </p>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {format(new Date(log.timestamp), "MMM dd, HH:mm:ss")}
+                  </TableCell>
                 </TableRow>
               );
             })
           ) : (
             <TableRow>
-              <TableCell colSpan={4} className="h-24 text-center">
+              <TableCell colSpan={5} className="h-24 text-center">
                 {searchTerm ? 'No logs match your search' : t('activity.noLogs')}
               </TableCell>
             </TableRow>

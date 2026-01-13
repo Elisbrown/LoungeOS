@@ -70,137 +70,136 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
     return (
       <div 
         ref={ref} 
-        className={cn("p-2 bg-white text-black text-[10px] w-[300px] mx-auto", fontClass)}
-        style={{ lineHeight: settings.receiptLineSpacing }}
+        className={cn("p-4 bg-white text-black text-[12px] w-[302px] mx-auto", fontClass)}
+        style={{ lineHeight: settings.receiptLineSpacing || 1.2, fontFamily: 'monospace' }}
       >
-        <div className="text-center mb-2">
-           <div className="flex items-center justify-center mb-1">
-              {settings.platformLogo ? (
-                <Image src={settings.platformLogo} alt="logo" width={40} height={40} className="h-10 w-10 object-contain aspect-square" />
-              ) : (
-                <LoungeChairIcon className="h-8 w-8 text-black" />
-              )}
+        {/* Header - Centered */}
+        <div className="text-center mb-4 space-y-1">
+          <div className="flex items-center justify-center mb-2">
+            {settings.platformLogo ? (
+              <Image src={settings.platformLogo} alt="logo" width={50} height={50} className="h-12 w-12 object-contain" />
+            ) : (
+              <LoungeChairIcon className="h-10 w-10 text-black" />
+            )}
           </div>
-          <h1 className="text-sm font-bold font-sans">{settings.organizationName}</h1>
-          <p>{settings.contactAddress}</p>
-          <p>Tel: {settings.contactPhone}</p>
-          {settings.receiptHeader && <p className="mt-1 text-[9px]">{settings.receiptHeader}</p>}
+          <h1 className="text-base font-bold uppercase">{settings.organizationName}</h1>
+          <p className="text-[11px] leading-tight">{settings.contactAddress}</p>
+          <p className="text-[11px]">Tel: {settings.contactPhone}</p>
+          {settings.receiptHeader && <p className="mt-1 text-[11px] font-medium">{settings.receiptHeader}</p>}
         </div>
 
-        <div className="mb-1">
-            {settings.receiptCustomFields.map((field, index) => (
-                <div key={index} className="flex justify-between">
-                    <span className="font-bold">{field.label}:</span>
-                    <span>{field.value}</span>
-                </div>
-            ))}
-        </div>
-        
-        <div className="mb-1">
+        <div className="border-t border-dashed border-black my-2" />
+
+        {/* Receipt Details - Left/Right */}
+        <div className="space-y-1 text-[11px]">
+          <div className="flex justify-between">
+            <span className="font-bold">{type === 'Invoice' ? 'INVOICE:' : 'RECEIPT:'}</span>
+            <span>#{orderId.split('-').pop()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="font-bold">DATE:</span>
+            <span>{timestamp.toLocaleString()}</span>
+          </div>
+          {table && (
             <div className="flex justify-between">
-                <span className="font-bold">{type === 'Invoice' ? 'Invoice Number' : 'Receipt No'}:</span>
-                <span>{orderId}</span>
-            </div>
-            <div className="flex justify-between">
-                <span className="font-bold">{type === 'Invoice' ? 'Invoice Date' : 'Date'}:</span>
-                <span>{timestamp.toLocaleString()}</span>
-            </div>
-             <div className="flex justify-between">
-                <span className="font-bold">Table:</span>
-                <span>{table}</span>
-            </div>
-            <div className="flex justify-between">
-                <span className="font-bold">Cashier:</span>
-                <span>{cashierName}</span>
-            </div>
-          {settings.receiptShowWaiter && waiterName && (
-             <div className="flex justify-between">
-                <span className="font-bold">Waiter:</span>
-                <span>{waiterName}</span>
+              <span className="font-bold">TABLE:</span>
+              <span>{table}</span>
             </div>
           )}
+          <div className="flex justify-between">
+            <span className="font-bold">CASHIER:</span>
+            <span>{cashierName}</span>
+          </div>
+          {settings.receiptShowWaiter && waiterName && (
+            <div className="flex justify-between">
+              <span className="font-bold">WAITER:</span>
+              <span>{waiterName}</span>
+            </div>
+          )}
+          {settings.receiptCustomFields.map((field, index) => (
+            <div key={index} className="flex justify-between">
+              <span className="font-bold">{field.label.toUpperCase()}:</span>
+              <span>{field.value}</span>
+            </div>
+          ))}
         </div>
 
-        <hr className="border-dashed border-black my-1" />
-        
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-dashed border-black">
-              <th className="text-left font-bold w-1/2">Item</th>
-              <th className="text-center font-bold">Qty</th>
-              <th className="text-right font-bold">Rate</th>
-              <th className="text-right font-bold">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map(item => (
-              <tr key={item.id}>
-                <td className="text-left">{item.name}</td>
-                <td className="text-center">{item.quantity}</td>
-                <td className="text-right">{formatCurrency(item.price, settings.defaultCurrency)}</td>
-                <td className="text-right">{formatCurrency(item.price * item.quantity, settings.defaultCurrency)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="border-t border-dashed border-black my-2" />
 
-        <hr className="border-dashed border-black my-1" />
-        
-        <div className="space-y-1">
-            <div className="flex justify-between">
-              <span>Total Qty:</span>
-              <span>{totalQuantity}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Sub Total:</span>
-              <span>{formatCurrency(subtotal, settings.defaultCurrency)}</span>
-            </div>
-            
-            {/* Discount */}
-            {discount && discount > 0 && (
-              <div className="flex justify-between">
-                <span>Discount{discountName ? ` (${discountName})` : ''}:</span>
-                <span>-{formatCurrency(discount, settings.defaultCurrency)}</span>
+        {/* Items */}
+        <div className="space-y-3">
+          {items.map(item => (
+            <div key={item.id} className="space-y-0.5">
+              <div className="font-bold uppercase">{item.name}</div>
+              <div className="flex justify-between items-center text-[11px]">
+                <span>{item.quantity} x {formatCurrency(item.price, settings.defaultCurrency)}</span>
+                <span className="font-medium">{formatCurrency(item.price * item.quantity, settings.defaultCurrency)}</span>
               </div>
-            )}
-            
-            {/* Tax */}
-            {settings.taxEnabled && tax && tax > 0 && (
-              <div className="flex justify-between">
-                <span>Tax{taxRate ? ` (${taxRate}%)` : ''}:</span>
-                <span>{formatCurrency(tax, settings.defaultCurrency)}</span>
-              </div>
-            )}
-            
-            <hr className="border-dashed border-black my-1" />
-            <div className="flex justify-between font-bold">
-              <span>TOTAL:</span>
-              <span>{formatCurrency(total, settings.defaultCurrency)}</span>
             </div>
+          ))}
+        </div>
+
+        <div className="border-t border-dashed border-black my-2" />
+
+        {/* Totals */}
+        <div className="space-y-1.5 text-[12px]">
+          <div className="flex justify-between">
+            <span>Subtotal:</span>
+            <span>{formatCurrency(subtotal, settings.defaultCurrency)}</span>
+          </div>
+          
+          <div className="flex justify-between">
+            <span>Discount{discountName ? ` (${discountName})` : ''}:</span>
+            <span>-{formatCurrency(discount || 0, settings.defaultCurrency)}</span>
+          </div>
+          
+          <div className="flex justify-between">
+            <span>Tax{taxRate ? ` (${taxRate}%)` : ''}:</span>
+            <span>{formatCurrency(tax || 0, settings.defaultCurrency)}</span>
+          </div>
+          
+          <div className="border-t border-black my-1" />
+          
+          <div className="flex justify-between font-bold text-[14px]">
+            <span>TOTAL:</span>
+            <span>{formatCurrency(total, settings.defaultCurrency)}</span>
+          </div>
         </div>
 
         {type === 'Receipt' && (
-            <>
-                <hr className="border-dashed border-black my-1" />
-                <div className="space-y-1">
-                    {amountTendered !== undefined && (
-                        <div className="flex justify-between">
-                            <span>Amount Tendered ({paymentMethod}):</span>
-                            <span>{formatCurrency(amountTendered, settings.defaultCurrency)}</span>
-                        </div>
-                    )}
-                    {change !== undefined && (
-                         <div className="flex justify-between">
-                            <span>Change:</span>
-                            <span>{formatCurrency(change, settings.defaultCurrency)}</span>
-                        </div>
-                    )}
+          <>
+            <div className="border-t border-dashed border-black my-2" />
+            <div className="space-y-1 text-[11px]">
+              {amountTendered !== undefined && (
+                <div className="flex justify-between">
+                  <span>Paid ({paymentMethod}):</span>
+                  <span>{formatCurrency(amountTendered, settings.defaultCurrency)}</span>
                 </div>
-            </>
+              )}
+              {change !== undefined && change > 0 && (
+                <div className="flex justify-between">
+                  <span>Change:</span>
+                  <span>{formatCurrency(change, settings.defaultCurrency)}</span>
+                </div>
+              )}
+            </div>
+          </>
         )}
         
-        <div className="text-center mt-3">
-          <p className="font-bold">{settings.receiptFooter}</p>
+        <div className="border-t border-dashed border-black my-2" />
+        
+        {/* Footer - Centered */}
+        <div className="text-center mt-4 space-y-2">
+          <div className="space-y-0.5">
+            <p className="font-bold uppercase text-[11px]">{settings.receiptFooter || 'Thank you for your business!'}</p>
+            <p className="text-[10px]">Please come again!</p>
+          </div>
+          
+          <div className="border-t border-dotted border-black/20 pt-2 space-y-0.5 opacity-70">
+            <p className="text-[9px] font-medium">Software: LoungeOS</p>
+            <p className="text-[9px]">Developed by SIGALIX</p>
+            <p className="text-[8px] whitespace-nowrap">+237 679 690 703 | sigalix.net</p>
+          </div>
         </div>
       </div>
     );

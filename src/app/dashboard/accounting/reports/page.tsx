@@ -1,48 +1,42 @@
-// New page for financial reports
+// Financial reports page
 "use client"
 
 import { Header } from '@/components/dashboard/header'
 import { useAuth } from '@/context/auth-context'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Lock, FileText } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Lock } from 'lucide-react'
 import { useTranslation } from '@/hooks/use-translation'
-import { Button } from '@/components/ui/button'
+import { ReportViewer } from '@/components/dashboard/accounting/report-viewer'
 
 function ReportsContent() {
     const { t } = useTranslation()
     
     return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-                <CardHeader>
-                    <FileText className="h-8 w-8 mb-2 text-primary" />
-                    <CardTitle>{t('accounting.reports.pnl')}</CardTitle>
-                    <CardDescription>{t('accounting.reports.pnlDesc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button className="w-full">{t('accounting.reports.generate')}</Button>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <FileText className="h-8 w-8 mb-2 text-primary" />
-                    <CardTitle>{t('accounting.reports.balanceSheet')}</CardTitle>
-                    <CardDescription>{t('accounting.reports.balanceSheetDesc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button className="w-full">{t('accounting.reports.generate')}</Button>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <FileText className="h-8 w-8 mb-2 text-primary" />
-                    <CardTitle>{t('accounting.reports.cashFlow')}</CardTitle>
-                    <CardDescription>{t('accounting.reports.cashFlowDesc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button className="w-full">{t('accounting.reports.generate')}</Button>
-                </CardContent>
-            </Card>
+        <div className="space-y-6">
+            <div>
+                <h2 className="text-2xl font-bold">Financial Reports</h2>
+                <p className="text-sm text-muted-foreground">Generate and view financial reports</p>
+            </div>
+
+            <div className="grid gap-6">
+                <ReportViewer
+                    reportType="profit-loss"
+                    title={t('accounting.reports.pnl')}
+                    description={t('accounting.reports.pnlDesc')}
+                />
+
+                <ReportViewer
+                    reportType="balance-sheet"
+                    title={t('accounting.reports.balanceSheet')}
+                    description={t('accounting.reports.balanceSheetDesc')}
+                />
+
+                <ReportViewer
+                    reportType="cash-flow"
+                    title={t('accounting.reports.cashFlow')}
+                    description={t('accounting.reports.cashFlowDesc')}
+                />
+            </div>
         </div>
     )
 }

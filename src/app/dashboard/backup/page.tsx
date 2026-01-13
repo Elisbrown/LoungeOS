@@ -45,6 +45,7 @@ interface BackupSettings {
 }
 
 function BackupPageContent() {
+  const { user } = useAuth()
   const { t } = useTranslation()
   const { toast } = useToast()
   const [isRestoreConfirmOpen, setRestoreConfirmOpen] = useState(false)
@@ -107,7 +108,7 @@ function BackupPageContent() {
   const handleManualBackup = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/backup');
+      const response = await fetch(`/api/backup?userEmail=${user?.email || ''}`);
       if (!response.ok) {
         throw new Error('Backup failed');
       }
@@ -161,6 +162,7 @@ function BackupPageContent() {
     
     const formData = new FormData();
     formData.append('backupFile', backupFile);
+    formData.append('userEmail', user?.email || '');
 
     try {
         const response = await fetch('/api/backup', {
@@ -198,7 +200,7 @@ function BackupPageContent() {
       const response = await fetch('/api/backup/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename }),
+        body: JSON.stringify({ filename, userEmail: user?.email }),
       });
 
       if (!response.ok) throw new Error('Download failed');
@@ -222,7 +224,7 @@ function BackupPageContent() {
 
   const handleDeleteBackup = async (id: number) => {
     try {
-      const response = await fetch(`/api/backup/history?id=${id}`, {
+      const response = await fetch(`/api/backup/history?id=${id}&userEmail=${user?.email || ''}`, {
         method: 'DELETE',
       });
 
@@ -242,7 +244,7 @@ function BackupPageContent() {
       const response = await fetch('/api/backup/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ frequency, enabled }),
+        body: JSON.stringify({ frequency, enabled, userEmail: user?.email }),
       });
 
       if (!response.ok) throw new Error('Update failed');

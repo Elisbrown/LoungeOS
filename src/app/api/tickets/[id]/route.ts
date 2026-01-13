@@ -1,9 +1,17 @@
+
 // src/app/api/tickets/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getTicketById, updateTicket, deleteTicket } from '@/lib/db/tickets';
 import { addActivityLog } from '@/lib/db/activity-logs';
+import { getStaffByEmail } from '@/lib/db/staff';
 
 export const runtime = 'nodejs';
+
+async function getActorId(email?: string) {
+    if (!email || email === "system") return null;
+    const user = await getStaffByEmail(email);
+    return user ? Number(user.id) : null;
+}
 
 export async function GET(
     request: Request,
@@ -28,17 +36,28 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     try {
-        const ticketData = await request.json();
+        const body = await request.json();
+        const { userEmail, ...ticketData } = body;
         const ticketId = Number(params.id);
         
+        const oldTicket = getTicketById(ticketId);
         const updatedTicket = updateTicket(ticketId, ticketData);
         
-        // Log activity - use creator if no user specified
-        const userId = ticketData.user_id || updatedTicket.created_by;
+        if (!updatedTicket) {
+            return NextResponse.json({ message: 'Ticket not found' }, { status: 404 });
+        }
+
+        const actorId = await getActorId(userEmail);
+
         await addActivityLog(
-            userId,
-            'ticket_updated',
-            `Updated ticket: ${updatedTicket.title}`
+            actorId || updatedTicket.created_by,
+            'TICKET_UPDATE',
+            `Updated ticket: ${updatedTicket.title}`,
+            `TICKET-${updatedTicket.id}`,
+            {
+                status: oldTicket?.status !== updatedTicket.status ? { old: oldTicket?.status, new: updatedTicket.status } : undefined,
+                priority: oldTicket?.priority !== updatedTicket.priority ? { old: oldTicket?.priority, new: updatedTicket.priority } : undefined
+            }
         );
         
         return NextResponse.json(updatedTicket);
@@ -54,6 +73,8 @@ export async function DELETE(
 ) {
     try {
         const ticketId = Number(params.id);
+        const { searchParams } = new URL(request.url);
+        const userEmail = searchParams.get('userEmail');
         
         // Get ticket before deletion for logging
         const ticket = getTicketById(ticketId);
@@ -64,11 +85,12 @@ export async function DELETE(
         const deleted = deleteTicket(ticketId);
         
         if (deleted) {
-            // Log activity
+            const actorId = await getActorId(userEmail || undefined);
             await addActivityLog(
-                ticket.created_by,
-                'ticket_deleted',
-                `Deleted ticket: ${ticket.title}`
+                actorId || ticket.created_by,
+                'TICKET_DELETE',
+                `Deleted ticket: ${ticket.title}`,
+                `TICKET-${ticketId}`
             );
             
             return NextResponse.json({ message: 'Ticket deleted successfully' });

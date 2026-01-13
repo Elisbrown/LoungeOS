@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -7,8 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Edit, Trash2, Save, X, Calendar, Clock } from 'lucide-react'
+import { Plus, Edit, Trash2, Save, X, Calendar } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from '@/hooks/use-translation'
 import { useAuth } from '@/context/auth-context'
 
 type Note = {
@@ -30,6 +32,7 @@ export function DashboardNotes() {
   const [newNote, setNewNote] = useState({ title: '', content: '', tags: '' });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   // Fetch notes from database
@@ -73,7 +76,8 @@ export function DashboardNotes() {
         body: JSON.stringify({
           title: newNote.title,
           content: newNote.content,
-          tags: newNote.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+          tags: newNote.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+          userEmail: user?.email
         })
       });
 
@@ -108,7 +112,8 @@ export function DashboardNotes() {
         body: JSON.stringify({
           title: selectedNote.title,
           content: selectedNote.content,
-          tags: selectedNote.tags
+          tags: selectedNote.tags,
+          userEmail: user?.email
         })
       });
 
@@ -136,7 +141,7 @@ export function DashboardNotes() {
   // Delete note
   const deleteNote = async (noteId: string) => {
     try {
-      const response = await fetch(`/api/notes/${noteId}`, {
+      const response = await fetch(`/api/notes/${noteId}?userEmail=${user?.email || ''}`, {
         method: 'DELETE'
       });
 
@@ -170,7 +175,10 @@ export function DashboardNotes() {
       const response = await fetch(`/api/notes/${noteId}/pin`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_pinned: !note.is_pinned })
+        body: JSON.stringify({ 
+            is_pinned: !note.is_pinned,
+            userEmail: user?.email
+        })
       });
 
       if (response.ok) {
@@ -207,8 +215,8 @@ export function DashboardNotes() {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Quick Notes</h3>
-          <Button size="sm" disabled>Loading...</Button>
+          <h3 className="font-semibold">{t('dashboard.quickNotes')}</h3>
+          <Button size="sm" disabled>{t('common.loading')}</Button>
         </div>
         <div className="space-y-2">
           {[...Array(3)].map((_, i) => (
@@ -228,42 +236,42 @@ export function DashboardNotes() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Quick Notes</h3>
+        <h3 className="font-semibold">{t('dashboard.quickNotes')}</h3>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="flex items-center gap-1">
               <Plus className="h-3 w-3" />
-              New Note
+              {t('dashboard.newNote')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create New Note</DialogTitle>
+              <DialogTitle>{t('dashboard.createNewNote')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <Input
-                placeholder="Note title"
+                placeholder={t('dashboard.noteTitle')}
                 value={newNote.title}
                 onChange={(e) => setNewNote(prev => ({ ...prev, title: e.target.value }))}
               />
               <Textarea
-                placeholder="Note content..."
+                placeholder={t('dashboard.noteContent')}
                 value={newNote.content}
                 onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
                 rows={6}
               />
               <Input
-                placeholder="Tags (comma separated)"
+                placeholder={t('dashboard.tagsPlaceholder')}
                 value={newNote.tags}
                 onChange={(e) => setNewNote(prev => ({ ...prev, tags: e.target.value }))}
               />
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button onClick={createNote}>
                   <Save className="h-3 w-3 mr-1" />
-                  Save
+                  {t('common.save')}
                 </Button>
               </div>
             </div>
@@ -275,7 +283,7 @@ export function DashboardNotes() {
       <div className="space-y-2 max-h-[400px] overflow-y-auto">
         {sortedNotes.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
-            No notes yet. Create your first note!
+            {t('dashboard.noNotes')}
           </div>
         ) : (
           sortedNotes.map(note => (
@@ -292,7 +300,7 @@ export function DashboardNotes() {
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium truncate">{note.title}</h4>
                       {note.is_pinned && (
-                        <Badge variant="secondary" className="text-xs">Pinned</Badge>
+                        <Badge variant="secondary" className="text-xs">{t('dashboard.pinned')}</Badge>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
@@ -362,13 +370,13 @@ export function DashboardNotes() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              {isEditing ? 'Edit Note' : 'View Note'}
+              {isEditing ? t('dashboard.editNote') : t('dashboard.viewNote')}
               <div className="flex items-center gap-2">
                 {isEditing ? (
                   <>
                     <Button size="sm" onClick={updateNote}>
                       <Save className="h-3 w-3 mr-1" />
-                      Save
+                      {t('common.save')}
                     </Button>
                     <Button 
                       size="sm" 
@@ -376,7 +384,7 @@ export function DashboardNotes() {
                       onClick={() => setIsEditing(false)}
                     >
                       <X className="h-3 w-3 mr-1" />
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                   </>
                 ) : (
@@ -386,7 +394,7 @@ export function DashboardNotes() {
                     onClick={() => setIsEditing(true)}
                   >
                     <Edit className="h-3 w-3 mr-1" />
-                    Edit
+                    {t('common.edit')}
                   </Button>
                 )}
               </div>

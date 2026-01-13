@@ -2,7 +2,8 @@
 "use client"
 
 import React, { useState, useRef } from "react"
-import ReactDOMServer from 'react-dom/server';
+import { jsPDF } from "jspdf"
+import autoTable from "jspdf-autotable"
 
 import {
   Dialog,
@@ -18,17 +19,23 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
-import { Receipt, type ReceiptProps } from './receipt'
-import { Printer } from "lucide-react"
+import { type ReceiptProps } from './receipt'
+import { Download } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { type Order, type OrderItem } from "@/context/order-context"
 import { useSettings } from "@/context/settings-context";
+import { useStaff } from "@/context/staff-context";
 import { formatCurrency } from "@/lib/utils";
 
 export type PaymentDetails = {
     paymentMethod: string;
     amountPaid: number;
     change: number;
+    subtotal?: number;
+    discount?: number;
+    discountName?: string;
+    tax?: number;
+    total?: number;
 }
 
 type PaymentDialogProps = {
@@ -69,34 +76,221 @@ export function PaymentDialog({
   const { t } = useTranslation()
   const { user } = useAuth()
   const { settings } = useSettings();
+  const { staff } = useStaff();
   
-  const handlePrint = () => {
-    if (!receiptProps) return;
+  const getBase64Image = async (url: string): Promise<string> => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+  
+  const handleDownloadReceipt = async () => {
+    if (!receiptProps || !user) return;
+    
+    const doc = new jsPDF({
+        unit: 'mm',
+        format: [80, 297]
+    });
 
-    const printContent = ReactDOMServer.renderToString(
-      <>
-        <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-          @import url('https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap');
-          body { -webkit-print-color-adjust: exact; }
-        `}</style>
-        <Receipt {...receiptProps} />
-      </>
-    );
+    const pageWidth = 80;
+    let currentY = 10;
+    const margin = 5;
 
-    const printWindow = window.open('', '', 'height=600,width=400');
-    if (printWindow) {
-        printWindow.document.write('<html><head><title>Print Receipt</title>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(printContent);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-           printWindow.print();
-           printWindow.close();
-        }, 500);
+    doc.setFont('courier', 'normal');
+
+    const centerText = (text: string, y: number, fontSize: number = 10, style: 'normal' | 'bold' = 'normal') => {
+        doc.setFontSize(fontSize);
+        doc.setFont('courier', style);
+        const textWidth = doc.getTextWidth(text);
+        const x = (pageWidth - textWidth) / 2;
+        doc.text(text, x, y);
+    };
+
+    const drawDashedLine = (y: number) => {
+        doc.setLineDashPattern([1, 1], 0);
+        doc.line(margin, y, pageWidth - margin, y);
+        doc.setLineDashPattern([], 0);
+    };
+
+    // Header - Logo logic
+    if (settings.platformLogo) {
+        try {
+            const base64Logo = await getBase64Image(settings.platformLogo);
+            // Centering logo (12mm x 12mm)
+            const logoSize = 12;
+            doc.addImage(base64Logo, 'PNG', (pageWidth - logoSize) / 2, currentY, logoSize, logoSize);
+            currentY += logoSize + 4;
+        } catch (e) {
+            console.error('Failed to add logo to PDF:', e);
+        }
     }
+
+    centerText(settings.organizationName.toUpperCase(), currentY, 14, 'bold');
+    currentY += 6;
+    centerText(settings.contactAddress, currentY, 9);
+    currentY += 4;
+    centerText(`Tel: ${settings.contactPhone}`, currentY, 9);
+    
+    if (settings.receiptHeader) {
+        currentY += 5;
+        centerText(settings.receiptHeader, currentY, 9);
+    }
+
+    currentY += 6;
+    drawDashedLine(currentY);
+    currentY += 6;
+
+    // Receipt Info
+    doc.setFontSize(9);
+    doc.setFont('courier', 'bold');
+    doc.text(`RECEIPT:`, margin, currentY);
+    doc.setFont('courier', 'normal');
+    doc.text(`#${receiptProps.orderId.split('-').pop()}`, pageWidth - margin, currentY, { align: 'right' });
+    currentY += 5;
+
+    doc.setFont('courier', 'bold');
+    doc.text(`DATE:`, margin, currentY);
+    doc.setFont('courier', 'normal');
+    doc.text(receiptProps.timestamp.toLocaleString(), pageWidth - margin, currentY, { align: 'right' });
+    currentY += 5;
+
+    doc.setFont('courier', 'bold');
+    doc.text(`TABLE:`, margin, currentY);
+    doc.setFont('courier', 'normal');
+    doc.text(receiptProps.table, pageWidth - margin, currentY, { align: 'right' });
+    currentY += 5;
+
+    doc.setFont('courier', 'bold');
+    doc.text(`CASHIER:`, margin, currentY);
+    doc.setFont('courier', 'normal');
+    doc.text(user.name, pageWidth - margin, currentY, { align: 'right' });
+    currentY += 5;
+    const waiter = staff.find(s => parseInt(s.id) === (orderForReceipt as Order).waiter_id);
+    const waiterName = waiter?.name;
+
+    if (settings.receiptShowWaiter && waiterName) {
+        doc.setFont('courier', 'bold');
+        doc.text(`WAITER:`, margin, currentY);
+        doc.setFont('courier', 'normal');
+        doc.text(waiterName, pageWidth - margin, currentY, { align: 'right' });
+        currentY += 5;
+    }
+
+    // Custom Fields
+    settings.receiptCustomFields.forEach(field => {
+        doc.setFont('courier', 'bold');
+        doc.text(`${field.label.toUpperCase()}:`, margin, currentY);
+        doc.setFont('courier', 'normal');
+        doc.text(field.value, pageWidth - margin, currentY, { align: 'right' });
+        currentY += 5;
+    });
+
+    currentY += 1;
+    drawDashedLine(currentY);
+    currentY += 7;
+
+    // Items
+    receiptProps.items.forEach(item => {
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(10);
+        doc.text(item.name.toUpperCase(), margin, currentY);
+        currentY += 5;
+        
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(9);
+        const qtyPrice = `${item.quantity} x ${formatCurrency(item.price, settings.defaultCurrency)}`;
+        doc.text(qtyPrice, margin, currentY);
+        
+        const itemTotal = formatCurrency(item.price * item.quantity, settings.defaultCurrency);
+        doc.text(itemTotal, pageWidth - margin, currentY, { align: 'right' });
+        currentY += 8;
+    });
+
+    drawDashedLine(currentY);
+    currentY += 6;
+
+    // Totals Section using autoTable
+    autoTable(doc, {
+        startY: currentY,
+        body: [
+            ['Subtotal:', formatCurrency(receiptProps.subtotal, settings.defaultCurrency)],
+            [`Discount${receiptProps.discountName ? ` (${receiptProps.discountName})` : ''}:`, `-${formatCurrency(receiptProps.discount || 0, settings.defaultCurrency)}`],
+            ['Tax:', formatCurrency(receiptProps.tax || 0, settings.defaultCurrency)],
+        ],
+        theme: 'plain',
+        styles: { 
+            fontSize: 10, 
+            cellPadding: { top: 1, bottom: 1, left: 0, right: 0 },
+            font: 'courier'
+        },
+        columnStyles: {
+            0: { cellWidth: 45, halign: 'left' },
+            1: { cellWidth: 25, halign: 'right' }
+        },
+        margin: { left: margin, right: margin }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 2;
+
+    // Solid Line before Total
+    doc.setLineWidth(0.5);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+    doc.setLineWidth(0.2);
+    currentY += 6;
+
+    // Total
+    doc.setFontSize(12);
+    doc.setFont('courier', 'bold');
+    doc.text(`TOTAL:`, margin, currentY);
+    doc.text(formatCurrency(receiptProps.total, settings.defaultCurrency), pageWidth - margin, currentY, { align: 'right' });
+    currentY += 6;
+
+    drawDashedLine(currentY);
+    currentY += 6;
+
+    // Paid Info
+    doc.setFontSize(10);
+    doc.setFont('courier', 'normal');
+    doc.text(`Paid (${receiptProps.paymentMethod}):`, margin, currentY);
+    doc.text(formatCurrency(receiptProps.amountTendered || receiptProps.total, settings.defaultCurrency), pageWidth - margin, currentY, { align: 'right' });
+    currentY += 4;
+    
+    if (receiptProps.change && receiptProps.change > 0) {
+        doc.text(`Change:`, margin, currentY);
+        doc.text(formatCurrency(receiptProps.change, settings.defaultCurrency), pageWidth - margin, currentY, { align: 'right' });
+        currentY += 4;
+    }
+    currentY += 2;
+
+    drawDashedLine(currentY);
+    currentY += 10;
+
+    // Footer
+    centerText((settings.receiptFooter || 'THANK YOU FOR YOUR VISIT!').toUpperCase(), currentY, 10, 'bold');
+    currentY += 5;
+    centerText('Please come again!', currentY, 9);
+    
+    currentY += 8;
+    drawDashedLine(currentY);
+    currentY += 5;
+    centerText('Software: LoungeOS', currentY, 8, 'bold');
+    currentY += 4;
+    centerText('Developed by SIGALIX', currentY, 8);
+    currentY += 4;
+    centerText('+237 679 690 703 | sigalix.net', currentY, 7);
+
+    // Save PDF
+    doc.save(`Receipt_${receiptProps.orderId.split('-').pop()}.pdf`);
+    
+    toast({
+        title: "Receipt Downloaded",
+        description: `Receipt for order #${receiptProps.orderId.split('-').pop()} has been saved.`
+    });
   };
 
 
@@ -122,6 +316,11 @@ export function PaymentDialog({
         paymentMethod,
         amountPaid: paymentMethod === 'cash' ? amountPaid : totalAmount,
         change,
+        subtotal,
+        discount,
+        discountName,
+        tax,
+        total: totalAmount
     };
     
     const finalReceiptProps: ReceiptProps = {
@@ -138,6 +337,7 @@ export function PaymentDialog({
       paymentMethod: paymentDetails.paymentMethod,
       timestamp: new Date(),
       cashierName: user.name,
+      waiterName: staff.find(s => parseInt(s.id) === (orderForReceipt as Order).waiter_id)?.name,
       settings: settings,
       // Pass tax and discount information
       discount,
@@ -174,7 +374,7 @@ export function PaymentDialog({
         <DialogHeader>
           <DialogTitle className="font-headline">{isConfirmed ? "Payment Successful" : t('pos.completePaymentTitle')}</DialogTitle>
           <DialogDescription>
-            {isConfirmed ? "You can now print the receipt or close this window." : t('pos.completePaymentDesc')}
+            {isConfirmed ? "You can now download the receipt or close this window." : t('pos.completePaymentDesc')}
           </DialogDescription>
         </DialogHeader>
         {!isConfirmed ? (
@@ -257,8 +457,8 @@ export function PaymentDialog({
                 <Button type="button" variant="outline" onClick={handleCloseDialog}>
                     Close
                 </Button>
-                <Button type="button" onClick={handlePrint} disabled={!receiptProps}>
-                    <Printer className="mr-2 h-4 w-4" /> Print Receipt
+                <Button type="button" onClick={handleDownloadReceipt} disabled={!receiptProps}>
+                    <Download className="mr-2 h-4 w-4" /> {t('orders.downloadReceipt')}
                 </Button>
               </>
           ) : (

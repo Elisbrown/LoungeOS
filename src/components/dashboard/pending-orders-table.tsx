@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Card, CardContent } from '@/components/ui/card'
 import { Clock, CheckCircle, XCircle, Eye, ArrowRight } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useTranslation } from '@/hooks/use-translation'
+import { useLanguage } from '@/context/language-context'
 import { formatCurrency } from '@/lib/utils'
 import { useSettings } from '@/context/settings-context'
+import { useRouter } from 'next/navigation'
 
 type PendingOrder = {
   id: string;
@@ -31,7 +32,11 @@ export function PendingOrdersTable() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { language } = useLanguage();
   const { settings } = useSettings();
+  const router = useRouter();
+
+  const locale = language === 'fr' ? 'fr-FR' : 'en-US';
 
   const fetchPendingOrders = async () => {
     try {
@@ -44,8 +49,8 @@ export function PendingOrdersTable() {
       console.error('Failed to fetch pending orders:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to load pending orders"
+        title: t('common.error') || "Error",
+        description: t('dashboard.loadingOrdersError') || "Failed to load pending orders"
       });
     } finally {
       setLoading(false);
@@ -65,11 +70,10 @@ export function PendingOrdersTable() {
       });
 
       if (response.ok) {
-        // Refresh the orders list
         await fetchPendingOrders();
         toast({
-          title: "Success",
-          description: `Order ${newStatus.toLowerCase()} successfully`
+          title: t('common.success') || "Success",
+          description: t('dashboard.orderUpdated', { status: t(`pos.${newStatus.toLowerCase().replace(' ', '')}`) || newStatus })
         });
       } else {
         throw new Error('Failed to update status');
@@ -86,42 +90,29 @@ export function PendingOrdersTable() {
 
   useEffect(() => {
     fetchPendingOrders();
-    // Auto-refresh every 30 seconds
     const interval = setInterval(fetchPendingOrders, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'Pending':
-        return 'secondary';
-      case 'In Progress':
-        return 'default';
-      case 'Ready':
-        return 'default';
-      case 'Completed':
-        return 'default';
-      case 'Canceled':
-        return 'destructive';
-      default:
-        return 'secondary';
+      case 'Pending': return 'secondary';
+      case 'In Progress': return 'default';
+      case 'Ready': return 'default';
+      case 'Completed': return 'default';
+      case 'Canceled': return 'destructive';
+      default: return 'secondary';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Pending':
-        return <Clock className="h-3 w-3" />;
-      case 'In Progress':
-        return <ArrowRight className="h-3 w-3" />;
-      case 'Ready':
-        return <CheckCircle className="h-3 w-3" />;
-      case 'Completed':
-        return <CheckCircle className="h-3 w-3" />;
-      case 'Canceled':
-        return <XCircle className="h-3 w-3" />;
-      default:
-        return <Clock className="h-3 w-3" />;
+      case 'Pending': return <Clock className="h-3 w-3" />;
+      case 'In Progress': return <ArrowRight className="h-3 w-3" />;
+      case 'Ready': return <CheckCircle className="h-3 w-3" />;
+      case 'Completed': return <CheckCircle className="h-3 w-3" />;
+      case 'Canceled': return <XCircle className="h-3 w-3" />;
+      default: return <Clock className="h-3 w-3" />;
     }
   };
 
@@ -130,10 +121,10 @@ export function PendingOrdersTable() {
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
     
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return date.toLocaleDateString();
+    if (diffInMinutes < 1) return t('periods.justNow') || 'Just now';
+    if (diffInMinutes < 60) return t('periods.minutesAgo', { count: diffInMinutes }) || `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return t('periods.hoursAgo', { count: Math.floor(diffInMinutes / 60) }) || `${Math.floor(diffInMinutes / 60)}h ago`;
+    return date.toLocaleDateString(locale);
   };
 
   if (loading) {
@@ -155,11 +146,13 @@ export function PendingOrdersTable() {
     return (
       <div className="text-center py-8">
         <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-muted-foreground mb-2">No Pending Orders</h3>
-        <p className="text-sm text-muted-foreground">All orders are up to date!</p>
+        <h3 className="text-lg font-medium text-muted-foreground mb-2">{t('dashboard.noPendingOrders') || 'No Pending Orders'}</h3>
+        <p className="text-sm text-muted-foreground">{t('dashboard.allOrdersUpToDate') || 'All orders are up to date!'}</p>
       </div>
     );
   }
+
+  const displayedOrders = pendingOrders.slice(0, 5);
 
   return (
     <div className="space-y-4">
@@ -167,16 +160,24 @@ export function PendingOrdersTable() {
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            {pendingOrders.length} Pending
+            {pendingOrders.length} {t('dashboard.pending') || 'Pending'}
           </Badge>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchPendingOrders}>
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+            {pendingOrders.length > 5 && (
+                <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/orders')}>
+                    {t('dashboard.viewAll') || 'View All'}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={fetchPendingOrders}>
+                {t('dashboard.refresh') || 'Refresh'}
+            </Button>
+        </div>
       </div>
 
       <div className="space-y-2">
-        {pendingOrders.map(order => (
+        {displayedOrders.map(order => (
           <Card key={order.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
@@ -184,13 +185,13 @@ export function PendingOrdersTable() {
                   <div className="flex items-center gap-2">
                     <Badge variant={getStatusVariant(order.status)} className="flex items-center gap-1">
                       {getStatusIcon(order.status)}
-                      {order.status}
+                      {t(`pos.${order.status.toLowerCase().replace(' ', '')}`) || order.status}
                     </Badge>
                   </div>
                   <div>
-                    <h4 className="font-medium">Table {order.table}</h4>
+                    <h4 className="font-medium">{t('pos.table')} {order.table}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {formatTime(order.timestamp)} • {order.item_count} items
+                      {formatTime(order.timestamp)} • {order.item_count} {t('dashboard.items')}
                     </p>
                   </div>
                 </div>
@@ -202,7 +203,7 @@ export function PendingOrdersTable() {
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Order #{order.id.slice(-6)}
+                    {t('pos.order')} #{order.id.slice(-6)}
                   </p>
                 </div>
               </div>
@@ -221,7 +222,7 @@ export function PendingOrdersTable() {
                 ))}
                 {order.items.length > 3 && (
                   <div className="text-sm text-muted-foreground">
-                    +{order.items.length - 3} more items
+                    {t('dashboard.moreItems', { count: order.items.length - 3 }) || `+${order.items.length - 3} more items`}
                   </div>
                 )}
               </div>
@@ -234,7 +235,7 @@ export function PendingOrdersTable() {
                     onClick={() => updateOrderStatus(order.id, 'In Progress')}
                     disabled={order.status !== 'Pending'}
                   >
-                    Start
+                    {t('common.start') || 'Start'}
                   </Button>
                   <Button
                     variant="outline"
@@ -242,15 +243,7 @@ export function PendingOrdersTable() {
                     onClick={() => updateOrderStatus(order.id, 'Ready')}
                     disabled={order.status === 'Pending'}
                   >
-                    Ready
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updateOrderStatus(order.id, 'Completed')}
-                    disabled={order.status === 'Pending'}
-                  >
-                    Complete
+                    {t('pos.ready') || 'Ready'}
                   </Button>
                 </div>
                 <div className="flex items-center gap-2">
@@ -260,9 +253,13 @@ export function PendingOrdersTable() {
                     onClick={() => updateOrderStatus(order.id, 'Canceled')}
                   >
                     <XCircle className="h-3 w-3 mr-1" />
-                    Cancel
+                    {t('common.cancel') || 'Cancel'}
                   </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => router.push(`/dashboard/orders?id=${order.id}`)}
+                  >
                     <Eye className="h-3 w-3" />
                   </Button>
                 </div>
@@ -271,6 +268,17 @@ export function PendingOrdersTable() {
           </Card>
         ))}
       </div>
+      
+      {pendingOrders.length > 5 && (
+        <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={() => router.push('/dashboard/orders')}
+        >
+            {t('dashboard.viewAllOrders') || 'View All Pending Orders'}
+            <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
-} 
+}

@@ -28,6 +28,21 @@ function getDb(): Database.Database {
     return db;
 }
 
+export async function getMealById(id: string): Promise<Meal | null> {
+    const db = getDb();
+    try {
+        const stmt = db.prepare('SELECT id, name, price, category, image, quantity FROM products WHERE id = ?');
+        const meal = stmt.get(id) as any;
+        if (!meal) return null;
+        return {
+            ...meal,
+            id: String(meal.id)
+        };
+    } finally {
+        // No close
+    }
+}
+
 export async function getMeals(): Promise<Meal[]> {
   const db = getDb();
   try {

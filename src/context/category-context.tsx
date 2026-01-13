@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { useProducts } from './product-context'; 
+import { useAuth } from './auth-context';
 
 export type Category = {
   id: string
@@ -24,6 +25,7 @@ const CategoryContext = createContext<CategoryContextType | undefined>(undefined
 export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const { meals } = useProducts()
+  const { user } = useAuth();
 
   const fetchCategories = useCallback(async () => {
     const response = await fetch('/api/categories');
@@ -40,7 +42,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   }, [meals]);
 
   useEffect(() => {
-    if (meals.length > 0) { // Fetch categories only after meals are loaded
+    if (meals.length > 0) { 
         fetchCategories();
     }
   }, [fetchCategories, meals]);
@@ -49,7 +51,7 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     await fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(categoryData)
+        body: JSON.stringify({ ...categoryData, userEmail: user?.email })
     });
     await fetchCategories();
   };
@@ -58,13 +60,13 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     await fetch(`/api/categories?id=${updatedCategory.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedCategory)
+        body: JSON.stringify({ ...updatedCategory, userEmail: user?.email })
     });
     await fetchCategories();
   };
 
   const deleteCategory = async (categoryId: string) => {
-    await fetch(`/api/categories?id=${categoryId}`, {
+    await fetch(`/api/categories?id=${categoryId}&userEmail=${encodeURIComponent(user?.email || '')}`, {
         method: 'DELETE'
     });
     await fetchCategories();
