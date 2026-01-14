@@ -306,8 +306,9 @@ The system supports 8 different user roles with specific permissions:
 - **Import/Export**:
 
   - CSV import with template download
-  - CSV export
+  - Custom date-range stock movement export (CSV/PDF)
   - Automatic category creation on import
+  - Professional PDF headers with organization logo and address
 
 - **Stock Status Indicators**:
   - ✅ In Stock (green)
@@ -403,6 +404,7 @@ The system supports 8 different user roles with specific permissions:
   - Reserve tables
   - Merge and split tables
   - Real-time status updates
+  - **Bulk Actions**: Move multiple tables to floors, update statuses, or delete in bulk
 
 ---
 
@@ -448,9 +450,9 @@ The system supports 8 different user roles with specific permissions:
 
 - **Key Financial Metrics**:
 
-  - Net Profit (current month)
-  - Total Revenue
-  - Total Expenses
+  - Net Profit (current month, research-backed)
+  - Total Revenue (synced from POS)
+  - Total Expenses (synced from Inventory)
   - Profit Margin %
   - Month-over-month changes
 
@@ -461,33 +463,25 @@ The system supports 8 different user roles with specific permissions:
 ### **Journals** (`/dashboard/accounting/journals`)
 
 - Manual journal entry system
-- Debit/credit recording
-- Transaction history
-- Account classification
-- Export to PDF
+- Automated syncing from POS sales and inventory movements
+- Debit/credit recording with balanced entry validation
+- Transaction history and account classification
+- Export to PDF with professional branding
 
-### **Expense Tracking** (`/dashboard/accounting/expenses`)
+### **Chart of Accounts** (`/dashboard/accounting/chart-of-accounts`)
 
-- **Manual Expense Entry**:
-
-  - Expense category
-  - Amount
-  - Date
-  - Description/notes
-  - Attachments
-
-- **Automated Expense Tracking**:
-  - Automatically track inventory purchases
-  - Link to supplier invoices
-  - Stock movement integration
+- Manage business account hierarchy
+- Classify accounts: Assets, Liabilities, Equity, Revenue, Expenses
+- Add/edit custom accounts for granular financial tracking
 
 ### **Financial Reports** (`/dashboard/accounting/reports`)
 
 - Income Statement (Profit & Loss)
 - Balance Sheet
 - Cash Flow Statement
+- Automated data population via accounting sync
 - Custom date range filtering
-- Export to CSV/PDF
+- Export to CSV/PDF with organization logo and headers
 
 ---
 

@@ -158,6 +158,7 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
                       width={37} 
                       height={37} 
                       className="object-contain" 
+                      unoptimized
                     />
                   </div>
                 ) : (
@@ -169,6 +170,7 @@ export function AppSidebar({ onLinkClick }: AppSidebarProps) {
                       width={32} 
                       height={32} 
                       className="object-contain shrink-0" 
+                      unoptimized
                     />
                     <div>
                       <h2 className="text-lg font-bold font-headline">{settings.platformName || 'LoungeOS'}</h2>

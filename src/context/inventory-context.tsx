@@ -10,6 +10,7 @@ type InventoryContextType = {
     // Items
     items: InventoryItem[];
     addItem: (itemData: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'status' | 'supplier'>) => Promise<void>;
+    bulkAddItems: (itemsData: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'status' | 'supplier'>[]) => Promise<void>;
     updateItem: (id: number, itemData: Partial<InventoryItem>) => Promise<void>;
     deleteItem: (id: number) => Promise<void>;
     fetchItems: () => Promise<void>;
@@ -17,6 +18,7 @@ type InventoryContextType = {
     // Movements
     movements: InventoryMovement[];
     addMovement: (movementData: Omit<InventoryMovement, 'id' | 'movement_date' | 'item' | 'user'>) => Promise<void>;
+    addBulkMovements: (movementsData: Omit<InventoryMovement, 'id' | 'movement_date' | 'item' | 'user'>[]) => Promise<void>;
     fetchMovements: (itemId?: number) => Promise<void>;
     
     // Categories
@@ -103,6 +105,25 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    // Add multiple items (Bulk)
+    const bulkAddItems = async (itemsData: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'status' | 'supplier'>[]) => {
+        try {
+            const response = await fetch('/api/inventory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: itemsData, userEmail: user?.email })
+            });
+            if (response.ok) {
+                await fetchItems();
+            } else {
+                throw new Error('Failed to add bulk items');
+            }
+        } catch (error) {
+            console.error('Error adding bulk inventory items:', error);
+            throw error;
+        }
+    };
+
     // Update item
     const updateItem = async (id: number, itemData: Partial<InventoryItem>) => {
         try {
@@ -171,6 +192,27 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
             }
         } catch (error) {
             console.error('Error adding inventory movement:', error);
+            throw error;
+        }
+    };
+
+    // Add bulk movements
+    const addBulkMovements = async (movementsData: Omit<InventoryMovement, 'id' | 'movement_date' | 'item' | 'user'>[]) => {
+        try {
+            const response = await fetch('/api/inventory/movements', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ movements: movementsData, userEmail: user?.email })
+            });
+            if (response.ok) {
+                await fetchMovements();
+                await fetchItems(); // Refresh items to update stock levels
+            } else {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to add bulk movements');
+            }
+        } catch (error) {
+            console.error('Error adding bulk inventory movements:', error);
             throw error;
         }
     };
@@ -301,11 +343,13 @@ export const InventoryProvider = ({ children }: { children: ReactNode }) => {
     const value: InventoryContextType = {
         items,
         addItem,
+        bulkAddItems,
         updateItem,
         deleteItem,
         fetchItems,
         movements,
         addMovement,
+        addBulkMovements,
         fetchMovements,
         categories,
         addCategory,

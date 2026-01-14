@@ -159,7 +159,7 @@ export async function updateSetting<K extends keyof Settings>(key: K, value: Set
 
 // Helper function to save uploaded images
 export async function saveImage(file: Buffer, filename: string): Promise<string> {
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+    const uploadsDir = path.join(process.cwd(), 'uploads');
     const imagesDir = path.join(uploadsDir, 'images');
     
     // Create directories if they don't exist
@@ -173,16 +173,32 @@ export async function saveImage(file: Buffer, filename: string): Promise<string>
     const filePath = path.join(imagesDir, filename);
     fs.writeFileSync(filePath, file);
     
-    // Return the public URL path
-    return `/uploads/images/${filename}`;
+    const returnPath = `/api/files/images/${filename}`;
+    console.log(`[saveImage] Saved image to ${filePath}, returning path: ${returnPath}`);
+    
+    // Return the API path (served via /api/files)
+    return returnPath;
 }
 
 // Helper function to delete uploaded images
 export async function deleteImage(imagePath: string): Promise<void> {
-    if (imagePath.startsWith('/uploads/')) {
-        const fullPath = path.join(process.cwd(), 'public', imagePath);
+    // Handle both /api/files/images/ and legacy /uploads/images/ formats
+    let relativePath = '';
+    if (imagePath.startsWith('/api/files/')) {
+        relativePath = imagePath.replace('/api/files/', '');
+    } else if (imagePath.startsWith('/uploads/')) {
+        // Legacy support for public/uploads
+        const legacyPath = path.join(process.cwd(), 'public', imagePath);
+        if (fs.existsSync(legacyPath)) {
+            fs.unlinkSync(legacyPath);
+        }
+        return;
+    }
+
+    if (relativePath) {
+        const fullPath = path.join(process.cwd(), 'uploads', relativePath);
         if (fs.existsSync(fullPath)) {
             fs.unlinkSync(fullPath);
         }
     }
-} 
+}

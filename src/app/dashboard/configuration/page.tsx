@@ -135,7 +135,7 @@ function GeneralSettings() {
                     <div className="flex items-center gap-4">
                         <div className="relative group/logo">
                             {localSettings.platformLogo ? (
-                                <Image src={localSettings.platformLogo} alt={t('config.general.platformLogo')} width={64} height={64} className="rounded-md bg-muted p-1 aspect-square object-contain" />
+                                <Image src={localSettings.platformLogo} alt={t('config.general.platformLogo')} width={64} height={64} className="rounded-md bg-muted p-1 aspect-square object-contain" unoptimized />
                             ) : (
                                 <div className="h-16 w-16 rounded-md bg-muted p-1 flex items-center justify-center">
                                     <LoungeChairIcon className="h-10 w-10 text-muted-foreground" />
@@ -505,6 +505,7 @@ function LoginScreenSettings() {
                                     width={200} 
                                     height={200}
                                     className="rounded-lg object-cover aspect-video"
+                                    unoptimized
                                 />
                             )}
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity">
@@ -960,34 +961,47 @@ function FinancialSettings() {
 
 function ConfigurationPageContent() {
     const { t } = useTranslation()
+    const { user } = useAuth()
+    const isSuperAdmin = user?.role === 'Super Admin'
+
     return (
-        <Tabs defaultValue="general" className="w-full">
+        <Tabs defaultValue={isSuperAdmin ? "general" : "appearance"} className="w-full">
             <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="general">
-                    <ImageIcon className="mr-2 h-4 w-4" /> {t('config.tabs.general')}
-                </TabsTrigger>
+                {isSuperAdmin && (
+                    <TabsTrigger value="general">
+                        <ImageIcon className="mr-2 h-4 w-4" /> {t('config.tabs.general')}
+                    </TabsTrigger>
+                )}
                 <TabsTrigger value="appearance">
                     <Palette className="mr-2 h-4 w-4" /> {t('config.tabs.appearance')}
                 </TabsTrigger>
                 <TabsTrigger value="receipt">
                     <FileText className="mr-2 h-4 w-4" /> {t('config.tabs.receipt')}
                 </TabsTrigger>
-                <TabsTrigger value="financial">
-                    <DollarSign className="mr-2 h-4 w-4" /> {t('settings.financial')}
-                </TabsTrigger>
-                <TabsTrigger value="loginScreen">
-                    <Clapperboard className="mr-2 h-4 w-4" /> {t('config.tabs.loginScreen')}
-                </TabsTrigger>
+                {isSuperAdmin && (
+                    <TabsTrigger value="financial">
+                        <DollarSign className="mr-2 h-4 w-4" /> {t('settings.financial')}
+                    </TabsTrigger>
+                )}
+                {isSuperAdmin && (
+                    <TabsTrigger value="loginScreen">
+                        <Clapperboard className="mr-2 h-4 w-4" /> {t('config.tabs.loginScreen')}
+                    </TabsTrigger>
+                )}
             </TabsList>
-            <TabsContent value="general">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t('config.general.title')}</CardTitle>
-                        <CardDescription>{t('config.general.description')}</CardDescription>
-                    </CardHeader>
-                    <GeneralSettings />
-                </Card>
-            </TabsContent>
+            
+            {isSuperAdmin && (
+                <TabsContent value="general">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('config.general.title')}</CardTitle>
+                            <CardDescription>{t('config.general.description')}</CardDescription>
+                        </CardHeader>
+                        <GeneralSettings />
+                    </Card>
+                </TabsContent>
+            )}
+            
             <TabsContent value="appearance">
                 <Card>
                     <CardHeader>
@@ -997,6 +1011,7 @@ function ConfigurationPageContent() {
                     <AppearanceSettings />
                 </Card>
             </TabsContent>
+            
             <TabsContent value="receipt">
                 <Card>
                     <CardHeader>
@@ -1006,24 +1021,30 @@ function ConfigurationPageContent() {
                     <ReceiptSettings />
                 </Card>
             </TabsContent>
-            <TabsContent value="financial">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t('settings.financial')}</CardTitle>
-                        <CardDescription>{t('settings.financialDesc')}</CardDescription>
-                    </CardHeader>
-                    <FinancialSettings />
-                </Card>
-            </TabsContent>
-            <TabsContent value="loginScreen">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t('config.loginScreen.title')}</CardTitle>
-                        <CardDescription>{t('config.loginScreen.description')}</CardDescription>
-                    </CardHeader>
-                    <LoginScreenSettings />
-                </Card>
-            </TabsContent>
+            
+            {isSuperAdmin && (
+                <TabsContent value="financial">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('settings.financial')}</CardTitle>
+                            <CardDescription>{t('settings.financialDesc')}</CardDescription>
+                        </CardHeader>
+                        <FinancialSettings />
+                    </Card>
+                </TabsContent>
+            )}
+            
+            {isSuperAdmin && (
+                <TabsContent value="loginScreen">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('config.loginScreen.title')}</CardTitle>
+                            <CardDescription>{t('config.loginScreen.description')}</CardDescription>
+                        </CardHeader>
+                        <LoginScreenSettings />
+                    </Card>
+                </TabsContent>
+            )}
         </Tabs>
     )
 }

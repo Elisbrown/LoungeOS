@@ -147,6 +147,7 @@ export function EditTicketDialog({ ticket, open, onOpenChange }: EditTicketDialo
                     <SelectItem value="Medium">Medium</SelectItem>
                     <SelectItem value="High">High</SelectItem>
                     <SelectItem value="Critical">Critical</SelectItem>
+                    <SelectItem value="Urgent">Urgent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

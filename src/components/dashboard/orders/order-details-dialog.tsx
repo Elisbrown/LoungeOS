@@ -102,27 +102,29 @@ export function OrderDetailsDialog({
     if (settings.platformLogo) {
         try {
             const base64Logo = await getBase64Image(settings.platformLogo);
-            // Centering logo (12mm x 12mm)
             const logoSize = 12;
-            doc.addImage(base64Logo, 'PNG', (pageWidth - logoSize) / 2, currentY, logoSize, logoSize);
+            const logoX = (pageWidth - logoSize) / 2;
+            doc.addImage(base64Logo, 'PNG', logoX, currentY, logoSize, logoSize);
             currentY += logoSize + 4;
         } catch (e) {
             console.error('Failed to add logo to PDF:', e);
         }
     }
 
-    centerText(settings.organizationName.toUpperCase(), currentY, 14, 'bold');
+    centerText(settings.organizationName.toUpperCase(), currentY, 12, 'bold');
     currentY += 6;
-    centerText(settings.contactAddress, currentY, 9);
+    
+    centerText(settings.contactAddress, currentY, 9, 'normal');
     currentY += 4;
-    centerText(`Tel: ${settings.contactPhone}`, currentY, 9);
+    centerText(`Tel: ${settings.contactPhone}`, currentY, 9, 'normal');
+    currentY += 5;
     
     if (settings.receiptHeader) {
+        centerText(settings.receiptHeader, currentY, 9, 'normal');
         currentY += 5;
-        centerText(settings.receiptHeader, currentY, 9);
     }
 
-    currentY += 6;
+    currentY += 2;
     drawDashedLine(currentY);
     currentY += 6;
 

@@ -9,7 +9,7 @@ export interface Ticket {
     title: string;
     description: string;
     status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
-    priority: 'Low' | 'Medium' | 'High' | 'Critical';
+    priority: 'Low' | 'Medium' | 'High' | 'Critical' | 'Urgent';
     category: string;
     created_by: number;
     assigned_to?: number;
@@ -22,6 +22,20 @@ export interface Ticket {
         email: string;
     };
     assignee?: {
+        id: number;
+        name: string;
+        email: string;
+    };
+    comments?: TicketComment[];
+}
+
+export interface TicketComment {
+    id: number;
+    ticket_id: number;
+    author_id: number;
+    content: string;
+    created_at: string;
+    author?: {
         id: number;
         name: string;
         email: string;
@@ -55,6 +69,19 @@ function initializeTicketsTable() {
             resolved_at TEXT,
             FOREIGN KEY (creator_id) REFERENCES users(id),
             FOREIGN KEY (assignee_id) REFERENCES users(id)
+        )
+    `);
+    
+    // Create ticket_comments table
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS ticket_comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_id INTEGER NOT NULL,
+            author_id INTEGER NOT NULL,
+            content TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
+            FOREIGN KEY (author_id) REFERENCES users(id)
         )
     `);
     
@@ -152,7 +179,7 @@ export function getTicketById(id: number): Ticket | null {
     
     if (!row) return null;
     
-    return {
+    const ticket = {
         id: row.id,
         title: row.title,
         description: row.description,
@@ -173,8 +200,65 @@ export function getTicketById(id: number): Ticket | null {
             id: row.assignee_id,
             name: row.assignee_name,
             email: row.assignee_email
-        } : undefined
+        } : undefined,
+        comments: getTicketComments(id)
     };
+    
+    return ticket;
+}
+
+// Get comments for a ticket
+export function getTicketComments(ticketId: number): TicketComment[] {
+    const db = new Database(dbPath);
+    
+    const stmt = db.prepare(`
+        SELECT 
+            tc.*,
+            u.name as author_name, u.email as author_email
+        FROM ticket_comments tc
+        LEFT JOIN users u ON tc.author_id = u.id
+        WHERE tc.ticket_id = ?
+        ORDER BY tc.created_at ASC
+    `);
+    
+    const rows = stmt.all(ticketId) as any[];
+    db.close();
+    
+    return rows.map(row => ({
+        id: row.id,
+        ticket_id: row.ticket_id,
+        author_id: row.author_id,
+        content: row.content,
+        created_at: row.created_at,
+        author: row.author_id ? {
+            id: row.author_id,
+            name: row.author_name,
+            email: row.author_email
+        } : undefined
+    }));
+}
+
+// Add a comment to a ticket
+export function addComment(ticketId: number | string, data: { author_id: number; content: string }): Ticket {
+    const db = new Database(dbPath);
+    const id = typeof ticketId === 'string' ? parseInt(ticketId) : ticketId;
+    
+    const stmt = db.prepare(`
+        INSERT INTO ticket_comments (ticket_id, author_id, content)
+        VALUES (?, ?, ?)
+    `);
+    
+    stmt.run(id, data.author_id, data.content);
+    
+    // Update ticket's updated_at
+    db.prepare('UPDATE tickets SET updated_at = datetime(\'now\') WHERE id = ?').run(id);
+    
+    db.close();
+    
+    const ticket = getTicketById(id);
+    if (!ticket) throw new Error('Ticket not found after adding comment');
+    
+    return ticket;
 }
 
 // Create new ticket

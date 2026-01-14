@@ -166,6 +166,35 @@ export function getAccountByCode(code: string): ChartOfAccount | null {
   }
 }
 
+export function addChartOfAccount(accountData: Omit<ChartOfAccount, 'id' | 'created_at' | 'updated_at' | 'is_active'>): ChartOfAccount {
+  const db = getDb();
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO chart_of_accounts (code, name, account_type, parent_code)
+      VALUES (?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      accountData.code,
+      accountData.name,
+      accountData.account_type,
+      accountData.parent_code || null
+    );
+    
+    return {
+      id: Number(result.lastInsertRowid),
+      code: accountData.code,
+      name: accountData.name,
+      account_type: accountData.account_type,
+      parent_code: accountData.parent_code || null,
+      is_active: 1,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+  } finally {
+    db.close();
+  }
+}
+
 // Journal Entry functions
 export function getJournalEntries(filters?: { type?: string; status?: string; startDate?: string; endDate?: string }): JournalEntry[] {
   const db = getDb();

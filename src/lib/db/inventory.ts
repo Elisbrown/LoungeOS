@@ -254,6 +254,40 @@ export async function addInventoryItem(itemData: Omit<InventoryItem, 'id' | 'cre
     }
 }
 
+export async function bulkAddInventoryItems(itemsData: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'status' | 'supplier'>[]): Promise<void> {
+    const db = getDb();
+    try {
+        const transaction = db.transaction((items) => {
+            const stmt = db.prepare(`
+                INSERT INTO inventory_items (
+                    sku, name, category, description, unit, min_stock_level, 
+                    max_stock_level, current_stock, cost_per_unit, supplier_id, image
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+            
+            for (const data of items) {
+                stmt.run(
+                    data.sku,
+                    data.name,
+                    data.category,
+                    data.description || null,
+                    data.unit,
+                    data.min_stock_level,
+                    data.max_stock_level || null,
+                    data.current_stock,
+                    data.cost_per_unit || null,
+                    data.supplier_id || null,
+                    data.image || null
+                );
+            }
+        });
+        
+        transaction(itemsData);
+    } finally {
+        // No close
+    }
+}
+
 export async function updateInventoryItem(id: number, itemData: Partial<InventoryItem>): Promise<InventoryItem> {
     const db = getDb();
     try {
@@ -333,6 +367,46 @@ export async function addInventoryMovement(movementData: Omit<InventoryMovement,
     }
 }
 
+export async function bulkAddInventoryMovements(movementsData: Omit<InventoryMovement, 'id' | 'movement_date' | 'item' | 'user'>[]): Promise<void> {
+    const db = getDb();
+    try {
+        const transaction = db.transaction((movements) => {
+            const movementStmt = db.prepare(`
+                INSERT INTO inventory_movements (
+                    item_id, movement_type, quantity, unit_cost, total_cost,
+                    reference_number, reference_type, notes, user_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+            
+            const itemStmt = db.prepare('UPDATE inventory_items SET current_stock = current_stock + ?, updated_at = ? WHERE id = ?');
+            const now = new Date().toISOString();
+
+            for (const data of movements) {
+                const totalCost = data.unit_cost ? data.unit_cost * data.quantity : null;
+                
+                movementStmt.run(
+                    data.item_id,
+                    data.movement_type,
+                    data.quantity,
+                    data.unit_cost || null,
+                    totalCost,
+                    data.reference_number || null,
+                    data.reference_type || null,
+                    data.notes || null,
+                    data.user_id || null
+                );
+                
+                const stockChange = data.movement_type === 'IN' ? data.quantity : -data.quantity;
+                itemStmt.run(stockChange, now, data.item_id);
+            }
+        });
+        
+        transaction(movementsData);
+    } finally {
+        // No close
+    }
+}
+
 export async function getInventoryMovements(itemId?: number, limit: number = 100): Promise<InventoryMovement[]> {
     const db = getDb();
     try {
@@ -358,6 +432,39 @@ export async function getInventoryMovements(itemId?: number, limit: number = 100
         params.push(limit);
         
         const rows = db.prepare(query).all(...params) as any[];
+        
+        return rows.map(row => ({
+            ...row,
+            item: {
+                name: row.item_name,
+                sku: row.item_sku
+            },
+            user: row.user_id ? {
+                name: row.user_name,
+                email: row.user_email
+            } : undefined
+        }));
+    } finally {
+        // No close
+    }
+}
+
+export async function getInventoryMovementsByDate(startDate: string, endDate: string): Promise<InventoryMovement[]> {
+    const db = getDb();
+    try {
+        const rows = db.prepare(`
+            SELECT 
+                m.*,
+                i.name as item_name,
+                i.sku as item_sku,
+                u.name as user_name,
+                u.email as user_email
+            FROM inventory_movements m
+            LEFT JOIN inventory_items i ON m.item_id = i.id
+            LEFT JOIN users u ON m.user_id = u.id
+            WHERE DATE(m.movement_date) >= DATE(?) AND DATE(m.movement_date) <= DATE(?)
+            ORDER BY m.movement_date DESC
+        `).all(startDate, endDate) as any[];
         
         return rows.map(row => ({
             ...row,
@@ -536,4 +643,4 @@ export async function getInventoryStats(): Promise<{
     } finally {
         // No close
     }
-} 
+}

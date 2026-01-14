@@ -18,13 +18,7 @@ export async function GET(request: NextRequest) {
 
     const report = generateCashFlow(startDate, endDate);
     const appSettings = await getSettings();
-
-    const settings = {
-      platformName: appSettings.platformName,
-      defaultCurrency: appSettings.defaultCurrency?.code || 'USD',
-    };
-
-    const pdf = generateCashFlowPDF(report, settings);
+    const pdf = await generateCashFlowPDF(report, appSettings);
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
 
     return new NextResponse(pdfBuffer, {

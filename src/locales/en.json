@@ -208,7 +208,9 @@
     "eventCreateFailed": "Failed to create event",
     "eventUpdated": "Event updated successfully",
     "eventUpdateFailed": "Failed to update event",
-    "createEvent": "Create Event"
+    "createEvent": "Create Event",
+    "outOfStock": "Out of Stock",
+    "lowStockCount": "{{count}} low stock"
   },
   "periods": {
     "today": "Today",
@@ -336,6 +338,7 @@
     "layoutTitle": "Table Layout",
     "layoutDescription": "View and manage the status of your establishment's tables.",
     "manageFloors": "Manage Floors",
+    "manageTables": "Manage Tables",
     "addTable": "Add Table",
     "guestCount": "{{count}} Guests",
     "reserve": "Reserve",
@@ -379,6 +382,7 @@
     "importCSV": "Import from CSV",
     "downloadTemplate": "Download Template",
     "exportCSV": "Export as CSV",
+    "exportPDF": "Export as PDF",
     "product": "Ingredient",
     "sku": "SKU",
     "name": "Name",
@@ -692,7 +696,9 @@
     "amount": "Amount",
     "staffPerformance": "Staff Performance",
     "staffPerformanceDesc": "Sales performance by staff member.",
-    "totalSalesValue": "Total Sales Value"
+    "totalSalesValue": "Total Sales Value",
+    "generateReport": "Generate PDF Report",
+    "generating": "Generating..."
   },
   "settings": {
     "title": "Settings",
@@ -1017,14 +1023,14 @@
       },
       "csv": {
         "title": "Importing & Exporting via CSV",
-        "content": "On both the 'Meals' and 'Inventory' pages, you can use the 'File Actions' button to manage products in bulk.\n- 'Download Template' gives you a correctly formatted CSV file.\n- Fill it out and use 'Import from CSV' to add many items at once."
+        "content": "On both the 'Meals' and 'Inventory' pages, you can use the 'File Actions' button to manage products in bulk.\n- 'Download Template' gives you a correctly formatted CSV file to guide your data entry.\n- Fill it out and use 'Import from CSV' to add many items at once.\n- 'Export Movements': On the Inventory page, you can export a detailed record of all stock changes within a custom date range as a professional CSV or PDF document, complete with your organization's logo and contact information.\n- 'Bulk Movements': Use the table checkboxes and the 'Bulk Move' button to perform stock-in, stock-out, or cost-adjustments for multiple items simultaneously."
       }
     },
     "management": {
       "title": "Admin & Management",
       "floorsTables": {
         "title": "How to Manage Floors and Tables",
-        "content": "1. To create or delete service areas (e.g., 'VIP Lounge', 'Terrace'), go to the 'Floor Management' page and click 'Manage Floors'.\n2. To add new tables, go to the 'Tables' page and click 'Add Table'. You must assign each new table to a floor.\n3. To assign existing tables or staff to a floor, go to 'Floor Management' and use the dropdowns on each floor's card."
+        "content": "1. To create or delete service areas (e.g., 'VIP Lounge', 'Terrace'), go to the 'Floor Management' page and click 'Manage Floors'.\n2. To add new tables, go to the 'Tables' page and click 'Add Table'. You must assign each new table to a floor.\n3. To assign existing tables or staff to a floor, go to 'Floor Management' and use the dropdowns on each floor's card.\n4. Bulk Actions: In the Table list view, use the 'Manage Tables' button to perform bulk operations. You can select multiple tables and move them to a different floor, change their status, or delete them all in a single action."
       },
       "staff": {
         "title": "How to Manage Staff",
@@ -1039,7 +1045,7 @@
       "title": "Accounting Module",
       "overview": {
         "title": "Accounting Overview",
-        "content": "The Accounting module is designed for Managers, Super Admins, and Accountants to track the financial health of the business. It provides high-level summaries and detailed transactional records."
+        "content": "The Accounting module is designed for Managers and Accountants to track the financial health of the business. It integrates directly with the POS and Inventory modules using a Synchronized Entry System. By clicking 'Sync Accounting Data' in the Reports view, the system automatically creates journal entries for all sales and all stock purchases, ensuring your financial data is always accurate and up-to-the-minute."
       },
       "dashboard": {
         "title": "Using the Accounting Dashboard",
@@ -1047,14 +1053,18 @@
       },
       "journals": {
         "title": "Understanding Financial Journals",
-        "content": "Journals are detailed logs of all financial transactions.\n- Sales Journal: Automatically populated with every completed order, showing revenue generated.\n- Expenses Journal: Manually log all business costs here, such as rent, salaries, or supplier payments.\n- General Ledger: A master log combining all sales and expenses, providing a complete financial history."
+        "content": "Financial journals record all business transactions using double-entry principles (Debits and Credits).\n- Balanced Entries: When manual entries are made, the system ensures that total debits match total credits before allowing the entry to be saved.\n- Automated Sync: The system automatically populates the Sales and Expenses journals when you run the data sync from the reports page, pulling data from POS transactions and Inventory stock-in movements."
+      },
+      "coa": {
+        "title": "Managing the Chart of Accounts",
+        "content": "The Chart of Accounts (COA) is the backbone of your accounting system.\n- Hierarchical Structure: Organize your accounts into five main types: Assets, Liabilities, Equity, Revenue, and Expenses.\n- Parent Accounts: You can nest accounts under parent codes to create a structured financial hierarchy.\n- Custom Accounts: Add custom accounts at any time to track specific revenue streams or expense categories."
       }
     },
     "system": {
       "title": "System & Maintenance",
       "configuration": {
         "title": "How to Configure the System",
-        "content": "The 'Configuration' page is where Super Admins and Managers can customize the application:\n- General: Change the platform name, logo, and organization details.\n- Appearance: Create new visual themes and switch between them.\n- Receipt: Customize the layout and content of receipts and invoices.\n- Login Screen: Change the background images that appear on the login page carousel."
+        "content": "The 'Configuration' page allows authorized users to customize the application settings. Access is restricted based on user roles:\n- General (Super Admin only): Update platform name, logo, and organization contact details.\n- Financial (Super Admin only): Manage currencies, tax rates, and discount rules.\n- Login Screen (Super Admin only): Customize the login page carousel images.\n- Appearance & Receipt (Manager & Super Admin): Customize visual themes and receipt layouts."
       },
       "backup": {
         "title": "Backup & Restore",
@@ -1299,7 +1309,8 @@
     "tableReserved": "Table Reserved",
     "tableReservedDesc": "Table {{name}} has been marked as reserved.",
     "tableAvailable": "Table Available",
-    "tableAvailableDesc": "Table {{name}} is now available."
+    "tableAvailableDesc": "Table {{name}} is now available.",
+    "orderPlaced": "Order Sent"
   },
   "activity": {
     "title": "Activity Log",

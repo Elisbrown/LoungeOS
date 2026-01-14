@@ -75,6 +75,7 @@ export async function POST(request: Request) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
         const imagePath = await saveImage(buffer, filename);
+        console.log(`[Settings API] saveImage returned: ${imagePath} for type ${type}`);
         
         const actorId = await getActorId(userEmail);
 

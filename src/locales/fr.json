@@ -185,7 +185,9 @@
     "eventCreateFailed": "Échec de la création de l'événement",
     "eventUpdated": "Événement mis à jour avec succès",
     "eventUpdateFailed": "Échec de la mise à jour de l'événement",
-    "createEvent": "Créer l'Événement"
+    "createEvent": "Créer l'Événement",
+    "outOfStock": "En Rupture",
+    "lowStockCount": "{{count}} stock faible"
   },
   "periods": {
     "today": "Aujourd'hui",
@@ -313,6 +315,7 @@
     "layoutTitle": "Plan de Salle",
     "layoutDescription": "Visualisez et gérez l'état des tables de votre établissement.",
     "manageFloors": "Gérer les Salles",
+    "manageTables": "Gérer les Tables",
     "addTable": "Ajouter une Table",
     "guestCount": "{{count}} Invités",
     "reserve": "Réserver",
@@ -356,6 +359,7 @@
     "importCSV": "Importer depuis CSV",
     "downloadTemplate": "Télécharger le Modèle",
     "exportCSV": "Exporter en CSV",
+    "exportPDF": "Exporter en PDF",
     "product": "Ingrédient",
     "sku": "SKU",
     "name": "Nom",
@@ -633,7 +637,9 @@
     "amount": "Montant",
     "staffPerformance": "Performance du Personnel",
     "staffPerformanceDesc": "Performance des ventes par membre du personnel.",
-    "totalSalesValue": "Valeur Totale des Ventes"
+    "totalSalesValue": "Valeur Totale des Ventes",
+    "generateReport": "Générer le Rapport PDF",
+    "generating": "Génération..."
   },
   "settings": {
     "title": "Paramètres",
@@ -958,14 +964,14 @@
       },
       "csv": {
         "title": "Importation & Exportation via CSV",
-        "content": "Sur les pages 'Plats' et 'Inventaire', vous pouvez utiliser le bouton 'Actions Fichier' pour gérer les produits en masse.\n- 'Télécharger le Modèle' vous donne un fichier CSV correctement formaté.\n- Remplissez-le et utilisez 'Importer depuis CSV' pour ajouter de nombreux articles en une seule fois."
+        "content": "Sur les pages 'Plats' et 'Inventaire', vous pouvez utiliser le bouton 'Actions Fichier' pour gérer les produits en masse.\n- 'Télécharger le Modèle' vous donne un fichier CSV correctement formaté pour guider votre saisie de données.\n- Remplissez-le et utilisez 'Importer depuis CSV' pour ajouter de nombreux articles en une seule fois.\n- 'Exporter les Mouvements' : Sur la page Inventaire, vous pouvez exporter un registre détaillé de tous les changements de stock dans une plage de dates personnalisée sous forme de document CSV ou PDF professionnel, complet avec le logo de votre organisation et ses coordonnées.\n- 'Mouvements en Masse' : Utilisez les cases à cocher du tableau et le bouton 'Mouvement en Masse' pour effectuer des entrées, des sorties ou des ajustements de coût pour plusieurs articles simultanément."
       }
     },
     "management": {
       "title": "Administration & Gestion",
       "floorsTables": {
         "title": "Comment Gérer les Salles et les Tables",
-        "content": "1. Pour créer ou supprimer des zones de service (ex: 'Salon VIP', 'Terrasse'), allez à la page 'Plan de Salle' et cliquez sur 'Gérer les Salles'.\n2. Pour ajouter de nouvelles tables, allez à la page 'Tables' et cliquez sur 'Ajouter une Table'. Vous devez assigner chaque nouvelle table à une salle.\n3. Pour assigner des tables ou du personnel existants à une salle, allez à 'Plan de Salle' et utilisez les menus déroulants sur la carte de chaque salle."
+        "content": "1. Pour créer ou supprimer des zones de service (ex: 'Salon VIP', 'Terrasse'), allez à la page 'Plan de Salle' et cliquez sur 'Gérer les Salles'.\n2. Pour ajouter de nouvelles tables, allez à la page 'Tables' et cliquez sur 'Ajouter une Table'. Vous devez assigner chaque nouvelle table à une salle.\n3. Pour assigner des tables ou du personnel existants à une salle, allez à 'Plan de Salle' et utilisez les menus déroulants sur la carte de chaque salle.\n4. Actions en Masse : Dans la vue en liste des tables, utilisez le bouton 'Gérer les Tables' pour effectuer des opérations en masse. Vous pouvez sélectionner plusieurs tables et les déplacer vers une salle différente, modifier leur statut, ou les supprimer toutes en une seule action."
       },
       "staff": {
         "title": "Comment Gérer le Personnel",
@@ -980,7 +986,7 @@
       "title": "Module de Comptabilité",
       "overview": {
         "title": "Aperçu de la Comptabilité",
-        "content": "Le module de Comptabilité est conçu pour les Managers, Super Admins et Comptables afin de suivre la santé financière de l'entreprise. Il fournit des résumés de haut niveau et des enregistrements transactionnels détaillés."
+        "content": "Le module de Comptabilité est conçu pour les Managers et les Comptables afin de suivre la santé financière de l'entreprise. Il s'intègre directement aux modules PDV et Inventaire à l'aide d'un Système d'Écriture Synchronisé. En cliquant sur 'Synchroniser les Données Comptables' dans la vue Rapports, le système crée automatiquement des écritures de journal pour toutes les ventes et tous les achats de stock, garantissant que vos données financières sont toujours précises et à jour."
       },
       "dashboard": {
         "title": "Utilisation du Tableau de Bord Comptable",
@@ -988,14 +994,18 @@
       },
       "journals": {
         "title": "Comprendre les Journaux Financiers",
-        "content": "Les journaux sont des registres détaillés de toutes les transactions financières.\n- Journal des Ventes : Automatiquement peuplé avec chaque commande terminée, montrant les revenus générés.\n- Journal des Dépenses : Enregistrez manuellement tous les coûts de l'entreprise ici, tels que le loyer, les salaires ou les paiements aux fournisseurs.\n- Grand Livre Général : Un registre principal combinant toutes les ventes et dépenses, fournissant un historique financier complet."
+        "content": "Les journaux financiers enregistrent toutes les transactions commerciales selon les principes de la comptabilité en partie double (Débits et Crédits).\n- Écritures Équilibrées : Lors de la saisie manuelle d'écritures, le système s'assure que le total des débits correspond au total des crédits avant d'autoriser l'enregistrement.\n- Synchronisation Automatique : Le système remplit automatiquement les journaux de Ventes et de Dépenses lorsque vous lancez la synchronisation des données depuis la page des rapports, en extrayant les données des transactions du PDV et des mouvements d'entrée en stock de l'Inventaire."
+      },
+      "coa": {
+        "title": "Gérer le Plan Comptable",
+        "content": "Le Plan Comptable (PC) est la colonne vertébrale de votre système comptable.\n- Structure Hiérarchique : Organisez vos comptes en cinq types principaux : Actifs, Passifs, Capitaux Propres, Revenus et Dépenses.\n- Comptes Parents : Vous pouvez imbriquer des comptes sous des codes parents pour créer une hiérarchie financière structurée.\n- Comptes Personnalisés : Ajoutez des comptes personnalisés à tout moment pour suivre des flux de revenus ou des catégories de dépenses spécifiques."
       }
     },
     "system": {
       "title": "Système & Maintenance",
       "configuration": {
         "title": "Comment Configurer le Système",
-        "content": "La page 'Configuration' est l'endroit où les Super Admins et les Managers peuvent personnaliser l'application :\n- Général : Changez le nom de la plateforme, le logo et les détails de l'organisation.\n- Apparence : Créez de nouveaux thèmes visuels et basculez entre eux.\n- Reçu : Personnalisez la mise en page et le contenu des reçus et factures.\n- Écran de Connexion : Changez les images d'arrière-plan qui apparaissent sur le carrousel de la page de connexion."
+        "content": "La page 'Configuration' permet aux utilisateurs autorisés de personnaliser les paramètres.\n- Général (Super Admin) : Mettre à jour le nom, le logo et les coordonnées.\n- Financier (Super Admin) : Gérer les devises, les taxes et les remises.\n- Connexion (Super Admin) : Personnaliser l'écran de connexion.\n- Apparence & Reçu (Manager) : Personnaliser les thèmes et les reçus."
       },
       "backup": {
         "title": "Sauvegarde & Restauration",
@@ -1240,7 +1250,8 @@
     "tableReserved": "Table Réservée",
     "tableReservedDesc": "La table {{name}} a été marquée comme réservée.",
     "tableAvailable": "Table Disponible",
-    "tableAvailableDesc": "La table {{name}} est maintenant disponible."
+    "tableAvailableDesc": "La table {{name}} est maintenant disponible.",
+    "orderPlaced": "Commande Envoyée"
   },
   "activity": {
     "title": "Journal d'Activité",

@@ -7,15 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Lock } from 'lucide-react'
 import { useTranslation } from '@/hooks/use-translation'
 import { ReportViewer } from '@/components/dashboard/accounting/report-viewer'
+import { SyncDataButton } from '@/components/dashboard/accounting/sync-data-button'
 
 function ReportsContent() {
     const { t } = useTranslation()
     
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold">Financial Reports</h2>
-                <p className="text-sm text-muted-foreground">Generate and view financial reports</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold">Financial Reports</h2>
+                    <p className="text-sm text-muted-foreground">Generate and view financial reports</p>
+                </div>
+                <SyncDataButton />
             </div>
 
             <div className="grid gap-6">

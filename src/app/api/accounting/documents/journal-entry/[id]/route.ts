@@ -5,10 +5,11 @@ import { getSettings } from '@/lib/db/settings';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: idParam } = await params;
   try {
-    const id = parseInt(params.id);
+    const id = parseInt(idParam);
     const entry = getJournalEntryById(id);
 
     if (!entry) {
@@ -16,13 +17,7 @@ export async function GET(
     }
 
     const appSettings = await getSettings();
-
-    const settings = {
-      platformName: appSettings.platformName,
-      defaultCurrency: appSettings.defaultCurrency?.code || 'USD',
-    };
-
-    const pdf = generateJournalEntryPDF(entry, settings);
+    const pdf = await generateJournalEntryPDF(entry, appSettings);
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
 
     return new NextResponse(pdfBuffer, {

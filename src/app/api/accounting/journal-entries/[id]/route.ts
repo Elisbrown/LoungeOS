@@ -3,10 +3,11 @@ import { getJournalEntryById, updateJournalEntry, deleteJournalEntry } from '@/l
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: idParam } = await params;
   try {
-    const id = parseInt(params.id);
+    const id = parseInt(idParam);
     const entry = getJournalEntryById(id);
 
     if (!entry) {
@@ -25,10 +26,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: idParam } = await params;
   try {
-    const id = parseInt(params.id);
+    const id = parseInt(idParam);
     const data = await request.json();
 
     const updatedEntry = updateJournalEntry(id, data);
@@ -49,10 +51,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: idParam } = await params;
   try {
-    const id = parseInt(params.id);
+    const id = parseInt(idParam);
     const success = deleteJournalEntry(id);
 
     if (!success) {

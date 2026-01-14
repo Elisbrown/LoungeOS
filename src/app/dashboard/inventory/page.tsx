@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { useInventory } from '@/context/inventory-context'
 import { useSettings } from '@/context/settings-context'
 import { formatCurrency } from '@/lib/utils'
+import { MovementsExportDialog } from '@/components/dashboard/inventory/movements-export-dialog'
 
 const chartConfig = {
   stockIn: {
@@ -276,6 +277,8 @@ function InventoryDashboardContent() {
                   </div>
                 </Button>
               </Link>
+
+              <MovementsExportDialog />
             </CardContent>
           </Card>
         </div>

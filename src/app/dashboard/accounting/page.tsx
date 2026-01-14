@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { Header } from '@/components/dashboard/header'
 import { useAuth } from '@/context/auth-context'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Lock, BarChart2, DollarSign, ArrowUp, ArrowDown, BookOpen } from 'lucide-react'
+import { Lock, BarChart2, DollarSign, ArrowUp, ArrowDown, BookOpen, Plus } from 'lucide-react'
 import { useTranslation } from '@/hooks/use-translation'
 import {
   ChartContainer,
@@ -250,6 +250,12 @@ function AccountingDashboardContent() {
                         <Button className="w-full justify-start" variant="outline">
                             <BarChart2 className="mr-2 h-4 w-4" />
                             {t('accounting.reports.title')}
+                        </Button>
+                    </Link>
+                    <Link href="/dashboard/accounting/chart-of-accounts" passHref>
+                        <Button className="w-full justify-start" variant="outline">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Chart of Accounts
                         </Button>
                     </Link>
                 </CardContent>

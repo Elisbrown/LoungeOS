@@ -54,6 +54,7 @@ export default function LoginPage() {
                         className="object-cover"
                         sizes="50vw"
                         priority={index === 0}
+                        unoptimized
                       />
                     )}
                   </CarouselItem>
@@ -75,6 +76,7 @@ export default function LoginPage() {
                     width={120}
                     height={120}
                     className="h-30 w-30 object-contain"
+                    unoptimized
                   />
                 </div>
                 <div className="space-y-2">

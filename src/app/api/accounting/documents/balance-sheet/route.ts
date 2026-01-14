@@ -17,13 +17,7 @@ export async function GET(request: NextRequest) {
 
     const report = generateBalanceSheet(asOfDate);
     const appSettings = await getSettings();
-
-    const settings = {
-      platformName: appSettings.platformName,
-      defaultCurrency: appSettings.defaultCurrency?.code || 'USD',
-    };
-
-    const pdf = generateBalanceSheetPDF(report, settings);
+    const pdf = await generateBalanceSheetPDF(report, appSettings);
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
 
     return new NextResponse(pdfBuffer, {

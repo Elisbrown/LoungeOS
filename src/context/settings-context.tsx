@@ -158,6 +158,15 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             const response = await fetch('/api/settings');
             if (response.ok) {
                 const data = await response.json();
+                // Normalize logo and carousel paths
+                if (data.platformLogo && data.platformLogo.startsWith('/uploads/')) {
+                    data.platformLogo = data.platformLogo.replace('/uploads/', '/api/files/');
+                }
+                if (data.loginCarouselImages) {
+                    data.loginCarouselImages = data.loginCarouselImages.map((img: string) => 
+                        img.startsWith('/uploads/') ? img.replace('/uploads/', '/api/files/') : img
+                    );
+                }
                 setSettingsState(data);
             }
         } catch (error) {
@@ -166,7 +175,18 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const handleSetSettings = useCallback(async (newSettings: Settings) => {
-        setSettingsState(newSettings);
+        // Normalize paths before saving and setting state
+        const normalized = { ...newSettings };
+        if (normalized.platformLogo && normalized.platformLogo.startsWith('/uploads/')) {
+            normalized.platformLogo = normalized.platformLogo.replace('/uploads/', '/api/files/');
+        }
+        if (normalized.loginCarouselImages) {
+            normalized.loginCarouselImages = normalized.loginCarouselImages.map((img: string) => 
+                img.startsWith('/uploads/') ? img.replace('/uploads/', '/api/files/') : img
+            );
+        }
+
+        setSettingsState(normalized);
         try {
             // Get current user email from localStorage or context
             const storedUser = typeof window !== 'undefined' ? sessionStorage.getItem('loungeos-user') : null;
@@ -177,7 +197,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    settings: newSettings,
+                    settings: normalized,
                     userEmail: userEmail
                 })
             });
@@ -187,7 +207,17 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const updateSetting = useCallback(async <K extends keyof Settings,>(key: K, value: Settings[K]) => {
-        const newSettings = { ...settings, [key]: value };
+        let normalizedValue = value;
+        if (key === 'platformLogo' && typeof value === 'string' && value.startsWith('/uploads/')) {
+            normalizedValue = value.replace('/uploads/', '/api/files/') as Settings[K];
+        }
+        if (key === 'loginCarouselImages' && Array.isArray(value)) {
+            normalizedValue = value.map(img => 
+                typeof img === 'string' && img.startsWith('/uploads/') ? img.replace('/uploads/', '/api/files/') : img
+            ) as Settings[K];
+        }
+
+        const newSettings = { ...settings, [key]: normalizedValue };
         setSettingsState(newSettings);
         try {
             // Get current user email from localStorage or context
@@ -199,7 +229,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    value,
+                    value: normalizedValue,
                     userEmail: userEmail
                 })
             });

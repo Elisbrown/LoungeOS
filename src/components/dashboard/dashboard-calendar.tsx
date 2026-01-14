@@ -152,23 +152,25 @@ export function DashboardCalendar() {
       const hasEvents = dayEvents.length > 0;
       
       days.push(
-        <div key={day} className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "h-8 w-8 p-0 font-normal",
-              isToday(day) && "bg-primary text-primary-foreground hover:bg-primary/90",
-              isSelected(day) && !isToday(day) && "bg-accent text-accent-foreground",
-              "hover:bg-accent hover:text-accent-foreground"
+        <div key={day} className="flex justify-center items-center h-8">
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-8 w-8 p-0 font-normal",
+                isToday(day) && "bg-primary text-primary-foreground hover:bg-primary/90",
+                isSelected(day) && !isToday(day) && "bg-accent text-accent-foreground",
+                "hover:bg-accent hover:text-accent-foreground"
+              )}
+              onClick={() => setSelectedDate(dayDate)}
+            >
+              {day}
+            </Button>
+            {hasEvents && (
+              <div className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-red-500 rounded-full border border-background"></div>
             )}
-            onClick={() => setSelectedDate(dayDate)}
-          >
-            {day}
-          </Button>
-          {hasEvents && (
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
-          )}
+          </div>
         </div>
       );
     }
@@ -228,44 +230,64 @@ export function DashboardCalendar() {
         )}
       </div>
 
-      {/* Upcoming Events */}
-      <Card>
+      {/* Events List */}
+      <Card className="border-none shadow-none bg-muted/30">
         <CardContent className="p-4">
-          <h4 className="font-medium mb-2">{t('dashboard.upcomingEvents')}</h4>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="font-medium text-xs uppercase tracking-wider text-muted-foreground">
+              {selectedDate ? `Events for ${selectedDate.toLocaleDateString(locale)}` : t('dashboard.upcomingEvents')}
+            </h4>
+            {selectedDate && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 text-[10px] text-muted-foreground"
+                onClick={() => setSelectedDate(null)}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+          
           {loading ? (
-            <div className="text-sm text-muted-foreground">{t('dashboard.loadingEvents')}</div>
-          ) : getUpcomingEvents().length === 0 ? (
-            <div className="text-sm text-muted-foreground">{t('dashboard.noEvents')}</div>
+            <div className="text-xs text-muted-foreground py-2 italic">{t('dashboard.loadingEvents')}</div>
+          ) : (selectedDate ? events.filter(e => {
+              const ed = new Date(e.start_date);
+              return ed.getFullYear() === selectedDate.getFullYear() &&
+                     ed.getMonth() === selectedDate.getMonth() &&
+                     ed.getDate() === selectedDate.getDate();
+            }) : getUpcomingEvents()).length === 0 ? (
+            <div className="text-xs text-muted-foreground py-2 italic">
+                {selectedDate ? "No events for this date" : t('dashboard.noEvents')}
+            </div>
           ) : (
-            <div className="space-y-2">
-              {getUpcomingEvents().slice(0, 3).map(event => (
-                <div key={event.id} className="flex items-start gap-2 p-2 rounded-md bg-muted/50">
-                  <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground" />
+            <div className="space-y-2 max-h-[160px] overflow-y-auto hide-scrollbar">
+              {(selectedDate ? events.filter(e => {
+                  const ed = new Date(e.start_date);
+                  return ed.getFullYear() === selectedDate.getFullYear() &&
+                         ed.getMonth() === selectedDate.getMonth() &&
+                         ed.getDate() === selectedDate.getDate();
+                }) : getUpcomingEvents()).map(event => (
+                <div key={event.id} className="flex items-start gap-2 p-2 rounded-md bg-background/50 hover:bg-background transition-colors border border-transparent hover:border-border/50">
+                  <Calendar className="h-3.5 w-3.5 mt-0.5 text-muted-foreground" />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{event.title}</div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    <div className="font-medium text-sm leading-tight">{event.title}</div>
+                    <div className="text-[10px] text-muted-foreground flex items-center gap-2 mt-0.5">
                       <Clock className="h-3 w-3" />
-                      {new Date(event.start_date).toLocaleDateString(locale, {
-                        month: 'short',
-                        day: 'numeric',
+                      {new Date(event.start_date).toLocaleTimeString(locale, {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
                       {event.location && (
                         <>
                           <MapPin className="h-3 w-3" />
-                          {event.location}
+                          <span className="truncate">{event.location}</span>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
               ))}
-              {getUpcomingEvents().length > 3 && (
-                <div className="text-xs text-muted-foreground text-center">
-                  {t('dashboard.moreEvents', { count: getUpcomingEvents().length - 3 })}
-                </div>
-              )}
             </div>
           )}
         </CardContent>

@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import type { StaffRole } from './staff-context';
 
 export type User = {
+  id: string | number;
   name: string;
   email: string;
   role: StaffRole;

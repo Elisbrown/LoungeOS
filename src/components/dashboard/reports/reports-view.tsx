@@ -22,8 +22,12 @@ import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell } from "rech
 import { Button } from "@/components/ui/button"
 import { DateRangePicker } from "@/components/dashboard/reports/date-range-picker"
 import { Download } from "lucide-react"
-import { useTranslation } from "@/hooks/use-translation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { exportSalesSummaryToPDF } from "@/lib/pdf-export"
+import { useAuth } from "@/context/auth-context"
+import { useTranslation } from "@/hooks/use-translation"
+import { useSettings } from "@/context/settings-context"
+
 
 const salesOverTimeData = [
   { date: "2023-01-01", sales: 200000 },
@@ -60,6 +64,9 @@ const salesChartConfig = {
 
 export function ReportsView() {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const { settings } = useSettings()
+
   const [isGenerating, setIsGenerating] = React.useState(false)
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
     from: new Date(new Date().setDate(new Date().getDate() - 7)),
@@ -91,8 +98,11 @@ export function ReportsView() {
   }, [fetchData])
 
   const handleGenerateReport = async () => {
+    if (!data) return;
     setIsGenerating(true)
-    await fetchData();
+    
+    await exportSalesSummaryToPDF(data, t('reports.salesReports'), user ? { name: user.name, email: user.email } : undefined, settings)
+    
     setIsGenerating(false)
   }
 

@@ -15,10 +15,11 @@ async function getActorId(email?: string) {
 
 export async function GET(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
-        const ticket = getTicketById(Number(params.id));
+        const ticket = getTicketById(Number(id));
         
         if (!ticket) {
             return NextResponse.json({ message: 'Ticket not found' }, { status: 404 });
@@ -33,12 +34,13 @@ export async function GET(
 
 export async function PUT(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         const body = await request.json();
         const { userEmail, ...ticketData } = body;
-        const ticketId = Number(params.id);
+        const ticketId = Number(id);
         
         const oldTicket = getTicketById(ticketId);
         const updatedTicket = updateTicket(ticketId, ticketData);
@@ -69,10 +71,11 @@ export async function PUT(
 
 export async function DELETE(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
-        const ticketId = Number(params.id);
+        const ticketId = Number(id);
         const { searchParams } = new URL(request.url);
         const userEmail = searchParams.get('userEmail');
         

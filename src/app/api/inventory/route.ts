@@ -8,7 +8,8 @@ import {
     getInventoryCategories,
     getInventorySuppliers,
     getInventoryStats,
-    getInventoryItemById
+    getInventoryItemById,
+    bulkAddInventoryItems
 } from '@/lib/db/inventory';
 import { addActivityLog } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
@@ -52,8 +53,24 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const itemData = await request.json();
+        const body = await request.json();
 
+        if (body.items && Array.isArray(body.items)) {
+            const actorId = await getActorId(body.userEmail);
+            await bulkAddInventoryItems(body.items);
+
+            await addActivityLog(
+                actorId,
+                'STOCK_ITEM_BULK_CREATE',
+                `Bulk added ${body.items.length} inventory items`,
+                'SYSTEM',
+                { count: body.items.length }
+            );
+
+            return NextResponse.json({ success: true }, { status: 201 });
+        }
+
+        const itemData = body;
         if (!itemData || Object.keys(itemData).length === 0) {
             return NextResponse.json(
                 { error: 'Item data is required' },

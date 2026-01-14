@@ -22,11 +22,12 @@ function getMimeType(filename: string): string {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const { path: pathSegments } = await params;
   try {
     // Join the path segments
-    const filepath = path.join(process.cwd(), 'uploads', ...params.path);
+    const filepath = path.join(process.cwd(), 'uploads', ...pathSegments);
     
     // Security check: Ensure the path is within uploads directory
     const uploadsDir = path.join(process.cwd(), 'uploads');

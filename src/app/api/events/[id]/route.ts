@@ -12,10 +12,11 @@ async function getActorId(email?: string) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: idParam } = await params;
   try {
-    const id = parseInt(params.id);
+    const id = parseInt(idParam);
     const event = getEventById(id);
     
     if (!event) {
@@ -31,10 +32,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: idParam } = await params;
   try {
-    const id = parseInt(params.id);
+    const id = parseInt(idParam);
     const data = await request.json();
     const { userEmail, ...eventData } = data;
     
@@ -68,10 +70,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: idParam } = await params;
   try {
-    const id = parseInt(params.id);
+    const id = parseInt(idParam);
     const { searchParams } = new URL(request.url);
     const userEmail = searchParams.get('userEmail');
     

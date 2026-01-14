@@ -17,7 +17,7 @@ export default function CreditsPage() {
                 <Card className="w-full max-w-2xl text-center">
                     <CardHeader>
                         <Avatar className="mx-auto h-24 w-24 mb-4 border-2 border-primary">
-                            <AvatarImage src="https://placehold.co/100x100.png" alt="Sunyin Elisbrown Sigala" data-ai-hint="person portrait" />
+                            <AvatarImage src="../../uploads/dev/elisbrown.jpeg" style={{ width: '100%', height: '100%' }} alt="Sunyin Elisbrown Sigala" data-ai-hint="person portrait" />
                             <AvatarFallback>SES</AvatarFallback>
                         </Avatar>
                         <CardTitle className="font-headline text-3xl">Sunyin Elisbrown Sigala</CardTitle>
@@ -31,7 +31,7 @@ export default function CreditsPage() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <Mail className="h-4 w-4" />
-                                <a href="mailto:selisbrown@ahfoh.org" className="hover:underline">selisbrown@ahfoh.org</a>
+                                <a href="mailto:elisbrown@sigalix.net" className="hover:underline">elisbrown@sigalix.net</a>
                             </div>
                              <div className="flex items-center gap-2">
                                 <Phone className="h-4 w-4" />

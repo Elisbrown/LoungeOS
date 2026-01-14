@@ -284,7 +284,7 @@ export default function DashboardPage() {
               <KpiCard 
                 title={t('dashboard.outOfStock') || "Out of Stock"}
                 value={data.inventory.outOfStockItems.toString()}
-                change={`${data.inventory.lowStockItems} ${t('dashboard.lowStockCount') || 'low on stock'}`}
+                change={t('dashboard.lowStockCount', { count: data.inventory.lowStockItems })}
                 icon={<PackageSearch className="h-4 w-4 text-muted-foreground" />}
                 variant={data.inventory.outOfStockItems > 0 ? "destructive" : "default"}
               />

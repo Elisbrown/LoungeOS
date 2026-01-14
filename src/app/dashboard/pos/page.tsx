@@ -62,9 +62,9 @@ function PosPageContent() {
     return tables.filter(table => table.status === 'Available' || table.status === 'Occupied');
   }, [tables]);
 
-  const handleTableSelect = (tableId: string) => {
-    setSelectedTable(tableId);
-    const activeOrder = orders.find(o => o.table === tableId && o.status !== "Completed" && o.status !== "Canceled");
+  const handleTableSelect = (tableName: string) => {
+    setSelectedTable(tableName);
+    const activeOrder = orders.find(o => o.table === tableName && o.status !== "Completed" && o.status !== "Canceled");
     if (activeOrder) {
         setOrderItems(activeOrder.items.map(i => ({...i, isPersisted: true})));
         setActiveOrderId(activeOrder.id);
@@ -399,7 +399,7 @@ function PosPageContent() {
                   </SelectTrigger>
                   <SelectContent>
                     {availableTables.map((table) => (
-                      <SelectItem key={table.id} value={table.id}>
+                      <SelectItem key={table.id} value={table.name}>
                         {table.name} ({table.status})
                       </SelectItem>
                     ))}

@@ -4,11 +4,12 @@
 
 - Secure User Authentication: User authentication and role-based access control (RBAC) with secure password handling, forced password changes on first login, and comprehensive login/logout activity logging.
 - Staff Management: Comprehensive module for managing staff accounts, including creating, modifying, deactivating, activating, and deleting staff, with role assignment (Manager, Waitress, Stock Manager, Cashier, Chef) and specific floor assignments for waitresses.
-- Inventory Management: Manage product inventory including categories (with icons), pricing (in XAF), stock levels with low stock alerts, product variations, and the ability to import inventory from CSV.
+- Inventory Management: Enhanced module for managing product inventory including categories, multi-step bulk stock-in/stock-out with auto-filling costs, custom date-range movement export (CSV/PDF), and full CSV template support for bulk item imports.
 - Point of Sale (POS): Process sales transactions with multiple payment methods (Cash, Mobile Money, Orange Money, Bank Transfer), split payment functionality, discount application, and receipt printing.
 - Kitchen Management Dashboard: Display a Trello-style interface for Chefs to manage order preparation, with new order notifications, drag-and-drop status updates, and waitress notifications for completed orders.
 - Table Management System: Manage tables and floor layouts, including adding/editing/removing floors and tables, assigning tables to specific floors, visual layout with real-time status updates, and the ability to merge and split tables/orders.
-- Dashboard & Reporting: Admin dashboard with key performance indicators (KPIs), visual sales trends, top-selling products, current stock status, detailed sales and inventory reports (filterable and exportable to CSV/PDF), and comprehensive login/logout activity reports.
+- Accounting Module: Full accounting system with a customizable Chart of Accounts, manual journal entries, automatic transaction syncing from POS and Inventory, and research-backed financial reports (Profit & Loss, Balance Sheet, Cash Flow).
+- Dashboard & Reporting: Admin dashboard with key performance indicators (KPIs), visual sales trends, top-selling products, current stock status, and comprehensive financial reporting module.
 - Core Infrastructure: Designed for local network deployment, optimized for touch interactions across various screen sizes, high compatibility with major browsers, and full English/French language support (with French as default).
 - Security: Robust role-based access control across all modules, sensitive data protection, encryption of critical data at rest, and logging of all significant actions for auditing.
 - Performance: Highly optimized search functionality providing real-time results (under 1ms) as each character is typed, fast page loading, and efficient transaction processing.

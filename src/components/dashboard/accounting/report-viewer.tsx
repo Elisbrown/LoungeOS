@@ -30,6 +30,10 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
 
   useEffect(() => {
     generateReport()
+    
+    const handleSync = () => generateReport()
+    window.addEventListener('accounting-data-synced', handleSync)
+    return () => window.removeEventListener('accounting-data-synced', handleSync)
   }, [])
 
   const generateReport = async () => {

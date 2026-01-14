@@ -20,7 +20,7 @@ export function ManageTablesDialog() {
   const { t } = useTranslation()
   
   const [open, setOpen] = useState(false)
-  const [selectedTables, setSelectedTables] = useState<number[]>([])
+  const [selectedTables, setSelectedTables] = useState<string[]>([])
   const [bulkAction, setBulkAction] = useState<string>('')
   const [targetFloor, setTargetFloor] = useState<string>('')
   const [targetStatus, setTargetStatus] = useState<string>('')
@@ -33,7 +33,7 @@ export function ManageTablesDialog() {
     }
   }
 
-  const handleSelectTable = (id: number, checked: boolean) => {
+  const handleSelectTable = (id: string, checked: boolean) => {
     if (checked) {
       setSelectedTables([...selectedTables, id])
     } else {
@@ -211,8 +211,8 @@ export function ManageTablesDialog() {
                   </SelectTrigger>
                   <SelectContent>
                     {floors.map((floor) => (
-                      <SelectItem key={floor.id} value={floor.name}>
-                        {floor.name}
+                      <SelectItem key={floor} value={floor}>
+                        {floor}
                       </SelectItem>
                     ))}
                   </SelectContent>

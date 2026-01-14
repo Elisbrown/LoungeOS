@@ -35,12 +35,13 @@ import { InventoryMovementsDialog } from "./inventory-movements-dialog";
 import { AddInventoryItemDialog } from "./add-inventory-item-dialog";
 import { EditInventoryItemDialog } from "./edit-inventory-item-dialog";
 import { StockMovementDialog } from "./stock-movement-dialog";
+import { BulkMovementDialog } from "./bulk-movement-dialog";
 import { exportInventoryToPDF } from "@/lib/pdf-export";
 
 const statusOptions = ["All", "In Stock", "Low Stock", "Out of Stock"] as const;
 
 export function InventoryTable() {
-  const { items, deleteItem, loading } = useInventory();
+  const { items, deleteItem, loading, bulkAddItems } = useInventory();
   const { settings } = useSettings();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -109,7 +110,7 @@ export function InventoryTable() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const text = e.target?.result as string;
       try {
         const lines = text.split('\n').filter(line => line.trim() !== '');
@@ -124,8 +125,28 @@ export function InventoryTable() {
             return;
         }
 
-        // Process CSV import - this would need to be implemented with the new inventory system
-        toast({ title: t('toasts.importSuccess'), description: t('toasts.importSuccessDesc', { count: lines.length - 1 }) });
+        // Process CSV import
+        const itemsToImport = lines.slice(1).map(line => {
+            const values = line.split(',').map(v => v.trim());
+            const item: any = {};
+            headers.forEach((header, index) => {
+                const value = values[index];
+                if (header === 'current_stock' || header === 'min_stock_level' || header === 'cost_per_unit') {
+                    item[header] = parseFloat(value) || 0;
+                } else {
+                    item[header] = value;
+                }
+            });
+            
+            // Add default values for missing required fields
+            if (!item.unit) item.unit = 'pieces';
+            if (!item.min_stock_level) item.min_stock_level = 0;
+            
+            return item;
+        });
+
+        await bulkAddItems(itemsToImport);
+        toast({ title: t('toasts.importSuccess'), description: t('toasts.importSuccessDesc', { count: itemsToImport.length }) });
       } catch (error) {
         toast({ variant: "destructive", title: t('toasts.importFailed'), description: t('toasts.importFailedDesc') });
         console.error("CSV Parsing Error:", error);
@@ -202,6 +223,8 @@ export function InventoryTable() {
     setStockMovementDialogOpen(true);
   };
 
+  const [bulkMovementDialogOpen, setBulkMovementDialogOpen] = useState(false);
+
   return (
     <div>
       <div className="flex items-center justify-between gap-2 mb-4">
@@ -250,6 +273,33 @@ export function InventoryTable() {
           </Button>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center bg-muted/30 p-1 rounded-md border gap-1 mr-2">
+             <Button 
+               variant="ghost" 
+               size="sm" 
+               className="h-8 text-xs gap-1 hover:bg-green-500/10 hover:text-green-600 dark:hover:text-green-400"
+               onClick={() => {
+                 setMovementType('IN');
+                 setBulkMovementDialogOpen(true);
+               }}
+             >
+               <TrendingUp className="h-3.5 w-3.5" />
+               Stock In
+             </Button>
+             <div className="w-px h-4 bg-border" />
+             <Button 
+               variant="ghost" 
+               size="sm" 
+               className="h-8 text-xs gap-1 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400"
+               onClick={() => {
+                 setMovementType('OUT');
+                 setBulkMovementDialogOpen(true);
+               }}
+             >
+               <TrendingDown className="h-3.5 w-3.5" />
+               Stock Out
+             </Button>
+          </div>
           <AddInventoryItemDialog />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -269,7 +319,6 @@ export function InventoryTable() {
                 <Download className="mr-2 h-4 w-4" />
                 {t('inventory.downloadTemplate')}
               </DropdownMenuItem>
-
               <DropdownMenuItem onSelect={handleExportCSV}>
                 <Download className="mr-2 h-4 w-4" />
                 {t('inventory.exportCSV')}
@@ -461,6 +510,12 @@ export function InventoryTable() {
           />
         </>
       )}
+
+      <BulkMovementDialog 
+        open={bulkMovementDialogOpen}
+        onOpenChange={setBulkMovementDialogOpen}
+        type={movementType}
+      />
     </div>
   );
 }

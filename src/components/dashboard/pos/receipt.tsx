@@ -1,4 +1,4 @@
-
+. Whi
 "use client"
 
 import React from 'react';
@@ -77,7 +77,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
         <div className="text-center mb-4 space-y-1">
           <div className="flex items-center justify-center mb-2">
             {settings.platformLogo ? (
-              <Image src={settings.platformLogo} alt="logo" width={50} height={50} className="h-12 w-12 object-contain" />
+              <Image src={settings.platformLogo} alt="logo" width={50} height={50} className="h-12 w-12 object-contain" unoptimized />
             ) : (
               <LoungeChairIcon className="h-10 w-10 text-black" />
             )}

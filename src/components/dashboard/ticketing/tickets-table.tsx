@@ -71,6 +71,8 @@ export function TicketsTable({ onSelectTicket }: TicketsTableProps) {
       case 'Medium': return 'secondary'
       case 'High': return 'default'
       case 'Critical': return 'destructive'
+      case 'Urgent': return 'destructive'
+      default: return 'secondary'
     }
   }
 

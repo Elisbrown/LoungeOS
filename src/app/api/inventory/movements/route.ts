@@ -1,7 +1,7 @@
 
 // src/app/api/inventory/movements/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getInventoryMovements, addInventoryMovement, getInventoryItemById } from '@/lib/db/inventory';
+import { getInventoryMovements, addInventoryMovement, getInventoryItemById, bulkAddInventoryMovements } from '@/lib/db/inventory';
 import { addActivityLog } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
 
@@ -37,8 +37,29 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
+        const userEmail = body.userEmail;
+
+        if (body.movements && Array.isArray(body.movements)) {
+            const actorId = await getActorId(userEmail);
+            const movementsWithUser = body.movements.map((m: any) => ({
+                ...m,
+                user_id: actorId
+            }));
+
+            await bulkAddInventoryMovements(movementsWithUser);
+
+            await addActivityLog(
+                actorId,
+                'BULK_STOCK_MOVEMENT',
+                `Bulk stock movement processed for ${body.movements.length} items`,
+                'SYSTEM',
+                { count: body.movements.length }
+            );
+
+            return NextResponse.json({ success: true }, { status: 201 });
+        }
+
         // Support both nested and flattened format for backward compatibility during transition
-        const userEmail = body.userEmail || body.movementData?.userEmail;
         const movementData = body.item_id ? body : body.movementData;
 
         if (!movementData || !movementData.item_id) {
@@ -49,7 +70,7 @@ export async function POST(request: NextRequest) {
         }
 
         const actorId = await getActorId(userEmail);
-        const newMovement = await addInventoryMovement(movementData);
+        const newMovement = await addInventoryMovement({ ...movementData, user_id: actorId });
         const item = await getInventoryItemById(movementData.item_id);
 
         let action = 'STOCK_ADJUSTMENT';

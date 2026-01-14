@@ -71,6 +71,7 @@ const knowledgeBaseContent: KBCategory[] = [
       { titleKey: 'kb.accounting.overview.title', contentKey: 'kb.accounting.overview.content' },
       { titleKey: 'kb.accounting.dashboard.title', contentKey: 'kb.accounting.dashboard.content' },
       { titleKey: 'kb.accounting.journals.title', contentKey: 'kb.accounting.journals.content' },
+      { titleKey: 'kb.accounting.coa.title', contentKey: 'kb.accounting.coa.content' },
     ],
   },
   {

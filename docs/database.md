@@ -221,6 +221,47 @@ CREATE TABLE IF NOT EXISTS inventory_suppliers (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Chart of Accounts Table
+-- Stores all accounts for the accounting system.
+CREATE TABLE IF NOT EXISTS chart_of_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    account_type TEXT NOT NULL CHECK(account_type IN ('asset', 'liability', 'equity', 'revenue', 'expense')),
+    parent_code TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Journal Entries Table
+-- Stores header information for accounting journal entries.
+CREATE TABLE IF NOT EXISTS journal_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entry_date DATE NOT NULL,
+    entry_type TEXT NOT NULL,
+    description TEXT,
+    reference TEXT,
+    total_amount REAL DEFAULT 0,
+    status TEXT DEFAULT 'draft',
+    created_by INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Journal Entry Lines Table
+-- Stores individual line items for journal entries (debits and credits).
+CREATE TABLE IF NOT EXISTS journal_entry_lines (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    journal_entry_id INTEGER NOT NULL,
+    account_code TEXT NOT NULL,
+    account_name TEXT NOT NULL,
+    description TEXT,
+    debit REAL DEFAULT 0,
+    credit REAL DEFAULT 0,
+    FOREIGN KEY (journal_entry_id) REFERENCES journal_entries(id) ON DELETE CASCADE
+);
+
 ```
 
 ## Data Layer Implementation
