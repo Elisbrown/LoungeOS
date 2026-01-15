@@ -25,43 +25,14 @@ export default function LoginPage() {
       <div className="relative hidden bg-muted lg:block h-screen overflow-hidden">
         {/* Background Carousel */}
         <div className="absolute inset-0">
-          <Carousel 
-            className="h-full w-full"
-            plugins={[ Autoplay({ delay: 5000, stopOnInteraction: false }) ]}
-            opts={{ loop: true }}
-          >
-            <CarouselContent className="h-full">
-              {(settings.loginCarouselImages || ['https://placehold.co/1280x800.png']).map((mediaUrl, index) => {
-                const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(mediaUrl);
-                
-                return (
-                  <CarouselItem key={index} className="h-full">
-                    {isVideo ? (
-                      <video
-                        className="h-full w-full object-cover"
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                      >
-                        <source src={mediaUrl} type="video/mp4" />
-                      </video>
-                    ) : (
-                      <Image
-                        src={mediaUrl}
-                        alt={`Login background ${index + 1}`}
-                        fill
-                        className="object-cover"
-                        sizes="50vw"
-                        priority={index === 0}
-                        unoptimized
-                      />
-                    )}
-                  </CarouselItem>
-                );
-              })}
-            </CarouselContent>
-          </Carousel>
+          <Image
+            src="/landing.jpg"
+            alt="Login background"
+            fill
+            className="object-cover"
+            priority
+            unoptimized
+          />
         </div>
 
         {/* Overlay with Logo, Name, and Tagline */}

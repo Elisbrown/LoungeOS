@@ -48,42 +48,61 @@ const getLandingPageRouteForRole = (role: StaffRole): string => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isSetup, setIsSetup] = useState<boolean | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleRedirects = useCallback((currentUser: User | null, currentPath: string) => {
+  const handleRedirects = useCallback((currentUser: User | null, currentPath: string, setupStatus: boolean | null) => {
+    if (setupStatus === false && currentPath !== '/setup') {
+      router.push('/setup');
+      return;
+    }
+    
+    if (setupStatus === true && currentPath === '/setup') {
+      router.push('/login');
+      return;
+    }
+
     if (currentUser) {
       if (currentUser.force_password_change === 1 && currentPath !== '/password-reset') {
         router.push('/password-reset');
       } else if (currentPath === '/password-reset' && currentUser.force_password_change !== 1) {
         router.push(getLandingPageRouteForRole(currentUser.role));
-      } else if (['/login', '/forgot-password', '/'].includes(currentPath)) {
+      } else if (['/login', '/forgot-password', '/', '/setup'].includes(currentPath)) {
         router.push(getLandingPageRouteForRole(currentUser.role));
       }
     } else {
-      if (currentPath !== '/login' && currentPath !== '/forgot-password' && currentPath !== '/password-reset') {
+      if (!['/login', '/forgot-password', '/password-reset', '/setup'].includes(currentPath)) {
         router.push('/login');
       }
     }
   }, [router]);
 
   useEffect(() => {
-    try {
-      const storedUser = sessionStorage.getItem('loungeos-user');
-      const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-      if (parsedUser && parsedUser.hireDate) {
-        parsedUser.hireDate = new Date(parsedUser.hireDate);
-      }
-      
-      if (user?.email !== parsedUser?.email) {
-          setUser(parsedUser);
-      }
-      handleRedirects(parsedUser, pathname);
-    } catch (e) {
-        console.error("Failed to parse user from session storage", e);
-        sessionStorage.removeItem('loungeos-user');
-        handleRedirects(null, pathname);
-    }
+    const checkSetupAndUser = async () => {
+        try {
+          // Check setup status
+          const setupRes = await fetch('/api/auth/setup-check');
+          const setupData = await setupRes.json();
+          setIsSetup(setupData.isSetup);
+
+          const storedUser = sessionStorage.getItem('loungeos-user');
+          const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+          if (parsedUser && parsedUser.hireDate) {
+            parsedUser.hireDate = new Date(parsedUser.hireDate);
+          }
+          
+          if (user?.email !== parsedUser?.email) {
+              setUser(parsedUser);
+          }
+          handleRedirects(parsedUser, pathname, setupData.isSetup);
+        } catch (e) {
+            console.error("Failed to check setup or user session", e);
+            handleRedirects(null, pathname, isSetup);
+        }
+    };
+
+    checkSetupAndUser();
   }, [pathname, handleRedirects, user?.email]);
 
   const login = (userData: User) => {
@@ -94,7 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
     setUser(userData);
     sessionStorage.setItem('loungeos-user', JSON.stringify(userToStore));
-    handleRedirects(userData, pathname);
+    handleRedirects(userData, pathname, isSetup);
   };
 
   const logout = () => {

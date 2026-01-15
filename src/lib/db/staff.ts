@@ -88,7 +88,7 @@ export async function verifyPassword(email: string, password_to_check: string): 
 export async function addStaff(staffData: Omit<StaffMember, 'id' | 'status' | 'avatar'>): Promise<StaffMember> {
   const db = getDb();
   try {
-    const password = 'password123'; // Default password, should be communicated securely
+    const password = '12345678'; // Default password, communicated to admin via toast
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const newStaff: Omit<StaffMember, 'id'> = { 
@@ -181,5 +181,14 @@ export async function updatePassword(email: string, newPassword: string): Promis
           .run(hashedPassword, email);
     } finally {
         // No close
+    }
+}
+export async function isAppSetup(): Promise<boolean> {
+    const db = getDb();
+    try {
+        const row = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = ?').get('Super Admin') as { count: number };
+        return row.count > 0;
+    } catch (e) {
+        return false;
     }
 }

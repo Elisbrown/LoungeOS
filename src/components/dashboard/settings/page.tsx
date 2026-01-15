@@ -215,7 +215,7 @@ export default function SettingsPage() {
                       name="newPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('settings.newPassword')}</FormLabel>
+                          <FormLabel>{t('settings.newPasswordLabel')}</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
@@ -228,7 +228,7 @@ export default function SettingsPage() {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('settings.confirmPassword')}</FormLabel>
+                          <FormLabel>{t('settings.confirmPasswordLabel')}</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>

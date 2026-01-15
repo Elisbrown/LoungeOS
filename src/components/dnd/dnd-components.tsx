@@ -42,9 +42,13 @@ const getTimeAgo = (timestamp: Date) => {
 }
 
 // Draggable Order Card Component
-export const OrderCard = React.forwardRef<HTMLDivElement, { order: Order; onUpdateStatus?: (id: string, status: OrderStatus) => void; t?: any, isDragging?: boolean, style?: React.CSSProperties, [key: string]: any }>(
-  ({ order, onUpdateStatus, t, isDragging, style, ...props }, ref) => {
+export const OrderCard = React.forwardRef<HTMLDivElement, { order: Order; onUpdateStatus?: (id: string, status: OrderStatus) => void; t?: any, isDragging?: boolean, style?: React.CSSProperties, filterItems?: (item: OrderItem) => boolean, [key: string]: any }>(
+  ({ order, onUpdateStatus, t, isDragging, style, filterItems, ...props }, ref) => {
     
+  const visibleItems = filterItems ? order.items.filter(filterItems) : order.items;
+
+  if (visibleItems.length === 0) return null; // Don't show card if no items match filter
+
   return (
     <Card ref={ref} style={style} className={cn("flex flex-col mb-4 touch-none cursor-grab active:cursor-grabbing", isDragging && "opacity-50 z-50")} {...props}>
       <CardHeader>
@@ -60,7 +64,7 @@ export const OrderCard = React.forwardRef<HTMLDivElement, { order: Order; onUpda
       <CardContent className="flex-grow space-y-2">
         <Separator />
         <ul className="space-y-1 pt-2">
-          {order.items.map((item: OrderItem, index: number) => (
+          {visibleItems.map((item: OrderItem, index: number) => (
             <li key={index} className="flex justify-between">
               <span>{item.name}</span>
               <span className="font-bold">x{item.quantity}</span>
@@ -94,7 +98,7 @@ export const OrderCard = React.forwardRef<HTMLDivElement, { order: Order; onUpda
 OrderCard.displayName = "OrderCard";
 
 
-export function SortableOrderCard({ order, onUpdateStatus, t }: { order: Order; onUpdateStatus: (id: string, status: OrderStatus) => void; t: any }) {
+export function SortableOrderCard({ order, onUpdateStatus, t, filterItems }: { order: Order; onUpdateStatus: (id: string, status: OrderStatus) => void; t: any, filterItems?: (item: OrderItem) => boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: order.id });
 
   const style = {
@@ -110,6 +114,7 @@ export function SortableOrderCard({ order, onUpdateStatus, t }: { order: Order; 
         t={t}
         isDragging={isDragging}
         style={style}
+        filterItems={filterItems}
         {...attributes} 
         {...listeners}
     />
@@ -118,13 +123,20 @@ export function SortableOrderCard({ order, onUpdateStatus, t }: { order: Order; 
 
 
 // Droppable Column Component
-export function DroppableColumn({ id, title, orders, onUpdateStatus, t }: { id: string, title: string, orders: Order[], onUpdateStatus: (id: string, status: OrderStatus) => void; t: any }) {
+export function DroppableColumn({ id, title, orders, onUpdateStatus, t, filterItems }: { id: string, title: string, orders: Order[], onUpdateStatus: (id: string, status: OrderStatus) => void; t: any, filterItems?: (item: OrderItem) => boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id });
+
+  // Filter orders to only show those that have at least one visible item
+  // This prevents empty cards from taking up space in the sortable context if we didn't handle it in OrderCard (but we do return null there)
+  // However, for SortableContext items prop, we should ideally only pass IDs of visible cards.
+  const visibleOrders = filterItems 
+    ? orders.filter(o => o.items.some(filterItems))
+    : orders;
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold font-headline">{title} ({orders.length})</h2>
-      <SortableContext id={id} items={orders.map(o => o.id)}>
+      <h2 className="text-xl font-bold font-headline">{title} ({visibleOrders.length})</h2>
+      <SortableContext id={id} items={visibleOrders.map(o => o.id)}>
         <div 
           ref={setNodeRef} 
           className={cn(
@@ -132,8 +144,8 @@ export function DroppableColumn({ id, title, orders, onUpdateStatus, t }: { id: 
             isOver && "bg-accent/50 border-primary"
           )}
         >
-          {orders.length > 0 ? orders.map((order) => (
-            <SortableOrderCard key={order.id} order={order} onUpdateStatus={onUpdateStatus} t={t} />
+          {visibleOrders.length > 0 ? visibleOrders.map((order) => (
+            <SortableOrderCard key={order.id} order={order} onUpdateStatus={onUpdateStatus} t={t} filterItems={filterItems} />
           )) : (
             <div className="flex items-center justify-center h-full">
               <p className="text-muted-foreground text-center">{t('kitchen.noPending')}</p>

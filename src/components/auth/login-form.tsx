@@ -142,19 +142,7 @@ function LoginFormContent() {
         <div className="mt-4 text-center text-sm">
             <LanguageSwitcher />
         </div>
-        <div className="mt-4 p-2 border rounded-md text-xs text-muted-foreground">
-            <p className="font-bold">{t('login.demoLoginsTitle')}</p>
-            <ul className="list-disc list-inside">
-                <li>superadmin@lounge.com (pw: password)</li>
-                <li>manager@lounge.com (pw: password)</li>
-                <li>stock@lounge.com (pw: password)</li>
-                <li>chef@lounge.com (pw: password)</li>
-                <li>waiter-main@lounge.com (pw: password)</li>
-                <li>waiter-vip@lounge.com (pw: password)</li>
-                <li>cashier@lounge.com (pw: password)</li>
-                <li>bartender@lounge.com (pw: password)</li>
-            </ul>
-        </div>
+
         </Form>
   )
 }

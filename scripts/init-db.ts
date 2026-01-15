@@ -189,6 +189,12 @@ CREATE TABLE IF NOT EXISTS inventory_suppliers (
 function main() {
   try {
     db.exec(schema);
+    
+    // Seed default settings if they don't exist
+    const insertSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
+    insertSetting.run('platformName', 'LoungeOS');
+    insertSetting.run('platformLogo', '/logo.png');
+
     console.log('✅ Database schema initialized successfully!');
   } catch (error) {
     console.error('❌ Error initializing database schema:', error);

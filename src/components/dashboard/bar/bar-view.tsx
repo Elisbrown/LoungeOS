@@ -85,6 +85,11 @@ export function BarView({ orderToCancel, setOrderToCancel, activeId }: {
     }
   };
 
+  const isDrinkItem = (item: any) => {
+    const category = categories.find(c => c.name === item.category);
+    return !!(category && !category.isFood);
+  };
+
   return (
     <>
       <div className="flex-1 space-y-4">
@@ -95,6 +100,7 @@ export function BarView({ orderToCancel, setOrderToCancel, activeId }: {
             orders={orderData['Pending']} 
             onUpdateStatus={handleUpdateStatus} 
             t={t} 
+            filterItems={isDrinkItem}
           />
           <DroppableColumn 
             id="In Progress" 
@@ -102,6 +108,7 @@ export function BarView({ orderToCancel, setOrderToCancel, activeId }: {
             orders={orderData['In Progress']} 
             onUpdateStatus={handleUpdateStatus} 
             t={t} 
+            filterItems={isDrinkItem}
           />
           <DroppableColumn 
             id="Ready" 
@@ -109,6 +116,7 @@ export function BarView({ orderToCancel, setOrderToCancel, activeId }: {
             orders={orderData['Ready']} 
             onUpdateStatus={handleUpdateStatus} 
             t={t} 
+            filterItems={isDrinkItem}
           />
         </div>
         <CancelDropZone activeId={activeId} />

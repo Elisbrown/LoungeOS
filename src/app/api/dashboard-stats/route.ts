@@ -291,19 +291,31 @@ export async function GET(request: NextRequest) {
     const totalItemsStmt = db.prepare('SELECT COUNT(*) as count FROM inventory_items')
     const totalItems = (totalItemsStmt.get() as { count: number }).count || 0
 
-    const lowStockItemsStmt = db.prepare(`
+    const lowStockInventoryStmt = db.prepare(`
       SELECT COUNT(*) as count 
       FROM inventory_items 
       WHERE current_stock > 0 AND current_stock <= min_stock_level
     `)
-    const lowStockItems = (lowStockItemsStmt.get() as { count: number }).count || 0
+    const lowStockProductsStmt = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM products 
+      WHERE quantity > 0 AND quantity <= 10
+    `)
+    const lowStockItems = ((lowStockInventoryStmt.get() as { count: number }).count || 0) + 
+                          ((lowStockProductsStmt.get() as { count: number }).count || 0)
 
-    const outOfStockItemsStmt = db.prepare(`
+    const outOfStockInventoryStmt = db.prepare(`
       SELECT COUNT(*) as count 
       FROM inventory_items 
       WHERE current_stock <= 0
     `)
-    const outOfStockItems = (outOfStockItemsStmt.get() as { count: number }).count || 0
+    const outOfStockProductsStmt = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM products 
+      WHERE quantity <= 0
+    `)
+    const outOfStockItems = ((outOfStockInventoryStmt.get() as { count: number }).count || 0) + 
+                            ((outOfStockProductsStmt.get() as { count: number }).count || 0)
 
     const totalValueStmt = db.prepare(`
       SELECT COALESCE(SUM(current_stock * COALESCE(cost_per_unit, 0)), 0) as total

@@ -75,6 +75,7 @@
     "date": "Date",
     "edit": "Modifier",
     "delete": "Supprimer",
+    "uploadImage": "Télécharger une image",
     "actions": "Actions",
     "itemsPerPage": "Éléments par page",
     "showingResults": "Affichage de {{start}}-{{end}} sur {{total}} résultats",
@@ -137,6 +138,8 @@
     "analytics": "Analyses",
     "tools": "Outils",
     "overview": "Aperçu",
+    "viewAll": "Voir tout",
+    "viewAllOrders": "Voir toutes les commandes en attente",
     "currentPeriod": "Période Actuelle",
     "previousPeriod": "Période Précédente",
     "amountFcfa": "Montant (FCFA)",
@@ -394,6 +397,8 @@
     "user": "Utilisateur",
     "stockIn": "Entrée de Stock",
     "stockOut": "Sortie de Stock",
+    "bulkStockIn": "Entrée de Stock Groupée",
+    "bulkStockOut": "Sortie de Stock Groupée",
     "movementRecorded": "Mouvement enregistré avec succès",
     "movementError": "Échec de l'enregistrement du mouvement",
     "unitCost": "Coût Unitaire",
@@ -1135,6 +1140,7 @@
     "restoreOrderDesc": "Êtes-vous sûr de vouloir restaurer cette commande annulée ? Ceci n'est possible que dans les 24 heures suivant l'annulation."
   },
   "toasts": {
+    "success": "Succès",
     "profileUpdated": "Profil Mis à Jour",
     "profileUpdatedDesc": "Vos informations de profil ont été mises à jour avec succès.",
     "passwordUpdated": "Mot de passe Mis à Jour",

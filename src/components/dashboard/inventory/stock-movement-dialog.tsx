@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,6 +34,15 @@ export function StockMovementDialog({ item, type, open, onOpenChange }: StockMov
     reference_type: 'PURCHASE_ORDER' as const,
     notes: ''
   })
+
+  useEffect(() => {
+    if (open && item) {
+      setFormData(prev => ({
+        ...prev,
+        unit_cost: item.cost_per_unit || 0
+      }))
+    }
+  }, [open, item])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

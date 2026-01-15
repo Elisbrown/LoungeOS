@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Lock, Palette, FileText, Image as ImageIcon, Trash2, PlusCircle, X, Clapperboard, DollarSign, Calculator, Percent, Plus } from 'lucide-react'
+import { Lock, Palette, FileText, Image as ImageIcon, Trash2, PlusCircle, X, Clapperboard, DollarSign, Calculator, Percent, Plus, Activity, Monitor, Database, Globe, Copy } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import Image from 'next/image'
 import { Receipt } from '@/components/dashboard/pos/receipt'
@@ -60,6 +60,51 @@ function GeneralSettings() {
         contactPhone: settings.contactPhone,
     })
     
+    // Tunnel State
+    const [tunnelStatus, setTunnelStatus] = React.useState<{ isRunning: boolean; url?: string }>({ isRunning: false })
+    const [isTunnelLoading, setIsTunnelLoading] = React.useState(false)
+
+    React.useEffect(() => {
+        if ((window as any).electron) {
+            (window as any).electron.getTunnelStatus().then(setTunnelStatus)
+        }
+    }, [])
+
+    const toggleTunnel = async () => {
+        if (!((window as any).electron)) return
+        
+        setIsTunnelLoading(true)
+        try {
+            if (tunnelStatus.isRunning) {
+                const res = await (window as any).electron.stopTunnel()
+                if (res.success) {
+                    setTunnelStatus({ isRunning: false })
+                    toast({ title: "Public Access Disabled", description: "The public URL has been deactivated." })
+                }
+            } else {
+                const res = await (window as any).electron.startTunnel()
+                if (res.success) {
+                    setTunnelStatus({ isRunning: true, url: res.url })
+                    toast({ title: "Public Access Enabled", description: "Your platform is now accessible publicly." })
+                } else {
+                     toast({ variant: "destructive", title: "Failed to start", description: res.error || "Unknown error" })
+                }
+            }
+        } catch (error) {
+            console.error(error)
+             toast({ variant: "destructive", title: "Error", description: "Tunnel operation failed" })
+        } finally {
+            setIsTunnelLoading(false)
+        }
+    }
+
+    const copyTunnelUrl = () => {
+        if (tunnelStatus.url) {
+            navigator.clipboard.writeText(tunnelStatus.url)
+            toast({ title: "Copied!", description: "Public URL copied to clipboard." })
+        }
+    }
+    
     React.useEffect(() => {
         setLocalSettings({
             platformName: settings.platformName,
@@ -104,6 +149,8 @@ function GeneralSettings() {
                 if (response.ok) {
                     const result = await response.json()
                     setLocalSettings(prev => ({...prev, platformLogo: result.imagePath }))
+                    // Immediately persist the logo path to settings
+                    await updateSetting('platformLogo', result.imagePath)
                     toast({ title: t('toasts.logoUpdated'), description: t('toasts.logoUpdatedDesc') })
                 } else {
                     throw new Error('Upload failed')
@@ -155,10 +202,12 @@ function GeneralSettings() {
                     </div>
                 </div>
                 <Separator />
-                <div className="space-y-2">
+                <div className="space-y-4">
                     <Label htmlFor="organizationName">{t('config.general.orgName')}</Label>
                     <Input id="organizationName" name="organizationName" value={localSettings.organizationName} onChange={handleInputChange} />
                 </div>
+                
+              
                  <div className="space-y-2">
                     <Label htmlFor="contactAddress">{t('config.general.contactAddress')}</Label>
                     <Input id="contactAddress" name="contactAddress" value={localSettings.contactAddress} onChange={handleInputChange} />
@@ -167,6 +216,77 @@ function GeneralSettings() {
                     <Label htmlFor="contactPhone">{t('config.general.contactPhone')}</Label>
                     <Input id="contactPhone" name="contactPhone" value={localSettings.contactPhone} onChange={handleInputChange} />
                 </div>
+
+                {(typeof window !== 'undefined' && (window as any).electron) && (
+                    <>
+                        <Separator />
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium flex items-center gap-2">
+                                <Monitor className="h-5 w-5" />
+                                Desktop Features (v1.1)
+                            </h3>
+                            <div className="bg-muted/50 p-4 rounded-lg border space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium">System Logs & Network</p>
+                                        <p className="text-sm text-muted-foreground">Monitor terminal logs and view local network addresses.</p>
+                                    </div>
+                                    <Button 
+                                        type="button" 
+                                        variant="outline"
+                                        onClick={() => (window as any).electron.openLogs()}
+                                    >
+                                        <Activity className="mr-2 h-4 w-4" />
+                                        Open Console
+                                    </Button>
+                                </div>
+                                <Separator />
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium">Data & Backups</p>
+                                        <p className="text-sm text-muted-foreground">Access your database files and local backups.</p>
+                                    </div>
+                                    <Button 
+                                        type="button" 
+                                        variant="outline"
+                                        onClick={() => (window as any).electron.openDataFolder()}
+                                    >
+                                        <Database className="mr-2 h-4 w-4" /> 
+                                        Open Data Folder
+                                    </Button>
+                                </div>
+                                <Separator />
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                         <div className="flex items-center gap-2">
+                                            <p className="font-medium">Public Access</p>
+                                            {tunnelStatus.isRunning && <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Live</span>}
+                                         </div>
+                                        <p className="text-sm text-muted-foreground">Generate a secure public URL for remote access.</p>
+                                        
+                                        {tunnelStatus.isRunning && tunnelStatus.url && (
+                                            <div className="flex items-center gap-2 mt-2 bg-background border p-2 rounded-md max-w-sm">
+                                                <Globe className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                                <code className="text-xs flex-1 truncate">{tunnelStatus.url}</code>
+                                                <Button type="button" size="icon" variant="ghost" className="h-6 w-6" onClick={copyTunnelUrl}>
+                                                    <Copy className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col items-end gap-2">
+                                         <Switch 
+                                            checked={tunnelStatus.isRunning}
+                                            onCheckedChange={toggleTunnel}
+                                            disabled={isTunnelLoading}
+                                         />
+                                         <span className="text-xs text-muted-foreground">{isTunnelLoading ? "Processing..." : (tunnelStatus.isRunning ? "Enabled" : "Disabled")}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
                 <Button type="submit">{t('dialogs.saveChanges')}</Button>

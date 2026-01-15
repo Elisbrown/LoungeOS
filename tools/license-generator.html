@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LoungeOS License Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tweetnacl/1.0.3/nacl-fast.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tweetnacl-util/0.15.1/nacl-util.min.js"></script>
+    <style>
+      :root {
+        --bg-primary: #0a0a0f;
+        --bg-secondary: #12121a;
+        --bg-tertiary: #1a1a25;
+        --border-color: #2a2a3a;
+        --text-primary: #f0f0f5;
+        --text-secondary: #8888a0;
+        --accent: #6366f1;
+        --accent-hover: #818cf8;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --error: #ef4444;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      .container {
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      header h1 {
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, var(--accent), #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      header p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      .card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .card-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+      }
+
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+
+      .form-group:last-child {
+        margin-bottom: 0;
+      }
+
+      label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+      }
+
+      input::placeholder {
+        color: var(--text-secondary);
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+
+      .row-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem;
+      }
+
+      select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238888a0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1.25rem;
+        padding-right: 2.5rem;
+      }
+
+      button {
+        width: 100%;
+        padding: 0.875rem 1.5rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+      }
+
+      button:hover {
+        background: var(--accent-hover);
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .output-section {
+        display: none;
+      }
+
+      .output-section.visible {
+        display: block;
+      }
+
+      .license-output {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        font-family: "Monaco", "Consolas", monospace;
+        font-size: 0.8rem;
+        word-break: break-all;
+        line-height: 1.6;
+        color: var(--success);
+        margin-bottom: 1rem;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .copy-btn {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+      }
+
+      .copy-btn:hover {
+        background: var(--border-color);
+      }
+
+      .copy-btn.copied {
+        background: var(--success);
+        border-color: var(--success);
+        color: white;
+      }
+
+      .info-box {
+        background: rgba(99, 102, 241, 0.1);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .info-box p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+
+      .info-box code {
+        background: var(--bg-tertiary);
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        color: var(--accent);
+      }
+
+      .public-key-display {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: var(--bg-tertiary);
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        word-break: break-all;
+      }
+
+      .public-key-display strong {
+        color: var(--warning);
+        display: block;
+        margin-bottom: 0.25rem;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        font-size: 0.75rem;
+      }
+
+      footer {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🔐 LoungeOS License Generator</h1>
+        <p>Generate cryptographically signed license keys for customers</p>
+      </header>
+
+      <div class="info-box">
+        <p>
+          This tool generates offline-verifiable license keys using
+          <code>Ed25519</code> signatures. The generated key is bound to a
+          specific machine and has a defined validity period.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔑 Signing Credentials</div>
+        <div class="form-group">
+          <label for="privateKey">Private Key (Keep Secret!)</label>
+          <input
+            type="password"
+            id="privateKey"
+            value="SIG_377e14b8fe018a5f57ad71d60cb6d6a5"
+            placeholder="Your private signing key"
+          />
+        </div>
+        <div class="public-key-display">
+          <strong>⚠️ Embed this Public Key in the App:</strong>
+          <span id="publicKeyDisplay"
+            >Click "Generate License" to compute...</span
+          >
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">👤 License Details</div>
+        <div class="form-group">
+          <label for="machineId">Machine ID</label>
+          <input
+            type="text"
+            id="machineId"
+            placeholder="e.g., a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          />
+        </div>
+        <div class="form-group">
+          <label for="licensee">Licensee Name</label>
+          <input
+            type="text"
+            id="licensee"
+            placeholder="e.g., Acme Corporation"
+          />
+        </div>
+        <div class="row-3">
+          <div class="form-group">
+            <label for="licenseType">Duration</label>
+            <select id="licenseType">
+              <option value="CUSTOM">Custom (set dates manually)</option>
+              <option value="14_DAYS">Trial - 14 Days</option>
+              <option value="30_DAYS">Trial - 30 Days</option>
+              <option value="3_MONTHS">Pro - 3 Months</option>
+              <option value="6_MONTHS">Pro - 6 Months</option>
+              <option value="1_YEAR" selected>Pro - 1 Year</option>
+              <option value="2_YEARS">Pro - 2 Years</option>
+              <option value="5_YEARS">Pro - 5 Years</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="issuedAt">Issue Date</label>
+            <input type="date" id="issuedAt" />
+          </div>
+          <div class="form-group">
+            <label for="expiresAt">Expiry Date</label>
+            <input type="date" id="expiresAt" />
+          </div>
+        </div>
+      </div>
+
+      <button id="generateBtn" onclick="generateLicense()">
+        Generate License Key
+      </button>
+
+      <div class="output-section" id="outputSection">
+        <div class="card" style="margin-top: 1.5rem">
+          <div class="card-title">✅ Generated License Key</div>
+          <div class="license-output" id="licenseOutput"></div>
+          <button class="copy-btn" id="copyBtn" onclick="copyLicense()">
+            Copy to Clipboard
+          </button>
+        </div>
+      </div>
+
+      <footer>
+        LoungeOS License Generator v1.0 &middot; For internal use only
+      </footer>
+    </div>
+
+    <script>
+      // Set default dates
+      document.addEventListener("DOMContentLoaded", () => {
+        const today = new Date();
+        const nextYear = new Date(today);
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+
+        document.getElementById("issuedAt").value = today
+          .toISOString()
+          .split("T")[0];
+        document.getElementById("expiresAt").value = nextYear
+          .toISOString()
+          .split("T")[0];
+
+        // Update expiry when type changes
+        document
+          .getElementById("licenseType")
+          .addEventListener("change", (e) => {
+            const today = new Date();
+            const expiry = new Date(today);
+
+            switch (e.target.value) {
+              case "14_DAYS":
+                expiry.setDate(expiry.getDate() + 14);
+                break;
+              case "30_DAYS":
+                expiry.setDate(expiry.getDate() + 30);
+                break;
+              case "3_MONTHS":
+                expiry.setMonth(expiry.getMonth() + 3);
+                break;
+              case "6_MONTHS":
+                expiry.setMonth(expiry.getMonth() + 6);
+                break;
+              case "1_YEAR":
+                expiry.setFullYear(expiry.getFullYear() + 1);
+                break;
+              case "2_YEARS":
+                expiry.setFullYear(expiry.getFullYear() + 2);
+                break;
+              case "5_YEARS":
+                expiry.setFullYear(expiry.getFullYear() + 5);
+                break;
+              case "CUSTOM":
+              default:
+                // Don't change the date for custom
+                return;
+            }
+
+            document.getElementById("expiresAt").value = expiry
+              .toISOString()
+              .split("T")[0];
+          });
+      });
+
+      // Custom encoding helpers (since CDN naclUtil can be unreliable)
+      const encodeBase64 = (arr) => {
+        return btoa(String.fromCharCode.apply(null, arr));
+      };
+
+      const decodeBase64 = (str) => {
+        return new Uint8Array(
+          atob(str)
+            .split("")
+            .map((c) => c.charCodeAt(0))
+        );
+      };
+
+      const encodeUTF8 = (str) => {
+        return new TextEncoder().encode(str);
+      };
+
+      // Derive Ed25519 keypair from the passphrase/private key string
+      async function deriveKeyPair(passphrase) {
+        // Use SHA-256 to create a 32-byte seed from the passphrase
+        const encoder = new TextEncoder();
+        const data = encoder.encode(passphrase);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const seed = new Uint8Array(hashBuffer);
+
+        // Generate Ed25519 keypair from seed
+        const keyPair = nacl.sign.keyPair.fromSeed(seed);
+        return keyPair;
+      }
+
+      async function generateLicense() {
+        const privateKeyInput = document
+          .getElementById("privateKey")
+          .value.trim();
+        const machineId = document.getElementById("machineId").value.trim();
+        const licensee = document.getElementById("licensee").value.trim();
+        const licenseType = document.getElementById("licenseType").value;
+        const issuedAt = document.getElementById("issuedAt").value;
+        const expiresAt = document.getElementById("expiresAt").value;
+
+        // Validation
+        if (!privateKeyInput) {
+          alert("Please enter the private key.");
+          return;
+        }
+        if (!machineId) {
+          alert("Please enter the Machine ID.");
+          return;
+        }
+        if (!licensee) {
+          alert("Please enter the Licensee name.");
+          return;
+        }
+        if (!issuedAt || !expiresAt) {
+          alert("Please select issue and expiry dates.");
+          return;
+        }
+
+        try {
+          // Derive keypair
+          const keyPair = await deriveKeyPair(privateKeyInput);
+
+          // Display public key (for embedding in app)
+          const publicKeyBase64 = encodeBase64(keyPair.publicKey);
+          document.getElementById("publicKeyDisplay").textContent =
+            publicKeyBase64;
+
+          // Create license payload
+          const payload = {
+            type: licenseType,
+            licensee: licensee,
+            machineId: machineId,
+            issuedAt: new Date(issuedAt).toISOString(),
+            expiresAt: new Date(expiresAt).toISOString(),
+            version: "1.0",
+          };
+
+          // Stringify and sign
+          const payloadString = JSON.stringify(payload);
+          const payloadBytes = encodeUTF8(payloadString);
+          const signature = nacl.sign.detached(payloadBytes, keyPair.secretKey);
+
+          // Create license structure
+          const licenseData = {
+            payload: payload,
+            signature: encodeBase64(signature),
+          };
+
+          // Encode as Base64
+          const licenseString = btoa(JSON.stringify(licenseData));
+
+          // Format with line breaks for readability
+          const formattedLicense = licenseString.match(/.{1,64}/g).join("\n");
+
+          // Display
+          document.getElementById("licenseOutput").textContent =
+            formattedLicense;
+          document.getElementById("outputSection").classList.add("visible");
+
+          // Scroll to output
+          document
+            .getElementById("outputSection")
+            .scrollIntoView({ behavior: "smooth" });
+        } catch (error) {
+          alert("Error generating license: " + error.message);
+          console.error(error);
+        }
+      }
+
+      function copyLicense() {
+        const licenseText = document
+          .getElementById("licenseOutput")
+          .textContent.replace(/\n/g, "");
+        navigator.clipboard.writeText(licenseText).then(() => {
+          const btn = document.getElementById("copyBtn");
+          btn.textContent = "Copied!";
+          btn.classList.add("copied");
+          setTimeout(() => {
+            btn.textContent = "Copy to Clipboard";
+            btn.classList.remove("copied");
+          }, 2000);
+        });
+      }
+    </script>
+  </body>
+</html>

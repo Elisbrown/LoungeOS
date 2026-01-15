@@ -10,40 +10,51 @@ async function handleLogin(request: Request) {
         const body = await request.json();
         const { email, password } = body;
         emailForLog = email || 'unknown';
+        
+        console.log(`[Auth] Login attempt for email: ${email}`);
 
         if (!email || !password) {
+            console.log(`[Auth] Missing credentials - email: ${!!email}, password: ${!!password}`);
             return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
         }
         
         const user = await getStaffByEmail(email);
         const forwarded = request.headers.get('x-forwarded-for');
         const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
+        
+        console.log(`[Auth] User lookup result: ${user ? 'found' : 'not found'}, IP: ${ip}`);
 
         if (!user) {
             await addActivityLog(null, 'LOGIN_FAILED', `Login attempt with non-existent email: ${email}`, email, { ip, reason: 'user_not_found' });
+            console.log(`[Auth] 401 - User not found: ${email}`);
             return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
         }
 
         if (user.status === 'Inactive') {
             await addActivityLog(Number(user.id), 'LOGIN_FAILED', `Login attempt for inactive account: ${email}`, email, { ip, reason: 'account_inactive' });
+            console.log(`[Auth] 403 - Account inactive: ${email}`);
             return NextResponse.json({ 
                 message: 'Account is deactivated. contact your Supervisor or Manager.' 
             }, { status: 403 });
         }
 
         const isCorrectPassword = await verifyPassword(email, password);
+        console.log(`[Auth] Password verification: ${isCorrectPassword ? 'success' : 'failed'}`);
+        
         if (!isCorrectPassword) {
             await addActivityLog(Number(user.id), 'LOGIN_FAILED', `Invalid password attempt for: ${email}`, email, { ip, reason: 'invalid_password' });
+            console.log(`[Auth] 401 - Invalid password for: ${email}`);
             return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
         }
 
         await addActivityLog(Number(user.id), 'LOGIN_SUCCESS', `User logged in: ${email}`, 'SYSTEM', { ip });
+        console.log(`[Auth] Login successful for: ${email}`);
 
         const { ...userWithoutPassword } = user;
         return NextResponse.json(userWithoutPassword);
 
     } catch (error: any) {
-        console.error('Login Error:', error);
+        console.error('[Auth] Login Error:', error);
         return NextResponse.json({ message: 'Login failed', error: error.message }, { status: 500 });
     }
 }

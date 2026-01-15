@@ -4,6 +4,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import type { InventoryItem, InventoryMovement, InventoryCategory, InventorySupplier } from '@/lib/db/inventory';
+export type { InventoryItem, InventoryMovement, InventoryCategory, InventorySupplier };
 import { useAuth } from './auth-context';
 
 type InventoryContextType = {

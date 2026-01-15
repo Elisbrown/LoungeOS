@@ -292,7 +292,7 @@ export async function updateInventoryItem(id: number, itemData: Partial<Inventor
     const db = getDb();
     try {
         const transaction = db.transaction((itemId, data) => {
-            const fields = Object.keys(data).filter(key => key !== 'id' && key !== 'created_at' && key !== 'updated_at' && key !== 'status' && key !== 'supplier');
+            const fields = Object.keys(data).filter(key => key !== 'id' && key !== 'created_at' && key !== 'updated_at' && key !== 'status' && key !== 'supplier' && key !== 'userEmail' && key !== 'userId');
             const setClause = fields.map(field => `${field} = ?`).join(', ');
             const values = fields.map(field => (data as any)[field]);
             

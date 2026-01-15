@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useInventory } from "@/context/inventory-context"
 import { useToast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
-import { Plus } from "lucide-react"
+import { Plus, Upload } from "lucide-react"
+import Image from "next/image"
+import { useRef } from "react"
 
 export function AddInventoryItemDialog() {
   const { addItem, categories, suppliers, fetchCategories, fetchSuppliers } = useInventory()
@@ -18,6 +20,17 @@ export function AddInventoryItemDialog() {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, image: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   const [formData, setFormData] = useState({
     sku: '',
     name: '',
@@ -67,7 +80,7 @@ export function AddInventoryItemDialog() {
     }
   }
 
-  const handleInputChange = (field: string, value: string | number) => {
+  const handleInputChange = (field: string, value: string | number | undefined) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -223,14 +236,28 @@ export function AddInventoryItemDialog() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="image">{t('inventory.imageUrl')}</Label>
-            <Input
-              id="image"
-              type="url"
-              value={formData.image}
-              onChange={(e) => handleInputChange('image', e.target.value)}
-              placeholder="https://example.com/image.jpg"
-            />
+            <Label>{t('inventory.image')}</Label>
+            <div className="flex items-center gap-4">
+                <div className="relative h-20 w-20 rounded-md overflow-hidden border bg-muted">
+                  <Image 
+                    src={formData.image || "https://placehold.co/150x150.png"} 
+                    alt="Item preview" 
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    {t('common.uploadImage')}
+                </Button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={handleFileChange} 
+                />
+            </div>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

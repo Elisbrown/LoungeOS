@@ -172,7 +172,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         } catch (error) {
             console.error('Failed to fetch settings:', error);
         }
-    }, []);
+    }, []); // Empty dependency array - only fetch on mount
 
     const handleSetSettings = useCallback(async (newSettings: Settings) => {
         // Normalize paths before saving and setting state

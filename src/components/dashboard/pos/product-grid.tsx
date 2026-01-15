@@ -31,10 +31,6 @@ export function ProductGrid({ onProductClick }: ProductGridProps) {
 
   const dynamicCategories = useMemo(() => {
     const cats = categories.map(c => ({ id: c.name.toLowerCase(), name: c.name, label: c.name }));
-    // Add Packaging if it's not there
-    if (!cats.find(c => c.id === 'packaging')) {
-        cats.push({ id: 'packaging', name: 'Packaging', label: 'Packaging' });
-    }
     return [{ id: 'all', name: 'All', label: 'All' }, ...cats];
   }, [categories]);
 
@@ -153,7 +149,7 @@ export function ProductGrid({ onProductClick }: ProductGridProps) {
                       alt={product.name}
                       width={150}
                       height={150}
-                      className="h-auto w-full object-cover"
+                      className="aspect-square w-full object-cover"
                       data-ai-hint={product.dataAiHint}
                     />
                     <div className="p-3">

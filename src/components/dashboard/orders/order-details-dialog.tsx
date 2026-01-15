@@ -86,9 +86,8 @@ export function OrderDetailsDialog({
     const centerText = (text: string, y: number, fontSize: number = 10, style: 'normal' | 'bold' = 'normal') => {
         doc.setFontSize(fontSize);
         doc.setFont('courier', style);
-        const textWidth = doc.getTextWidth(text);
-        const x = (pageWidth - textWidth) / 2;
-        doc.text(text, x, y);
+        // Use jsPDF's built-in alignment
+        doc.text(text, pageWidth / 2, y, { align: 'center' });
     };
 
     // Helper for dashed line
@@ -417,34 +416,7 @@ export function OrderDetailsDialog({
                     </p>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                        disabled={order.status === 'Canceled' || order.status === 'Completed'}
-                    >
-                        <MinusCircle className="h-4 w-4" />
-                    </Button>
-                    <span>{item.quantity}</span>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                        disabled={order.status === 'Canceled' || order.status === 'Completed'}
-                    >
-                        <PlusCircle className="h-4 w-4" />
-                    </Button>
-                     <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive"
-                        onClick={() => handleUpdateQuantity(item.id, 0)}
-                        disabled={order.status === 'Canceled' || order.status === 'Completed'}
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <span className="font-bold">x{item.quantity}</span>
                     </div>
                 </div>
                 ))}
@@ -478,17 +450,16 @@ export function OrderDetailsDialog({
           </div>
           <DialogFooter className="flex-col sm:flex-col sm:space-x-0 gap-2">
             <div className="flex sm:justify-end gap-2 w-full flex-wrap">
-                {order.status !== 'Canceled' && order.status !== 'Completed' && (
-                    <Button variant="outline" onClick={handleSaveChanges}>{t('dialogs.saveChanges')}</Button>
-                )}
                 <Button variant="outline" onClick={handleDownloadReceipt}><Download className="mr-2 h-4 w-4" /> {t('orders.downloadReceipt')}</Button>
                 
                 {order.status !== 'Canceled' && order.status !== 'Completed' && (
                     <>
                         <Button variant="secondary" onClick={() => setSplitOpen(true)}>{t('orders.splitOrder')}</Button>
                         <Button variant="secondary" onClick={() => setMergeOpen(true)}>{t('orders.mergeOrder')}</Button>
-                        <Button variant="destructive" onClick={() => setCancelOpen(true)}>{t('orders.cancelOrder')}</Button>
-                        <Button onClick={() => setPaymentOpen(true)}>{t('pos.chargeOrder')}</Button>
+                        <div className="flex gap-2">
+                             <Button variant="destructive" onClick={() => setCancelOpen(true)}>{t('orders.cancelOrder')}</Button>
+                             <Button className="bg-green-700 hover:bg-green-800 text-white" onClick={() => setPaymentOpen(true)}>{t('pos.chargeOrder')}</Button>
+                        </div>
                     </>
                 )}
                 

@@ -62,7 +62,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
                     // Only play sound if this notification ID is different from the last one played
                     if (latest.id !== lastPlayedId.current) {
                         // On first load or after refresh, only play if it's very recent (last 15 seconds)
-                        const isRecent = (new Date().getTime() - latest.timestamp.getTime()) < 15000;
+                        const isRecent = (new Date().getTime() - latest.timestamp.getTime()) < 60000;
 
                         if (isRecent) {
                             playSound(latest.id);

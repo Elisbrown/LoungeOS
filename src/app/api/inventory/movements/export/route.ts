@@ -44,11 +44,35 @@ export async function GET(request: NextRequest) {
         } else if (format === 'pdf') {
             const doc = new jsPDF();
             
-            doc.setFontSize(18);
-            doc.text('Inventory Movements Report', 14, 15);
-            doc.setFontSize(11);
-            doc.text(`Period: ${start} to ${end}`, 14, 22);
-            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
+            const pageWidth = doc.internal.pageSize.width;
+            let currentY = 15;
+            const leftMargin = 14;
+
+            // Organization Header
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text(settings.organizationName.toUpperCase(), leftMargin, currentY);
+            currentY += 7;
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(settings.contactAddress, leftMargin, currentY);
+            currentY += 5;
+            doc.text(`Tel: ${settings.contactPhone}`, leftMargin, currentY);
+            currentY += 10;
+
+            // Report Title
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text('Inventory Movements Report', leftMargin, currentY);
+            currentY += 7;
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Period: ${start} to ${end}`, leftMargin, currentY);
+            currentY += 5;
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, leftMargin, currentY);
+            currentY += 5;
             
             const tableData = movements.map(m => [
                 new Date(m.movement_date).toLocaleDateString(),
@@ -60,9 +84,19 @@ export async function GET(request: NextRequest) {
             ]);
 
             autoTable(doc, {
-                startY: 35,
+                startY: currentY,
                 head: [['Date', 'Item', 'Type', 'Qty', 'Unit Cost', 'Total']],
                 body: tableData,
+                didDrawPage: (data) => {
+                    // Footer
+                    const pageSize = doc.internal.pageSize;
+                    const pageHeight = pageSize.height;
+                    doc.setFontSize(8);
+                    doc.setFont("helvetica", "normal");
+                    doc.text('Software: LoungeOS', leftMargin, pageHeight - 15);
+                    doc.text('Developed by SIGALIX', leftMargin, pageHeight - 10);
+                    doc.text('+237 679 690 703 | sigalix.net', leftMargin, pageHeight - 5);
+                }
             });
 
             const pdfOutput = doc.output('arraybuffer');
