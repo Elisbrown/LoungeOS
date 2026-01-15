@@ -90,8 +90,31 @@ export async function POST(request: Request) {
         const fileBuffer = Buffer.from(await file.arrayBuffer());
         fs.writeFileSync(tempPath, fileBuffer);
 
+
+
+        // Close any existing connections if possible (not easy with global pool, but removing WAL helps)
+        
+        // Remove existing WAL/SHM files to prevent corruption/stale data
+        const walPath = `${dbPath}-wal`;
+        const shmPath = `${dbPath}-shm`;
+        
+        try {
+            if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
+            if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
+        } catch (e) {
+            console.warn('Failed to clean up WAL/SHM files:', e);
+        }
+
         // Replace the current database with the backup
         fs.renameSync(tempPath, dbPath);
+        
+        // Ensure WAL/SHM are gone again after replacement (just in case)
+        try {
+            if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
+            if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
+        } catch (e) {
+            // Ignore
+        }
 
         const actorId = await getActorId(userEmail || undefined);
         await addActivityLog(

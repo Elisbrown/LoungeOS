@@ -204,7 +204,8 @@
     "last12Months": "12 derniers mois",
     "justNow": "À l'instant",
     "minutesAgo": "Il y a {{count}} min",
-    "hoursAgo": "Il y a {{count}} h"
+    "hoursAgo": "Il y a {{count}} h",
+    "custom": "Personnalisé"
   },
   "pos": {
     "title": "Point de Vente",

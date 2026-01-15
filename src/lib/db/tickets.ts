@@ -152,7 +152,8 @@ export function getTickets(filters?: TicketFilters): Ticket[] {
             id: row.assignee_id,
             name: row.assignee_name,
             email: row.assignee_email
-        } : undefined
+        } : undefined,
+        comments: getTicketComments(row.id)
     }));
     
     db.close();

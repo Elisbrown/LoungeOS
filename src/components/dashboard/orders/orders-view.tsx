@@ -73,12 +73,11 @@ export function OrdersView() {
 
   const filteredOrders = React.useMemo(() => {
     return orders.filter(order => {
-        const matchesUser = !user || user.role === "Manager" || user.role === "Super Admin" || user.role === "Cashier";
         const matchesSearch = searchTerm === "" || 
                               order.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
                               order.table.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === "All" || order.status === statusFilter;
-        return matchesUser && matchesSearch && matchesStatus;
+        return matchesSearch && matchesStatus;
     }).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [orders, searchTerm, user, statusFilter])
 

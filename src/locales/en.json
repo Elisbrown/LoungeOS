@@ -227,7 +227,8 @@
     "last12Months": "Last 12 months",
     "justNow": "Just now",
     "minutesAgo": "{{count}}m ago",
-    "hoursAgo": "{{count}}h ago"
+    "hoursAgo": "{{count}}h ago",
+    "custom": "Custom"
   },
   "pos": {
     "title": "Point of Sale",
