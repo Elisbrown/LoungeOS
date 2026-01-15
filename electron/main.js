@@ -78,26 +78,26 @@ function buildMenu() {
     // App Menu (macOS only)
     ...(isMac
       ? [
-          {
-            label: app.name,
-            submenu: [
-              { role: "about" },
-              { type: "separator" },
-              {
-                label: "Device Info...",
-                click: () => createDeviceInfoWindow(),
-              },
-              { type: "separator" },
-              { role: "services" },
-              { type: "separator" },
-              { role: "hide" },
-              { role: "hideOthers" },
-              { role: "unhide" },
-              { type: "separator" },
-              { role: "quit" },
-            ],
-          },
-        ]
+        {
+          label: app.name,
+          submenu: [
+            { role: "about" },
+            { type: "separator" },
+            {
+              label: "Device Info...",
+              click: () => createDeviceInfoWindow(),
+            },
+            { type: "separator" },
+            { role: "services" },
+            { type: "separator" },
+            { role: "hide" },
+            { role: "hideOthers" },
+            { role: "unhide" },
+            { type: "separator" },
+            { role: "quit" },
+          ],
+        },
+      ]
       : []),
 
     // Navigate Menu - Direct access to all sections
@@ -424,8 +424,8 @@ function createDeviceInfoWindow() {
 
   const statusHtml = licenseInfo
     ? `<span style="color: #22c55e;">✓ ${licenseInfo.type} (Expires: ${new Date(
-        licenseInfo.expiresAt
-      ).toLocaleDateString()})</span>`
+      licenseInfo.expiresAt
+    ).toLocaleDateString()})</span>`
     : `<span style="color: #f59e0b;">⚠ Unlicensed</span>`;
 
   const deviceHtml = `
@@ -539,12 +539,6 @@ function createWindow() {
 
 function startServer() {
   log.info(`Starting Next.js server on port ${appPort}...`);
-  const command = os.platform() === "win32" ? "npm.cmd" : "npm";
-
-  // User requested PROD mode by default.
-  // 'npm run start' runs 'next start', which serves the production build.
-  // We pass the port dynamically.
-  const args = ["run", "start", "--", "-p", String(appPort)];
 
   // Ensure DB and Backups are in UserData to persist across updates
   const userDataPath = app.getPath("userData");
@@ -552,8 +546,11 @@ function startServer() {
   const backupDir = path.join(userDataPath, "backups");
 
   // Migration: Copy DB from app root to UserData if it doesn't exist there yet (First run / Migration)
-  // In dev, process.cwd() is project root. In prod, it's inside resources (usually).
-  const sourceDbPath = path.join(process.cwd(), "loungeos.db");
+  // In packaged app, use the app's resource path
+  const appPath = app.isPackaged
+    ? path.join(process.resourcesPath, "app.asar")
+    : path.join(__dirname, "..");
+  const sourceDbPath = path.join(appPath, "loungeos.db");
 
   if (!fs.existsSync(dbPath) && fs.existsSync(sourceDbPath)) {
     try {
@@ -571,16 +568,41 @@ function startServer() {
     fs.mkdirSync(backupDir, { recursive: true });
   }
 
-  serverProcess = spawn(command, args, {
-    cwd: path.join(__dirname, ".."), // Parent directory
-    // Pass persistent paths to the Next.js process
+  // In packaged app, run Next.js directly instead of via npm
+  // Next.js executable is at node_modules/.bin/next or node_modules/next/dist/bin/next
+  const nextBin = path.join(appPath, "node_modules", "next", "dist", "bin", "next");
+
+  // Use the bundled Node.js from Electron
+  const nodeExecutable = process.execPath;
+  const args = [nextBin, "start", "-p", String(appPort)];
+
+  log.info(`App path: ${appPath}`);
+  log.info(`Next.js bin: ${nextBin}`);
+  log.info(`Node executable: ${nodeExecutable}`);
+  log.info(`Running: ${nodeExecutable} ${args.join(" ")}`);
+  log.info(`Working directory: ${appPath}`);
+
+  // Check if next bin exists
+  if (!fs.existsSync(nextBin)) {
+    log.error(`Next.js binary not found at: ${nextBin}`);
+  }
+
+  serverProcess = spawn(nodeExecutable, args, {
+    cwd: appPath,
+    shell: process.platform === "win32", // Use shell on Windows for better compatibility
     env: {
       ...process.env,
       PORT: String(appPort),
       NODE_ENV: "production",
       SQLITE_DB_PATH: dbPath,
       BACKUP_DIR: backupDir,
+      ELECTRON_RUN_AS_NODE: "1", // Make Electron act as Node.js
     },
+  });
+
+  serverProcess.on("error", (err) => {
+    log.error(`Failed to start server process: ${err.message}`);
+    log.error(`Error code: ${err.code}`);
   });
 
   serverProcess.stdout.on("data", (data) => {
