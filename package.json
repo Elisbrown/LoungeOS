@@ -1,6 +1,8 @@
 {
   "name": "loungeos",
   "version": "1.2.0",
+  "description": "LoungeOS - A comprehensive management system for lounges, Snackbars, Restaurants, kitchens, and bars",
+  "author": "Sunyin Elisbrown",
   "main": "electron/loader.js",
   "private": true,
   "scripts": {
