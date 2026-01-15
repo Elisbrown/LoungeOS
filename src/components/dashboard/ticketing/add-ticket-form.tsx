@@ -41,7 +41,7 @@ const formSchema = z.object({
 })
 
 type AddTicketFormProps = {
-  onAddTicket: (ticket: Omit<Ticket, 'id' | 'timestamp' | 'status' | 'assignee' | 'comments'>) => void
+  onAddTicket: (ticket: Pick<Ticket, 'title' | 'description' | 'priority' | 'category' | 'created_by'>) => void
   currentUser: User
 }
 
@@ -63,7 +63,7 @@ export function AddTicketForm({ onAddTicket, currentUser }: AddTicketFormProps) 
   function onSubmit(values: z.infer<typeof formSchema>) {
     onAddTicket({
         ...values,
-        created_by: currentUser.id,
+        created_by: Number(currentUser.id),
         priority: values.priority as any,
         category: values.category as any,
     })

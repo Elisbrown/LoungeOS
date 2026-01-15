@@ -123,4 +123,4 @@ export const useTickets = () => {
 };
 
 // Re-export Ticket type for convenience
-export type { Ticket } from '@/lib/db/tickets';
+export type { Ticket, TicketPriority, TicketCategory, TicketStatus } from '@/lib/db/tickets';

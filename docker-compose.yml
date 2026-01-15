@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: loungeos
+    build: .
+    ports:
+      - "9002:9002"
+    environment:
+      - NODE_ENV=production
+      - SQLITE_DB_PATH=/app/data/loungeos.db
+      - BACKUP_DIR=/app/backups
+      # Add other env vars from .env here if needed
+    volumes:
+      # Persist Database
+      - ./lounge_data:/app/data
+      # Persist Uploads (Images)
+      - ./uploads:/app/uploads
+      # Persist Backups
+      - ./backups:/app/backups
+    restart: unless-stopped

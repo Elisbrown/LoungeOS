@@ -4,13 +4,17 @@ import path from 'path';
 
 const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'loungeos.db');
 
+export type TicketStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed';
+export type TicketPriority = 'Low' | 'Medium' | 'High' | 'Critical' | 'Urgent';
+export type TicketCategory = 'IT Support' | 'Maintenance' | 'Inventory Request' | 'HR Issue';
+
 export interface Ticket {
     id: number;
     title: string;
     description: string;
-    status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
-    priority: 'Low' | 'Medium' | 'High' | 'Critical' | 'Urgent';
-    category: string;
+    status: TicketStatus;
+    priority: TicketPriority;
+    category: TicketCategory | string;
     created_by: number;
     assigned_to?: number;
     created_at: string;
