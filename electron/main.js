@@ -573,23 +573,33 @@ function startServer() {
     fs.mkdirSync(backupDir, { recursive: true });
   }
 
-  // In packaged app, run Next.js directly instead of via npm
-  // Next.js executable is at node_modules/.bin/next or node_modules/next/dist/bin/next
-  const nextBin = path.join(appPath, "node_modules", "next", "dist", "bin", "next");
+  // In packaged app, we use the standalone build
+  // server.js is at the root of the unpacked app
+  const serverScript = path.join(appPath, "server.js");
 
   // Use the bundled Node.js from Electron
   const nodeExecutable = process.execPath;
-  const args = [nextBin, "start", "-p", String(appPort)];
+
+  let args;
+  if (app.isPackaged) {
+    // In standalone mode, we just run 'node server.js'
+    args = [serverScript];
+  } else {
+    // In development or unpacked testing, use standard next start
+    const nextBin = path.join(appPath, "node_modules", "next", "dist", "bin", "next");
+    args = [nextBin, "start", "-p", String(appPort)];
+  }
 
   log.info(`App path: ${appPath}`);
-  log.info(`Next.js bin: ${nextBin}`);
+  log.info(`Server script: ${serverScript}`);
   log.info(`Node executable: ${nodeExecutable}`);
   log.info(`Running: ${nodeExecutable} ${args.join(" ")}`);
   log.info(`Working directory: ${appPath}`);
 
-  // Check if next bin exists
-  if (!fs.existsSync(nextBin)) {
-    log.error(`Next.js binary not found at: ${nextBin}`);
+  // Check if script/bin exists
+  const targetScript = app.isPackaged ? serverScript : args[0];
+  if (!fs.existsSync(targetScript)) {
+    log.error(`Server script/binary not found at: ${targetScript}`);
   }
 
   serverProcess = spawn(nodeExecutable, args, {
