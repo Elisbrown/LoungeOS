@@ -121,6 +121,11 @@
       "loungeos.db",
       "docs/**/*"
     ],
+    "asarUnpack": [
+      "node_modules/next/**/*",
+      "node_modules/better-sqlite3/**/*",
+      ".next/**/*"
+    ],
     "mac": {
       "category": "public.app-category.business",
       "icon": "public/logo.png",
@@ -143,6 +148,14 @@
       "target": [
         "nsis"
       ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "linux": {
       "target": [

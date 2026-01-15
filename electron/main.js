@@ -510,7 +510,7 @@ function createWindow() {
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
     },
-    title: "LoungeOS v1.1",
+    title: "LoungeOS v1.2",
     icon: path.join(__dirname, "../public/logo.png"), // Set window icon
   });
 
@@ -545,12 +545,17 @@ function startServer() {
   const dbPath = path.join(userDataPath, "loungeos.db");
   const backupDir = path.join(userDataPath, "backups");
 
-  // Migration: Copy DB from app root to UserData if it doesn't exist there yet (First run / Migration)
-  // In packaged app, use the app's resource path
+  // In packaged app, use the unpacked directory (files extracted from asar)
+  // The asarUnpack config in package.json extracts .next and node_modules
   const appPath = app.isPackaged
+    ? path.join(process.resourcesPath, "app.asar.unpacked")
+    : path.join(__dirname, "..");
+
+  // For DB, it's still in the asar since it doesn't need to be executed
+  const asarPath = app.isPackaged
     ? path.join(process.resourcesPath, "app.asar")
     : path.join(__dirname, "..");
-  const sourceDbPath = path.join(appPath, "loungeos.db");
+  const sourceDbPath = path.join(asarPath, "loungeos.db");
 
   if (!fs.existsSync(dbPath) && fs.existsSync(sourceDbPath)) {
     try {
@@ -589,7 +594,6 @@ function startServer() {
 
   serverProcess = spawn(nodeExecutable, args, {
     cwd: appPath,
-    shell: process.platform === "win32", // Use shell on Windows for better compatibility
     env: {
       ...process.env,
       PORT: String(appPort),
@@ -671,7 +675,9 @@ app.on("ready", () => {
     }
 
     createWindow();
-    autoUpdater.checkForUpdatesAndNotify();
+    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+      log.error("Auto-updater error:", err.message);
+    });
   }
 });
 
