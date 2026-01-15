@@ -12,7 +12,9 @@
     "db:seed": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/seed.ts",
     "db:init": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/init-db.ts",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:9002 && electron electron/main.js\"",
-    "electron:build": "npm run build && npm run obfuscate && npm run compile-main && electron-builder",
+    "electron:build:mac": "npm run build && npm run obfuscate && npm run compile-main && electron-builder --mac --universal",
+    "electron:build:win": "npm run build && npm run obfuscate && docker run --rm -v \"$(pwd)\":/project -w /project electronuserland/builder:wine bash -c 'npx bytenode --compile electron/main.js && npx electron-builder --win'",
+    "electron:build:all": "npm run electron:build:mac && npm run electron:build:win",
     "electron:prod": "npm run build && electron electron/main.js",
     "db:wipe": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/wipe-db.ts",
     "obfuscate": "node scripts/obfuscate.js",
@@ -75,7 +77,11 @@
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
     "uuid": "^11.1.0",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "bytenode": "^1.5.7",
+    "electron-is-dev": "^3.0.1",
+    "electron-log": "^5.4.3",
+    "electron-updater": "^6.7.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -84,13 +90,9 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "bytenode": "^1.5.7",
     "concurrently": "^9.2.1",
     "electron": "^33.0.0",
     "electron-builder": "^26.4.0",
-    "electron-is-dev": "^3.0.1",
-    "electron-log": "^5.4.3",
-    "electron-updater": "^6.7.3",
     "javascript-obfuscator": "^5.1.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
@@ -108,17 +110,27 @@
       "electron/**/*",
       "!electron/main.js",
       ".next/**/*",
+      "!.next/dev/**/*",
+      "!.next/cache/**/*",
       "public/**/*",
       "node_modules/**/*",
       "package.json",
-      "loungeos.db"
+      "loungeos.db",
+      "docs/**/*"
     ],
     "mac": {
       "category": "public.app-category.business",
       "icon": "public/logo.png",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "x64ArchFiles": "**/node_modules/**/*-x64/**/*",
       "target": [
-        "dmg",
-        "pkg"
+        {
+          "target": "dmg",
+          "arch": ["universal"]
+        }
       ]
     },
     "win": {

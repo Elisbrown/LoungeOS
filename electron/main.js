@@ -72,79 +72,132 @@ function getNetworkAddress() {
 }
 
 function buildMenu() {
+  const isMac = process.platform === "darwin";
+
   const template = [
-    {
-      label: app.name,
-      submenu: [
-        { role: "about" },
-        { type: "separator" },
-        {
-          label: "Device Info...",
-          click: () => createDeviceInfoWindow(),
-        },
-        {
-          label: "System Settings",
-          accelerator: "CmdOrCtrl+,",
-          click: async () => {
-            if (mainWindow) {
-              mainWindow.loadURL(`${getBaseUrl()}/dashboard/configuration`);
-            }
+    // App Menu (macOS only)
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: "about" },
+              { type: "separator" },
+              {
+                label: "Device Info...",
+                click: () => createDeviceInfoWindow(),
+              },
+              { type: "separator" },
+              { role: "services" },
+              { type: "separator" },
+              { role: "hide" },
+              { role: "hideOthers" },
+              { role: "unhide" },
+              { type: "separator" },
+              { role: "quit" },
+            ],
           },
+        ]
+      : []),
+
+    // Navigate Menu - Direct access to all sections
+    {
+      label: "Navigate",
+      submenu: [
+        {
+          label: "Dashboard",
+          accelerator: "CmdOrCtrl+1",
+          click: () => mainWindow?.loadURL(`${getBaseUrl()}/dashboard`),
+        },
+        {
+          label: "Tables",
+          accelerator: "CmdOrCtrl+2",
+          click: () => mainWindow?.loadURL(`${getBaseUrl()}/dashboard/tables`),
+        },
+        {
+          label: "Menu",
+          accelerator: "CmdOrCtrl+3",
+          click: () => mainWindow?.loadURL(`${getBaseUrl()}/dashboard/menu`),
         },
         { type: "separator" },
-        { role: "services" },
+        {
+          label: "Kitchen",
+          accelerator: "CmdOrCtrl+4",
+          click: () => mainWindow?.loadURL(`${getBaseUrl()}/dashboard/kitchen`),
+        },
+        {
+          label: "Bar",
+          accelerator: "CmdOrCtrl+5",
+          click: () => mainWindow?.loadURL(`${getBaseUrl()}/dashboard/bar`),
+        },
+        {
+          label: "Orders",
+          accelerator: "CmdOrCtrl+6",
+          click: () => mainWindow?.loadURL(`${getBaseUrl()}/dashboard/orders`),
+        },
         { type: "separator" },
-        { role: "hide" },
-        { role: "hideOthers" },
-        { role: "unhide" },
+        {
+          label: "Inventory",
+          accelerator: "CmdOrCtrl+7",
+          click: () =>
+            mainWindow?.loadURL(`${getBaseUrl()}/dashboard/inventory`),
+        },
+        {
+          label: "Accounting",
+          accelerator: "CmdOrCtrl+8",
+          click: () =>
+            mainWindow?.loadURL(`${getBaseUrl()}/dashboard/accounting`),
+        },
+        {
+          label: "Staff",
+          accelerator: "CmdOrCtrl+9",
+          click: () => mainWindow?.loadURL(`${getBaseUrl()}/dashboard/staff`),
+        },
         { type: "separator" },
-        { role: "quit" },
+        {
+          label: "Settings",
+          accelerator: "CmdOrCtrl+,",
+          click: () =>
+            mainWindow?.loadURL(`${getBaseUrl()}/dashboard/configuration`),
+        },
       ],
     },
-    { role: "fileMenu" },
+
     { role: "editMenu" },
     { role: "viewMenu" },
     { role: "windowMenu" },
+
+    // Support Menu
     {
-      label: "Help",
+      label: "Support",
       submenu: [
         {
-          label: "Tickets", // Was 'Contact Support'
-          click: async () => {
-            if (mainWindow) {
-              mainWindow.loadURL(`${getBaseUrl()}/dashboard/support`);
-            }
-          },
-        },
-        {
-          label: "Help", // Whatsapp Link
-          click: async () => {
-            await shell.openExternal("https://wa.me/237679690703");
-          },
+          label: "Tickets",
+          click: () => mainWindow?.loadURL(`${getBaseUrl()}/dashboard/support`),
         },
         {
           label: "Knowledge Base",
-          click: async () => {
-            if (mainWindow) {
-              mainWindow.loadURL(`${getBaseUrl()}/dashboard/knowledge-base`);
-            }
-          },
+          click: () =>
+            mainWindow?.loadURL(`${getBaseUrl()}/dashboard/knowledge-base`),
         },
         { type: "separator" },
         {
-          label: "Credits",
-          click: async () => {
-            if (mainWindow) {
-              mainWindow.loadURL(`${getBaseUrl()}/dashboard/credits`);
-            }
-          },
+          label: "Contact Developer",
+          click: () => shell.openExternal("https://wa.me/237679690703"),
         },
+      ],
+    },
+
+    // Help Menu
+    {
+      label: "Help",
+      submenu: [
+        { label: "About LoungeOS", click: () => app.showAboutPanel() },
         {
-          label: "About LoungeOS",
-          click: async () => {
-            app.showAboutPanel();
-          },
+          label: "Credits",
+          click: () => mainWindow?.loadURL(`${getBaseUrl()}/dashboard/credits`),
         },
+        { label: "Device Info...", click: () => createDeviceInfoWindow() },
       ],
     },
   ];
