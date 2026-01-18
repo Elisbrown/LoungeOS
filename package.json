@@ -21,6 +21,7 @@
     "electron:prod": "npm run build && electron electron/main.js",
     "db:wipe": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/wipe-db.ts",
     "obfuscate": "node scripts/obfuscate.js",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
     "compile-main": "bytenode --compile electron/main.js"
   },
   "dependencies": {
@@ -94,7 +95,7 @@
     "js-cookie": "^3.0.5",
     "mysql2": "^3.11.4",
     "next-auth": "^5.0.0-beta.25",
-    "nodemailer": "^6.9.16",
+    "nodemailer": "^7.0.0",
     "qrcode": "^1.5.4",
     "react-chartjs-2": "^5.2.0",
     "react-dropzone": "^14.3.5",
@@ -134,6 +135,14 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": ".next/static",
+        "to": ".next/static"
+      },
+      {
+        "from": "public",
+        "to": "public"
       },
       "public/logo.png",
       "package.json",

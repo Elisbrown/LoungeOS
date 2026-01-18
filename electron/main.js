@@ -520,8 +520,25 @@ function createWindow() {
     ? "http://localhost:9002"
     : `http://localhost:${appPort}`;
 
-  log.info(`Loading URL: ${startUrl}`);
-  mainWindow.loadURL(startUrl);
+  // Retry logic for loading URL
+  const maxRetries = 10;
+  const retryDelay = 1000; // 1 second between retries
+  let retryCount = 0;
+
+  const loadWithRetry = () => {
+    log.info(`Loading URL: ${startUrl} (attempt ${retryCount + 1}/${maxRetries})`);
+    mainWindow.loadURL(startUrl).catch((err) => {
+      if (err.message.includes('ERR_CONNECTION_REFUSED') && retryCount < maxRetries - 1) {
+        retryCount++;
+        log.warn(`Connection refused, retrying in ${retryDelay}ms... (${retryCount}/${maxRetries})`);
+        setTimeout(loadWithRetry, retryDelay);
+      } else {
+        log.error(`Failed to load URL after ${retryCount + 1} attempts: ${err.message}`);
+      }
+    });
+  };
+
+  loadWithRetry();
 
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
@@ -538,109 +555,134 @@ function createWindow() {
 }
 
 function startServer() {
-  log.info(`Starting Next.js server on port ${appPort}...`);
+  return new Promise((resolve, reject) => {
+    log.info(`Starting Next.js server on port ${appPort}...`);
 
-  // Ensure DB and Backups are in UserData to persist across updates
-  const userDataPath = app.getPath("userData");
-  const dbPath = path.join(userDataPath, "loungeos.db");
-  const backupDir = path.join(userDataPath, "backups");
+    // Ensure DB and Backups are in UserData to persist across updates
+    const userDataPath = app.getPath("userData");
+    const dbPath = path.join(userDataPath, "loungeos.db");
+    const backupDir = path.join(userDataPath, "backups");
 
-  // In packaged app, use the unpacked directory (files extracted from asar)
-  // The asarUnpack config in package.json extracts .next and node_modules
-  const appPath = app.isPackaged
-    ? path.join(process.resourcesPath, "app.asar.unpacked")
-    : path.join(__dirname, "..");
+    // In packaged app, use the unpacked directory (files extracted from asar)
+    // The asarUnpack config in package.json extracts .next and node_modules
+    const appPath = app.isPackaged
+      ? path.join(process.resourcesPath, "app.asar.unpacked")
+      : path.join(__dirname, "..");
 
-  // For DB, it's still in the asar since it doesn't need to be executed
-  const asarPath = app.isPackaged
-    ? path.join(process.resourcesPath, "app.asar")
-    : path.join(__dirname, "..");
-  const sourceDbPath = path.join(asarPath, "loungeos.db");
+    // For DB, it's still in the asar since it doesn't need to be executed
+    const asarPath = app.isPackaged
+      ? path.join(process.resourcesPath, "app.asar")
+      : path.join(__dirname, "..");
+    const sourceDbPath = path.join(asarPath, "loungeos.db");
 
-  if (!fs.existsSync(dbPath) && fs.existsSync(sourceDbPath)) {
-    try {
-      fs.copyFileSync(sourceDbPath, dbPath);
-      log.info(`Migrated database to ${dbPath}`);
-    } catch (err) {
-      log.error(`Failed to migrate database: ${err.message}`);
+    if (!fs.existsSync(dbPath) && fs.existsSync(sourceDbPath)) {
+      try {
+        fs.copyFileSync(sourceDbPath, dbPath);
+        log.info(`Migrated database to ${dbPath}`);
+      } catch (err) {
+        log.error(`Failed to migrate database: ${err.message}`);
+      }
+    } else {
+      log.info(`Using database at ${dbPath}`);
     }
-  } else {
-    log.info(`Using database at ${dbPath}`);
-  }
 
-  // Ensure backup directory exists
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
-  }
-
-  // In packaged app, we use the standalone build
-  // server.js is at the root of the unpacked app
-  const serverScript = path.join(appPath, "server.js");
-
-  // Use the bundled Node.js from Electron
-  const nodeExecutable = process.execPath;
-
-  let args;
-  if (app.isPackaged) {
-    // In standalone mode, we just run 'node server.js'
-    args = [serverScript];
-  } else {
-    // In development or unpacked testing, use standard next start
-    const nextBin = path.join(appPath, "node_modules", "next", "dist", "bin", "next");
-    args = [nextBin, "start", "-p", String(appPort)];
-  }
-
-  log.info(`App path: ${appPath}`);
-  log.info(`Server script: ${serverScript}`);
-  log.info(`Node executable: ${nodeExecutable}`);
-  log.info(`Running: ${nodeExecutable} ${args.join(" ")}`);
-  log.info(`Working directory: ${appPath}`);
-
-  // Check if script/bin exists
-  const targetScript = app.isPackaged ? serverScript : args[0];
-  if (!fs.existsSync(targetScript)) {
-    log.error(`Server script/binary not found at: ${targetScript}`);
-  }
-
-  serverProcess = spawn(nodeExecutable, args, {
-    cwd: appPath,
-    env: {
-      ...process.env,
-      PORT: String(appPort),
-      NODE_ENV: "production",
-      SQLITE_DB_PATH: dbPath,
-      BACKUP_DIR: backupDir,
-      ELECTRON_RUN_AS_NODE: "1", // Make Electron act as Node.js
-    },
-  });
-
-  serverProcess.on("error", (err) => {
-    log.error(`Failed to start server process: ${err.message}`);
-    log.error(`Error code: ${err.code}`);
-  });
-
-  serverProcess.stdout.on("data", (data) => {
-    const output = data.toString();
-    log.info(`[Server]: ${output}`);
-    if (logsWindow) {
-      logsWindow.webContents.send("server-log", output);
+    // Ensure backup directory exists
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
     }
-  });
 
-  serverProcess.stderr.on("data", (data) => {
-    const output = data.toString();
-    log.error(`[Server Error]: ${output}`);
-    if (logsWindow) {
-      logsWindow.webContents.send("server-log", `ERROR: ${output}`);
+    // In packaged app, we use the standalone build
+    // server.js is at the root of the unpacked app
+    const serverScript = path.join(appPath, "server.js");
+
+    // Use the bundled Node.js from Electron
+    const nodeExecutable = process.execPath;
+
+    let args;
+    if (app.isPackaged) {
+      // In standalone mode, we just run 'node server.js'
+      args = [serverScript];
+    } else {
+      // In development or unpacked testing, use standard next start
+      const nextBin = path.join(appPath, "node_modules", "next", "dist", "bin", "next");
+      args = [nextBin, "start", "-p", String(appPort)];
     }
-  });
 
-  serverProcess.on("exit", (code) => {
-    log.info(`Server process exited with code ${code}`);
+    log.info(`App path: ${appPath}`);
+    log.info(`Server script: ${serverScript}`);
+    log.info(`Node executable: ${nodeExecutable}`);
+    log.info(`Running: ${nodeExecutable} ${args.join(" ")}`);
+    log.info(`Working directory: ${appPath}`);
+
+    // Check if script/bin exists
+    const targetScript = app.isPackaged ? serverScript : args[0];
+    if (!fs.existsSync(targetScript)) {
+      log.error(`Server script/binary not found at: ${targetScript}`);
+      reject(new Error(`Server script not found: ${targetScript}`));
+      return;
+    }
+
+    serverProcess = spawn(nodeExecutable, args, {
+      cwd: appPath,
+      env: {
+        ...process.env,
+        PORT: String(appPort),
+        NODE_ENV: "production",
+        SQLITE_DB_PATH: dbPath,
+        BACKUP_DIR: backupDir,
+        ELECTRON_RUN_AS_NODE: "1", // Make Electron act as Node.js
+      },
+    });
+
+    let serverReady = false;
+    const serverTimeout = setTimeout(() => {
+      if (!serverReady) {
+        log.warn("Server startup timeout (30s), proceeding anyway...");
+        resolve(); // Proceed anyway, retry logic in createWindow will handle it
+      }
+    }, 30000); // 30 second timeout
+
+    serverProcess.on("error", (err) => {
+      log.error(`Failed to start server process: ${err.message}`);
+      log.error(`Error code: ${err.code}`);
+      clearTimeout(serverTimeout);
+      reject(err);
+    });
+
+    serverProcess.stdout.on("data", (data) => {
+      const output = data.toString();
+      log.info(`[Server]: ${output}`);
+      if (logsWindow) {
+        logsWindow.webContents.send("server-log", output);
+      }
+      // Detect when server is ready
+      if (!serverReady && output.includes("Ready")) {
+        serverReady = true;
+        clearTimeout(serverTimeout);
+        log.info("Server is ready, proceeding to create window...");
+        resolve();
+      }
+    });
+
+    serverProcess.stderr.on("data", (data) => {
+      const output = data.toString();
+      log.error(`[Server Error]: ${output}`);
+      if (logsWindow) {
+        logsWindow.webContents.send("server-log", `ERROR: ${output}`);
+      }
+    });
+
+    serverProcess.on("exit", (code) => {
+      log.info(`Server process exited with code ${code}`);
+      clearTimeout(serverTimeout);
+      if (!serverReady) {
+        reject(new Error(`Server exited with code ${code} before becoming ready`));
+      }
+    });
   });
 }
 
-app.on("ready", () => {
+app.on("ready", async () => {
   loadConfig();
   buildMenu();
 
@@ -657,7 +699,13 @@ app.on("ready", () => {
     // Only start the internal server in production
     // In dev, we use the external 'npm run dev' server
     if (!isDev) {
-      startServer();
+      try {
+        await startServer(); // Wait for server to be ready
+        log.info("Server started successfully, creating window...");
+      } catch (err) {
+        log.error("Failed to start server:", err.message);
+        // Proceed anyway - retry logic in createWindow will handle connection issues
+      }
     } else {
       // In dev mode, send a log message explaining why logs aren't streaming
       // (because the server is running in a separate process we don't control here)
