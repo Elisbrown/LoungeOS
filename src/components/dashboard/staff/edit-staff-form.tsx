@@ -9,6 +9,7 @@ import { useFloors } from "@/context/floor-context"
 import type { StaffMember, StaffRole } from "@/context/staff-context"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
+import { useAuth } from "@/context/auth-context"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -52,13 +53,13 @@ const formSchema = z.object({
   emergency_contact_relationship: z.string().optional(),
   emergency_contact_phone: z.string().optional(),
 }).refine(data => {
-    if (["Waiter", "Cashier"].includes(data.role)) {
-        return !!data.floor && data.floor.length > 0;
-    }
-    return true;
+  if (["Waiter", "Cashier"].includes(data.role)) {
+    return !!data.floor && data.floor.length > 0;
+  }
+  return true;
 }, {
-    message: "Floor assignment is required for this role.",
-    path: ["floor"],
+  message: "Floor assignment is required for this role.",
+  path: ["floor"],
 });
 
 type EditStaffFormProps = {
@@ -71,7 +72,8 @@ type EditStaffFormProps = {
 export function EditStaffForm({ staffMember, onUpdateStaff, open, onOpenChange }: EditStaffFormProps) {
   const { floors } = useFloors();
   const { t } = useTranslation()
-  
+  const { user } = useAuth()
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -83,7 +85,7 @@ export function EditStaffForm({ staffMember, onUpdateStaff, open, onOpenChange }
       emergency_contact_phone: staffMember.emergency_contact_phone || "",
     },
   })
-  
+
   const selectedRole = form.watch("role");
 
   useEffect(() => {
@@ -125,7 +127,7 @@ export function EditStaffForm({ staffMember, onUpdateStaff, open, onOpenChange }
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
@@ -138,7 +140,7 @@ export function EditStaffForm({ staffMember, onUpdateStaff, open, onOpenChange }
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="phone"
               render={({ field }) => (
@@ -151,7 +153,7 @@ export function EditStaffForm({ staffMember, onUpdateStaff, open, onOpenChange }
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="hireDate"
               render={({ field }) => (
@@ -198,20 +200,21 @@ export function EditStaffForm({ staffMember, onUpdateStaff, open, onOpenChange }
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('staff.role')}</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value} disabled={staffMember.role === 'Super Admin'}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={staffMember.role === 'Super Admin'}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t('staff.selectRole')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      {user?.role === "Super Admin" && <SelectItem value="Super Admin">Super Admin</SelectItem>}
                       <SelectItem value="Manager">Manager</SelectItem>
                       <SelectItem value="Accountant">Accountant</SelectItem>
                       <SelectItem value="Waiter">Waiter</SelectItem>
                       <SelectItem value="Chef">Chef</SelectItem>
                       <SelectItem value="Stock Manager">Stock Manager</SelectItem>
                       <SelectItem value="Cashier">Cashier</SelectItem>
-                       <SelectItem value="Bartender">Bartender</SelectItem>
+                      <SelectItem value="Bartender">Bartender</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -219,75 +222,75 @@ export function EditStaffForm({ staffMember, onUpdateStaff, open, onOpenChange }
               )}
             />
             {(["Waiter", "Cashier"].includes(selectedRole || '')) && (
-                <FormField
+              <FormField
                 control={form.control}
                 name="floor"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <FormLabel>{t('staff.assignedFloor')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
+                      <FormControl>
                         <SelectTrigger>
-                            <SelectValue placeholder={t('staff.selectFloor')} />
+                          <SelectValue placeholder={t('staff.selectFloor')} />
                         </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+                      </FormControl>
+                      <SelectContent>
                         {floors.map((floor) => (
-                            <SelectItem key={floor} value={floor}>{floor}</SelectItem>
+                          <SelectItem key={floor} value={floor}>{floor}</SelectItem>
                         ))}
-                        </SelectContent>
+                      </SelectContent>
                     </Select>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
+              />
             )}
 
             <div className="border-t pt-2 mt-2">
-                <h4 className="text-sm font-medium mb-3">Emergency Contact Information</h4>
-                <div className="grid gap-4">
-                    <FormField
+              <h4 className="text-sm font-medium mb-3">Emergency Contact Information</h4>
+              <div className="grid gap-4">
+                <FormField
+                  control={form.control}
+                  name="emergency_contact_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contact Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Next of Kin Name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
                     control={form.control}
-                    name="emergency_contact_name"
+                    name="emergency_contact_relationship"
                     render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Contact Name</FormLabel>
+                      <FormItem>
+                        <FormLabel>Relationship</FormLabel>
                         <FormControl>
-                            <Input placeholder="Next of Kin Name" {...field} />
+                          <Input placeholder="e.g. Spouse, Parent" {...field} />
                         </FormControl>
                         <FormMessage />
-                        </FormItem>
+                      </FormItem>
                     )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                        control={form.control}
-                        name="emergency_contact_relationship"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Relationship</FormLabel>
-                            <FormControl>
-                                <Input placeholder="e.g. Spouse, Parent" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                        <FormField
-                        control={form.control}
-                        name="emergency_contact_phone"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Contact Phone</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Phone Number" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                    </div>
+                  />
+                  <FormField
+                    control={form.control}
+                    name="emergency_contact_phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact Phone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Phone Number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
+              </div>
             </div>
 
             <DialogFooter>

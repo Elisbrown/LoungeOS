@@ -106,23 +106,23 @@ function seedChartOfAccounts(db: Database.Database) {
     { code: '1300', name: 'Prepaid Expenses', type: 'asset' },
     { code: '1400', name: 'Equipment', type: 'asset' },
     { code: '1500', name: 'Accumulated Depreciation', type: 'asset' },
-    
+
     // Liabilities
     { code: '2000', name: 'Accounts Payable', type: 'liability' },
     { code: '2100', name: 'Accrued Expenses', type: 'liability' },
     { code: '2200', name: 'Loans Payable', type: 'liability' },
     { code: '2300', name: 'Taxes Payable', type: 'liability' },
-    
+
     // Equity
     { code: '3000', name: "Owner's Equity", type: 'equity' },
     { code: '3100', name: 'Retained Earnings', type: 'equity' },
     { code: '3900', name: 'Current Year Earnings', type: 'equity' },
-    
+
     // Revenue
     { code: '4000', name: 'Sales Revenue', type: 'revenue' },
     { code: '4100', name: 'Service Revenue', type: 'revenue' },
     { code: '4200', name: 'Other Revenue', type: 'revenue' },
-    
+
     // Expenses
     { code: '5000', name: 'Cost of Goods Sold', type: 'expense' },
     { code: '5100', name: 'Salaries & Wages', type: 'expense' },
@@ -179,7 +179,7 @@ export function addChartOfAccount(accountData: Omit<ChartOfAccount, 'id' | 'crea
       accountData.account_type,
       accountData.parent_code || null
     );
-    
+
     return {
       id: Number(result.lastInsertRowid),
       code: accountData.code,
@@ -196,7 +196,7 @@ export function addChartOfAccount(accountData: Omit<ChartOfAccount, 'id' | 'crea
 }
 
 // Journal Entry functions
-export function getJournalEntries(filters?: { type?: string; status?: string; startDate?: string; endDate?: string }): JournalEntry[] {
+export function getJournalEntries(filters?: { type?: string; status?: string; startDate?: string; endDate?: string; reference?: string }): JournalEntry[] {
   const db = getDb();
   try {
     initAccountingTables();
@@ -210,6 +210,10 @@ export function getJournalEntries(filters?: { type?: string; status?: string; st
     if (filters?.status) {
       query += ' AND status = ?';
       params.push(filters.status);
+    }
+    if (filters?.reference) {
+      query += ' AND reference = ?';
+      params.push(filters.reference);
     }
     if (filters?.startDate) {
       query += ' AND entry_date >= ?';
@@ -234,7 +238,7 @@ export function getJournalEntryById(id: number): (JournalEntry & { lines: Journa
   try {
     const entryStmt = db.prepare('SELECT * FROM journal_entries WHERE id = ?');
     const entry = entryStmt.get(id) as JournalEntry | null;
-    
+
     if (!entry) return null;
 
     const linesStmt = db.prepare('SELECT * FROM journal_entry_lines WHERE journal_entry_id = ?');
@@ -264,7 +268,7 @@ export function createJournalEntry(data: {
     // Validate debits = credits
     const totalDebits = data.lines.reduce((sum, line) => sum + line.debit, 0);
     const totalCredits = data.lines.reduce((sum, line) => sum + line.credit, 0);
-    
+
     if (Math.abs(totalDebits - totalCredits) > 0.01) {
       throw new Error('Debits must equal credits');
     }
@@ -365,7 +369,7 @@ export function deleteJournalEntry(id: number): boolean {
     // Delete entry
     const deleteEntryStmt = db.prepare('DELETE FROM journal_entries WHERE id = ?');
     const result = deleteEntryStmt.run(id);
-    
+
     return result.changes > 0;
   } finally {
     db.close();

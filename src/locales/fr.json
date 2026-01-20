@@ -1,4 +1,3 @@
-
 {
   "appDescription": "La solution de gestion complète pour votre salon.",
   "languages": {
@@ -190,7 +189,9 @@
     "eventUpdateFailed": "Échec de la mise à jour de l'événement",
     "createEvent": "Créer l'Événement",
     "outOfStock": "En Rupture",
-    "lowStockCount": "{{count}} stock faible"
+    "lowStockCount": "{{count}} stock faible",
+    "accessDeniedTitle": "Accès Refusé",
+    "accessDeniedDescription": "Vous n'avez pas la permission d'accéder à cette page. Seuls les Managers et les Administrateurs peuvent accéder au tableau de bord."
   },
   "periods": {
     "today": "Aujourd'hui",
@@ -625,7 +626,12 @@
     "allStatuses": "Tous les Statuts",
     "deactivate": "Désactiver",
     "activate": "Activer",
-    "clearFilters": "Effacer les Filtres"
+    "clearFilters": "Effacer les Filtres",
+    "viewProfile": "Voir le Profil",
+    "emergencyContact": "Contact d'Urgence",
+    "contactName": "Nom",
+    "contactRelationship": "Relation",
+    "contactPhone": "Téléphone"
   },
   "reports": {
     "title": "Rapports & Analyses",
@@ -814,11 +820,11 @@
       "preview": "Aperçu du Reçu"
     },
     "loginScreen": {
-        "title": "Fond d'Écran de Connexion",
-        "description": "Gérez les images qui apparaissent en arrière-plan de la page de connexion.",
-        "images": "Images du Carrousel",
-        "imagesDesc": "Ces images défileront en boucle. Taille recommandée : 1920x1080.",
-        "addImage": "Ajouter une Image"
+      "title": "Fond d'Écran de Connexion",
+      "description": "Gérez les images qui apparaissent en arrière-plan de la page de connexion.",
+      "images": "Images du Carrousel",
+      "imagesDesc": "Ces images défileront en boucle. Taille recommandée : 1920x1080.",
+      "addImage": "Ajouter une Image"
     }
   },
   "accounting": {
@@ -849,7 +855,41 @@
       "balanceSheet": "Bilan Comptable",
       "balanceSheetDesc": "Rapporte les actifs, passifs et capitaux propres.",
       "cashFlow": "État des Flux de Trésorerie",
-      "cashFlowDesc": "Suit les mouvements de trésorerie entrants et sortants."
+      "cashFlowDesc": "Suit les mouvements de trésorerie entrants et sortants.",
+      "period": "Période",
+      "asOf": "En date du",
+      "revenue": "Revenus",
+      "expenses": "Dépenses",
+      "assets": "Actifs",
+      "liabilities": "Passifs",
+      "equity": "Capitaux Propres",
+      "netIncome": "Résultat Net",
+      "operatingActivities": "Activités Opérationnelles",
+      "beginningCash": "Trésorerie Initiale",
+      "netCashFlow": "Flux de Trésorerie Net",
+      "endingCash": "Trésorerie Finale",
+      "totalRevenue": "Revenu Total",
+      "totalExpenses": "Dépenses Totales",
+      "totalAssets": "Total des Actifs",
+      "totalLiabilities": "Total des Passifs",
+      "totalEquity": "Total des Capitaux Propres",
+      "liabilitiesEquity": "Total Passifs + Capitaux Propres",
+      "account": "Compte",
+      "amount": "Montant",
+      "description": "Description",
+      "debit": "Débit",
+      "credit": "Crédit",
+      "refresh": "Actualiser",
+      "downloadPdf": "Télécharger PDF",
+      "generating": "Génération...",
+      "noData": "Aucune écriture de journal trouvée pour cette période.",
+      "createEntriesHint": "Créez des écritures dans la page Journaux pour voir les données ici.",
+      "noRevenue": "Aucun compte de revenus",
+      "noExpenses": "Aucun compte de dépenses",
+      "startDate": "Date de Début",
+      "endDate": "Date de Fin",
+      "asOfDate": "Date",
+      "generatedBy": "Généré par"
     }
   },
   "search": {

@@ -5,9 +5,9 @@ import { addActivityLog } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
 
 async function getActorId(email?: string) {
-    if (!email || email === "system") return null;
-    const user = await getStaffByEmail(email);
-    return user ? Number(user.id) : null;
+  if (!email || email === "system") return null;
+  const user = await getStaffByEmail(email);
+  return user ? Number(user.id) : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -15,20 +15,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { startDate, endDate, userEmail } = body;
 
-    const result = syncAllTransactions(startDate, endDate);
-    
+    const result = await syncAllTransactions(startDate, endDate);
+
     const actorId = await getActorId(userEmail);
     await addActivityLog(
-        actorId,
-        'ACCOUNTING_SYNC',
-        `Synced ${result.totalSynced} transactions`,
-        'ACCOUNTING',
-        { 
-            startDate, 
-            endDate, 
-            totalSynced: result.totalSynced,
-            totalAvailable: result.totalAvailable
-        }
+      actorId,
+      'ACCOUNTING_SYNC',
+      `Synced ${result.totalSynced} transactions`,
+      'ACCOUNTING',
+      {
+        startDate,
+        endDate,
+        totalSynced: result.totalSynced,
+        totalAvailable: result.totalAvailable
+      }
     );
 
     return NextResponse.json({

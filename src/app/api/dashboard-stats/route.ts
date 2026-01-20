@@ -17,13 +17,13 @@ export async function GET(request: NextRequest) {
   const toDate = searchParams.get('to')
 
   const db = getDb()
-  
+
   try {
     // Get current date and yesterday
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
-    
+
     const todayStr = today.toISOString().split('T')[0]
     const yesterdayStr = yesterday.toISOString().split('T')[0]
 
@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
 
     // Total orders (within date range if specified)
     const totalOrdersQuery = `SELECT COUNT(*) as count FROM orders ${fromDate && toDate ? 'WHERE DATE(timestamp) BETWEEN ? AND ?' : ''}`;
-    const totalOrders = fromDate && toDate 
-      ? (db.prepare(totalOrdersQuery).get(...dateParams) as { count: number }).count 
+    const totalOrders = fromDate && toDate
+      ? (db.prepare(totalOrdersQuery).get(...dateParams) as { count: number }).count
       : (db.prepare(totalOrdersQuery).get() as { count: number }).count;
 
     // Completed orders (within date range)
@@ -96,9 +96,9 @@ export async function GET(request: NextRequest) {
       const duration = end.getTime() - start.getTime();
       const prevStart = new Date(start.getTime() - duration - 86400000); // 1 day gap or just shift
       const prevEnd = new Date(start.getTime() - 86400000);
-      
+
       const prevParams = [prevStart.toISOString().split('T')[0], prevEnd.toISOString().split('T')[0]];
-      
+
       prevTotalSales = (db.prepare(`
         SELECT COALESCE(SUM(total), 0) as total
         FROM orders
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split('T')[0];
-      
+
       prevTotalSales = (db.prepare(`
         SELECT COALESCE(SUM(total), 0) as total
         FROM orders
@@ -135,13 +135,13 @@ export async function GET(request: NextRequest) {
     const salesChange = prevTotalSales > 0 ? ((totalSales - prevTotalSales) / prevTotalSales) * 100 : 0;
     const expensesChange = prevTotalExpenses > 0 ? ((totalExpenses - prevTotalExpenses) / prevTotalExpenses) * 100 : 0;
     const revenueChange = prevTotalRevenue > 0 ? ((totalRevenue - prevTotalRevenue) / prevTotalRevenue) * 100 : 0;
-    
+
     // Total Orders in period
     const periodOrders = totalOrders;
-    const prevPeriodOrders = fromDate && toDate 
+    const prevPeriodOrders = fromDate && toDate
       ? (db.prepare(`SELECT COUNT(*) as count FROM orders WHERE status = 'Completed' AND DATE(timestamp) BETWEEN ? AND ?`)
-          .get(new Date(new Date(fromDate).getTime() - (new Date(toDate).getTime() - new Date(fromDate).getTime()) - 86400000).toISOString().split('T')[0], 
-               new Date(new Date(fromDate).getTime() - 86400000).toISOString().split('T')[0]) as { count: number }).count
+        .get(new Date(new Date(fromDate).getTime() - (new Date(toDate).getTime() - new Date(fromDate).getTime()) - 86400000).toISOString().split('T')[0],
+          new Date(new Date(fromDate).getTime() - 86400000).toISOString().split('T')[0]) as { count: number }).count
       : (db.prepare(`SELECT COUNT(*) as count FROM orders WHERE status = 'Completed' AND DATE(timestamp) = ?`).get(yesterdayStr) as { count: number }).count;
 
     const ordersChange = prevPeriodOrders > 0 ? ((periodOrders - prevPeriodOrders) / prevPeriodOrders) * 100 : 0;
@@ -224,15 +224,15 @@ export async function GET(request: NextRequest) {
       this_week_vs_last_week: {
         revenue: thisWeekRevenue - lastWeekRevenue,
         orders: (thisWeekSales.count || 0) - (lastWeekSales.count || 0),
-        percentChange: lastWeekRevenue > 0 
-          ? ((thisWeekRevenue - lastWeekRevenue) / lastWeekRevenue) * 100 
+        percentChange: lastWeekRevenue > 0
+          ? ((thisWeekRevenue - lastWeekRevenue) / lastWeekRevenue) * 100
           : 0
       },
       this_month_vs_last_month: {
         revenue: thisMonthRevenue - lastMonthRevenue,
         orders: (thisMonthSales.count || 0) - (lastMonthSales.count || 0),
-        percentChange: lastMonthRevenue > 0 
-          ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
+        percentChange: lastMonthRevenue > 0
+          ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
           : 0
       }
     };
@@ -301,8 +301,8 @@ export async function GET(request: NextRequest) {
       FROM products 
       WHERE quantity > 0 AND quantity <= 10
     `)
-    const lowStockItems = ((lowStockInventoryStmt.get() as { count: number }).count || 0) + 
-                          ((lowStockProductsStmt.get() as { count: number }).count || 0)
+    const lowStockItems = ((lowStockInventoryStmt.get() as { count: number }).count || 0) +
+      ((lowStockProductsStmt.get() as { count: number }).count || 0)
 
     const outOfStockInventoryStmt = db.prepare(`
       SELECT COUNT(*) as count 
@@ -314,8 +314,8 @@ export async function GET(request: NextRequest) {
       FROM products 
       WHERE quantity <= 0
     `)
-    const outOfStockItems = ((outOfStockInventoryStmt.get() as { count: number }).count || 0) + 
-                            ((outOfStockProductsStmt.get() as { count: number }).count || 0)
+    const outOfStockItems = ((outOfStockInventoryStmt.get() as { count: number }).count || 0) +
+      ((outOfStockProductsStmt.get() as { count: number }).count || 0)
 
     const totalValueStmt = db.prepare(`
       SELECT COALESCE(SUM(current_stock * COALESCE(cost_per_unit, 0)), 0) as total
@@ -408,7 +408,7 @@ export async function GET(request: NextRequest) {
       FROM orders
       WHERE 1=1 ${dateFilter.replace('timestamp', 'timestamp')}
     `)
-    const teamStats = (fromDate && toDate) 
+    const teamStats = (fromDate && toDate)
       ? teamStatsStmt.get(...dateParams) as any
       : teamStatsStmt.get() as any
 
@@ -425,8 +425,8 @@ export async function GET(request: NextRequest) {
         FROM orders
         WHERE waiter_id = ? ${dateFilter.replace('timestamp', 'timestamp')}
       `)
-      
-      const stats = (fromDate && toDate) 
+
+      const stats = (fromDate && toDate)
         ? currentStatsStmt.get(staff.id, ...dateParams) as any
         : currentStatsStmt.get(staff.id) as any
 
@@ -444,7 +444,7 @@ export async function GET(request: NextRequest) {
       const total_revenue = stats.total_revenue || 0
       const average_order_value = orders_processed > 0 ? Math.round(total_revenue / orders_processed) : 0
       const completion_rate = Math.round(stats.completion_rate || 0)
-      
+
       const revenue_share = Math.round((total_revenue / team_total_revenue) * 100)
       const aov_comparison = team_avg_aov > 0 ? Math.round(((average_order_value - team_avg_aov) / team_avg_aov) * 100) : 0
 
@@ -459,7 +459,7 @@ export async function GET(request: NextRequest) {
       const contributionScore = Math.min(40, (total_revenue / (team_total_revenue / (waiters.length || 1))) * 20)
       const efficiencyScore = Math.min(30, (average_order_value / (team_avg_aov || 1)) * 15)
       const reliabilityScore = (completion_rate / 100) * 30
-      
+
       const performance_score = Math.min(100, Math.round(contributionScore + efficiencyScore + reliabilityScore))
 
       // Insight generation
@@ -498,11 +498,11 @@ export async function GET(request: NextRequest) {
       revenue: [] as any[],
       expenses: [] as any[]
     };
-    
+
     // Determine if we are in "Hourly Mode" (Single Day) or "Daily Mode" (Range)
     const startDate = fromDate ? new Date(fromDate) : new Date(new Date().setDate(new Date().getDate() - 30));
     const endDate = toDate ? new Date(toDate) : new Date();
-    
+
     // Check if start and end date are the same day (or very close)
     // We check if the duration is less than or equal to 26 hours (allowing for some buffer)
     // This handles "Today" (00:00 to Now) and "Yesterday" (00:00 to 23:59) correctly regardless of timezone shifts in UTC
@@ -545,13 +545,13 @@ export async function GET(request: NextRequest) {
         const bucketEnd = new Date(bucketStart.getTime() + 3600000);
         const label = `${bucketStart.getHours().toString().padStart(2, '0')}:00`;
 
-        // Bucket current data
-        const currSales = currentOrders
-          .filter(o => {
-            const d = new Date(o.timestamp);
-            return d >= bucketStart && d < bucketEnd;
-          })
-          .reduce((sum, o) => sum + o.amount, 0);
+        // Bucket current data - count orders for 'sales' (Total Orders)
+        const currOrdersInBucket = currentOrders.filter(o => {
+          const d = new Date(o.timestamp);
+          return d >= bucketStart && d < bucketEnd;
+        });
+        const currOrderCount = currOrdersInBucket.length;
+        const currSalesAmount = currOrdersInBucket.reduce((sum, o) => sum + o.amount, 0);
 
         const currExpenses = currentExpenses
           .filter(e => {
@@ -564,12 +564,12 @@ export async function GET(request: NextRequest) {
         const prevBucketStart = new Date(bucketStart.getTime() - durationMs);
         const prevBucketEnd = new Date(bucketEnd.getTime() - durationMs);
 
-        const prevSales = previousOrders
-          .filter(o => {
-            const d = new Date(o.timestamp);
-            return d >= prevBucketStart && d < prevBucketEnd;
-          })
-          .reduce((sum, o) => sum + o.amount, 0);
+        const prevOrdersInBucket = previousOrders.filter(o => {
+          const d = new Date(o.timestamp);
+          return d >= prevBucketStart && d < prevBucketEnd;
+        });
+        const prevOrderCount = prevOrdersInBucket.length;
+        const prevSalesAmount = prevOrdersInBucket.reduce((sum, o) => sum + o.amount, 0);
 
         const prevExpenses = previousExpenses
           .filter(e => {
@@ -578,11 +578,12 @@ export async function GET(request: NextRequest) {
           })
           .reduce((sum, e) => sum + e.amount, 0);
 
-        const currRevenue = currSales - currExpenses;
-        const prevRevenue = prevSales - prevExpenses;
+        const currRevenue = currSalesAmount - currExpenses;
+        const prevRevenue = prevSalesAmount - prevExpenses;
 
-        chartData.sales.push({ label, current: currSales, previous: prevSales });
-        chartData.revenue.push({ label, current: currRevenue, previous: prevRevenue });
+        // sales = order counts (for Total Orders tab), revenue = revenue amounts (for Total Revenue tab)
+        chartData.sales.push({ label, current: currOrderCount, previous: prevOrderCount });
+        chartData.revenue.push({ label, current: currSalesAmount, previous: prevSalesAmount });
         chartData.expenses.push({ label, current: currExpenses, previous: prevExpenses });
       }
     } else {
@@ -593,21 +594,21 @@ export async function GET(request: NextRequest) {
 
       // Helper to get date range array
       const getDaysArray = (start: Date, end: Date) => {
-        for(var arr=[],dt=new Date(start); dt<=end; dt.setDate(dt.getDate()+1)){
-            arr.push(new Date(dt));
+        for (var arr = [], dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+          arr.push(new Date(dt));
         }
         return arr;
       };
 
       const currentDateList = getDaysArray(new Date(startDate), new Date(endDate));
-      
-      // Fetch daily data for current range
-      const currentSalesDaily = db.prepare(`
-        SELECT DATE(timestamp) as date, SUM(total) as total
+
+      // Fetch daily data for current range - both counts and amounts
+      const currentOrdersDaily = db.prepare(`
+        SELECT DATE(timestamp) as date, COUNT(*) as count, SUM(total) as total
         FROM orders
         WHERE status = 'Completed' AND DATE(timestamp) BETWEEN ? AND ?
         GROUP BY date
-      `).all(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]) as { date: string, total: number }[];
+      `).all(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]) as { date: string, count: number, total: number }[];
 
       const currentExpensesDaily = db.prepare(`
         SELECT DATE(entry_date) as date, SUM(total_amount) as total
@@ -616,13 +617,13 @@ export async function GET(request: NextRequest) {
         GROUP BY date
       `).all(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]) as { date: string, total: number }[];
 
-      // Fetch daily data for previous range
-      const previousSalesDaily = db.prepare(`
-        SELECT DATE(timestamp) as date, SUM(total) as total
+      // Fetch daily data for previous range - both counts and amounts
+      const previousOrdersDaily = db.prepare(`
+        SELECT DATE(timestamp) as date, COUNT(*) as count, SUM(total) as total
         FROM orders
         WHERE status = 'Completed' AND DATE(timestamp) BETWEEN ? AND ?
         GROUP BY date
-      `).all(previousStartDate.toISOString().split('T')[0], previousEndDate.toISOString().split('T')[0]) as { date: string, total: number }[];
+      `).all(previousStartDate.toISOString().split('T')[0], previousEndDate.toISOString().split('T')[0]) as { date: string, count: number, total: number }[];
 
       const previousExpensesDaily = db.prepare(`
         SELECT DATE(entry_date) as date, SUM(total_amount) as total
@@ -634,23 +635,26 @@ export async function GET(request: NextRequest) {
       // Map data
       currentDateList.forEach((date, index) => {
         const dateStr = date.toISOString().split('T')[0];
-        
+
         // Calculate previous date corresponding to this index
         const prevDate = new Date(previousStartDate);
         prevDate.setDate(prevDate.getDate() + index);
         const prevDateStr = prevDate.toISOString().split('T')[0];
 
-        const currSales = currentSalesDaily.find(d => d.date === dateStr)?.total || 0;
-        const prevSales = previousSalesDaily.find(d => d.date === prevDateStr)?.total || 0;
+        const currOrderCount = currentOrdersDaily.find(d => d.date === dateStr)?.count || 0;
+        const currSalesAmount = currentOrdersDaily.find(d => d.date === dateStr)?.total || 0;
+        const prevOrderCount = previousOrdersDaily.find(d => d.date === prevDateStr)?.count || 0;
+        const prevSalesAmount = previousOrdersDaily.find(d => d.date === prevDateStr)?.total || 0;
 
         const currExpenses = currentExpensesDaily.find(d => d.date === dateStr)?.total || 0;
         const prevExpenses = previousExpensesDaily.find(d => d.date === prevDateStr)?.total || 0;
 
-        const currRevenue = currSales - currExpenses;
-        const prevRevenue = prevSales - prevExpenses;
+        const currRevenue = currSalesAmount - currExpenses;
+        const prevRevenue = prevSalesAmount - prevExpenses;
 
-        chartData.sales.push({ label: dateStr, current: currSales, previous: prevSales });
-        chartData.revenue.push({ label: dateStr, current: currRevenue, previous: prevRevenue });
+        // sales = order counts (for Total Orders tab), revenue = revenue amounts (for Total Revenue tab)
+        chartData.sales.push({ label: dateStr, current: currOrderCount, previous: prevOrderCount });
+        chartData.revenue.push({ label: dateStr, current: currSalesAmount, previous: prevSalesAmount });
         chartData.expenses.push({ label: dateStr, current: currExpenses, previous: prevExpenses });
       });
     }

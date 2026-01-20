@@ -10,6 +10,7 @@ import { Download, RefreshCw } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrency } from '@/lib/utils'
 import { useSettings } from '@/context/settings-context'
+import { useTranslation } from '@/hooks/use-translation'
 
 type ReportViewerProps = {
   reportType: 'profit-loss' | 'balance-sheet' | 'cash-flow'
@@ -27,10 +28,11 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
   })
   const { toast } = useToast()
   const { settings } = useSettings()
+  const { t, language } = useTranslation()
 
   useEffect(() => {
     generateReport()
-    
+
     const handleSync = () => generateReport()
     window.addEventListener('accounting-data-synced', handleSync)
     return () => window.removeEventListener('accounting-data-synced', handleSync)
@@ -40,7 +42,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
     try {
       setLoading(true)
       let url = ''
-      
+
       if (reportType === 'profit-loss') {
         url = `/api/accounting/reports/profit-loss?startDate=${dates.startDate}&endDate=${dates.endDate}`
       } else if (reportType === 'balance-sheet') {
@@ -56,16 +58,16 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
       } else {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Failed to generate report"
+          title: t('toasts.error'),
+          description: t('accounting.reports.noData') // Fallback or generic error
         })
       }
     } catch (error) {
       console.error('Failed to generate report:', error)
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to generate report"
+        title: t('toasts.error'),
+        description: t('accounting.reports.noData')
       })
     } finally {
       setLoading(false)
@@ -74,7 +76,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
 
   const downloadPDF = () => {
     let url = ''
-    
+
     if (reportType === 'profit-loss') {
       url = `/api/accounting/documents/profit-loss?startDate=${dates.startDate}&endDate=${dates.endDate}`
     } else if (reportType === 'balance-sheet') {
@@ -83,6 +85,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
       url = `/api/accounting/documents/cash-flow?startDate=${dates.startDate}&endDate=${dates.endDate}`
     }
 
+    url += `&lang=${language}`
     window.open(url, '_blank')
   }
 
@@ -92,8 +95,8 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
     if (reportData.revenue.length === 0 && reportData.expenses.length === 0) {
       return (
         <div className="text-center p-8 text-muted-foreground">
-          <p>No journal entries found for this period.</p>
-          <p className="text-sm mt-2">Create journal entries in the Journals page to see data here.</p>
+          <p>{t('accounting.reports.noData')}</p>
+          <p className="text-sm mt-2">{t('accounting.reports.createEntriesHint')}</p>
         </div>
       )
     }
@@ -101,16 +104,16 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
     return (
       <div className="space-y-6">
         <div className="text-sm text-muted-foreground">
-          Period: {new Date(reportData.period.start).toLocaleDateString()} - {new Date(reportData.period.end).toLocaleDateString()}
+          {t('accounting.reports.period')}: {new Date(reportData.period.start).toLocaleDateString()} - {new Date(reportData.period.end).toLocaleDateString()}
         </div>
 
         <div>
-          <h3 className="font-semibold mb-2">Revenue</h3>
+          <h3 className="font-semibold mb-2">{t('accounting.reports.revenue')}</h3>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Account</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>{t('accounting.reports.account')}</TableHead>
+                <TableHead className="text-right">{t('accounting.reports.amount')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -123,11 +126,11 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center text-muted-foreground">No revenue accounts</TableCell>
+                  <TableCell colSpan={2} className="text-center text-muted-foreground">{t('accounting.reports.noRevenue')}</TableCell>
                 </TableRow>
               )}
               <TableRow className="font-semibold bg-muted">
-                <TableCell>Total Revenue</TableCell>
+                <TableCell>{t('accounting.reports.totalRevenue')}</TableCell>
                 <TableCell className="text-right">{formatCurrency(reportData.totalRevenue, settings.defaultCurrency)}</TableCell>
               </TableRow>
             </TableBody>
@@ -135,12 +138,12 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
         </div>
 
         <div>
-          <h3 className="font-semibold mb-2">Expenses</h3>
+          <h3 className="font-semibold mb-2">{t('accounting.reports.expenses')}</h3>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Account</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>{t('accounting.reports.account')}</TableHead>
+                <TableHead className="text-right">{t('accounting.reports.amount')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -153,11 +156,11 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center text-muted-foreground">No expense accounts</TableCell>
+                  <TableCell colSpan={2} className="text-center text-muted-foreground">{t('accounting.reports.noExpenses')}</TableCell>
                 </TableRow>
               )}
               <TableRow className="font-semibold bg-muted">
-                <TableCell>Total Expenses</TableCell>
+                <TableCell>{t('accounting.reports.totalExpenses')}</TableCell>
                 <TableCell className="text-right">{formatCurrency(reportData.totalExpenses, settings.defaultCurrency)}</TableCell>
               </TableRow>
             </TableBody>
@@ -168,7 +171,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
           <Table>
             <TableBody>
               <TableRow className="text-lg font-bold">
-                <TableCell>Net Income</TableCell>
+                <TableCell>{t('accounting.reports.netIncome')}</TableCell>
                 <TableCell className={`text-right ${reportData.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {formatCurrency(reportData.netIncome, settings.defaultCurrency)}
                 </TableCell>
@@ -186,11 +189,11 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
     return (
       <div className="space-y-6">
         <div className="text-sm text-muted-foreground">
-          As of: {new Date(reportData.asOfDate).toLocaleDateString()}
+          {t('accounting.reports.asOf')}: {new Date(reportData.asOfDate).toLocaleDateString()}
         </div>
 
         <div>
-          <h3 className="font-semibold mb-2">Assets</h3>
+          <h3 className="font-semibold mb-2">{t('accounting.reports.assets')}</h3>
           <Table>
             <TableBody>
               {reportData.assets.map((item: any, idx: number) => (
@@ -200,7 +203,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
                 </TableRow>
               ))}
               <TableRow className="font-semibold bg-muted">
-                <TableCell>Total Assets</TableCell>
+                <TableCell>{t('accounting.reports.totalAssets')}</TableCell>
                 <TableCell className="text-right">{formatCurrency(reportData.totalAssets, settings.defaultCurrency)}</TableCell>
               </TableRow>
             </TableBody>
@@ -208,7 +211,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
         </div>
 
         <div>
-          <h3 className="font-semibold mb-2">Liabilities</h3>
+          <h3 className="font-semibold mb-2">{t('accounting.reports.liabilities')}</h3>
           <Table>
             <TableBody>
               {reportData.liabilities.map((item: any, idx: number) => (
@@ -218,7 +221,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
                 </TableRow>
               ))}
               <TableRow className="font-semibold bg-muted">
-                <TableCell>Total Liabilities</TableCell>
+                <TableCell>{t('accounting.reports.totalLiabilities')}</TableCell>
                 <TableCell className="text-right">{formatCurrency(reportData.totalLiabilities, settings.defaultCurrency)}</TableCell>
               </TableRow>
             </TableBody>
@@ -226,7 +229,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
         </div>
 
         <div>
-          <h3 className="font-semibold mb-2">Equity</h3>
+          <h3 className="font-semibold mb-2">{t('accounting.reports.equity')}</h3>
           <Table>
             <TableBody>
               {reportData.equity.map((item: any, idx: number) => (
@@ -236,7 +239,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
                 </TableRow>
               ))}
               <TableRow className="font-semibold bg-muted">
-                <TableCell>Total Equity</TableCell>
+                <TableCell>{t('accounting.reports.totalEquity')}</TableCell>
                 <TableCell className="text-right">{formatCurrency(reportData.totalEquity, settings.defaultCurrency)}</TableCell>
               </TableRow>
             </TableBody>
@@ -247,7 +250,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
           <Table>
             <TableBody>
               <TableRow className="text-lg font-bold">
-                <TableCell>Total Liabilities + Equity</TableCell>
+                <TableCell>{t('accounting.reports.liabilitiesEquity')}</TableCell>
                 <TableCell className="text-right">
                   {formatCurrency(reportData.totalLiabilities + reportData.totalEquity, settings.defaultCurrency)}
                 </TableCell>
@@ -265,11 +268,11 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
     return (
       <div className="space-y-6">
         <div className="text-sm text-muted-foreground">
-          Period: {new Date(reportData.period.start).toLocaleDateString()} - {new Date(reportData.period.end).toLocaleDateString()}
+          {t('accounting.reports.period')}: {new Date(reportData.period.start).toLocaleDateString()} - {new Date(reportData.period.end).toLocaleDateString()}
         </div>
 
         <div>
-          <h3 className="font-semibold mb-2">Operating Activities</h3>
+          <h3 className="font-semibold mb-2">{t('accounting.reports.operatingActivities')}</h3>
           <Table>
             <TableBody>
               {reportData.operating.map((item: any, idx: number) => (
@@ -284,17 +287,17 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
 
         <div className="pt-4 border-t space-y-2">
           <div className="flex justify-between text-sm">
-            <span>Beginning Cash:</span>
+            <span>{t('accounting.reports.beginningCash')}:</span>
             <span className="font-medium">{formatCurrency(reportData.beginningCash, settings.defaultCurrency)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span>Net Cash Flow:</span>
+            <span>{t('accounting.reports.netCashFlow')}:</span>
             <span className={`font-medium ${reportData.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatCurrency(reportData.netCashFlow, settings.defaultCurrency)}
             </span>
           </div>
           <div className="flex justify-between text-lg font-bold pt-2 border-t">
-            <span>Ending Cash:</span>
+            <span>{t('accounting.reports.endingCash')}:</span>
             <span>{formatCurrency(reportData.endingCash, settings.defaultCurrency)}</span>
           </div>
         </div>
@@ -313,12 +316,12 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
           <div className="flex gap-2">
             <Button onClick={generateReport} disabled={loading} variant="outline" size="sm">
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              {t('accounting.reports.refresh')}
             </Button>
             {reportData && (
               <Button onClick={downloadPDF} variant="default" size="sm">
                 <Download className="h-4 w-4 mr-2" />
-                Download PDF
+                {t('accounting.reports.downloadPdf')}
               </Button>
             )}
           </div>
@@ -330,7 +333,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
             {reportType !== 'balance-sheet' ? (
               <>
                 <div className="flex-1">
-                  <Label htmlFor="startDate">Start Date</Label>
+                  <Label htmlFor="startDate">{t('accounting.reports.startDate')}</Label>
                   <Input
                     id="startDate"
                     type="date"
@@ -339,7 +342,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
                   />
                 </div>
                 <div className="flex-1">
-                  <Label htmlFor="endDate">End Date</Label>
+                  <Label htmlFor="endDate">{t('accounting.reports.endDate')}</Label>
                   <Input
                     id="endDate"
                     type="date"
@@ -350,7 +353,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
               </>
             ) : (
               <div className="flex-1">
-                <Label htmlFor="asOfDate">As Of Date</Label>
+                <Label htmlFor="asOfDate">{t('accounting.reports.asOfDate')}</Label>
                 <Input
                   id="asOfDate"
                   type="date"
@@ -363,7 +366,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
 
           {loading ? (
             <div className="text-center p-8 text-muted-foreground">
-              Generating report...
+              {t('accounting.reports.generating')}
             </div>
           ) : reportData ? (
             <div className="mt-6">
@@ -373,7 +376,7 @@ export function ReportViewer({ reportType, title, description }: ReportViewerPro
             </div>
           ) : (
             <div className="text-center p-8 text-muted-foreground">
-              Click "Refresh" to generate the report
+              {t('accounting.reports.refreshHint') || 'Click "Refresh" to generate the report'}
             </div>
           )}
         </div>

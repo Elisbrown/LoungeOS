@@ -4,9 +4,9 @@ import { addActivityLog } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
 
 async function getActorId(email?: string) {
-    if (!email || email === "system") return null;
-    const user = await getStaffByEmail(email);
-    return user ? Number(user.id) : null;
+  if (!email || email === "system") return null;
+  const user = await getStaffByEmail(email);
+  return user ? Number(user.id) : null;
 }
 
 export async function GET(request: NextRequest) {
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     // Validate debits = credits
     const totalDebits = data.lines.reduce((sum: number, line: any) => sum + (line.debit || 0), 0);
     const totalCredits = data.lines.reduce((sum: number, line: any) => sum + (line.credit || 0), 0);
-    
+
     if (Math.abs(totalDebits - totalCredits) > 0.01) {
       return NextResponse.json(
         { error: 'Debits must equal credits', totalDebits, totalCredits },
@@ -57,11 +57,11 @@ export async function POST(request: NextRequest) {
     const actorId = await getActorId(data.userEmail);
 
     await addActivityLog(
-        actorId,
-        'FIN_JOURNAL_CREATE',
-        `Created journal entry: ${data.description}`,
-        `ENTRY-${entry.id}`,
-        { type: data.entry_type, amount: entry.total_amount, linesCount: data.lines.length }
+      actorId,
+      'FIN_JOURNAL_CREATE',
+      `Created journal entry: ${data.description}`,
+      `ENTRY-${entry.id}`,
+      { type: data.entry_type, amount: entry.total_amount, linesCount: data.lines.length }
     );
 
     return NextResponse.json(entry, { status: 201 });
@@ -71,5 +71,70 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to create journal entry', message: error.message },
       { status: 500 }
     );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, ...updateData } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Entry ID is required' }, { status: 400 });
+    }
+
+    const { updateJournalEntry } = await import('@/lib/db/accounting');
+    const updated = updateJournalEntry(id, updateData);
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Journal entry not found' }, { status: 404 });
+    }
+
+    // Log activity
+    const actorId = await getActorId(body.userEmail);
+    await addActivityLog(
+      actorId,
+      'FIN_JOURNAL_UPDATE',
+      `Updated journal entry ${id}`,
+      `ENTRY-${id}`,
+      { ...updateData }
+    );
+
+    return NextResponse.json(updated);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const userEmail = searchParams.get('userEmail');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Entry ID is required' }, { status: 400 });
+    }
+
+    const { deleteJournalEntry } = await import('@/lib/db/accounting');
+    const success = deleteJournalEntry(Number(id));
+
+    if (!success) {
+      return NextResponse.json({ error: 'Journal entry not found or could not be deleted' }, { status: 404 });
+    }
+
+    // Log activity
+    const actorId = await getActorId(userEmail || undefined);
+    await addActivityLog(
+      actorId,
+      'FIN_JOURNAL_DELETE',
+      `Deleted journal entry ${id}`,
+      `ENTRY-${id}`,
+      {}
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

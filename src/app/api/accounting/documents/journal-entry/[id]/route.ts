@@ -10,6 +10,9 @@ export async function GET(
   const { id: idParam } = await params;
   try {
     const id = parseInt(idParam);
+    const searchParams = request.nextUrl.searchParams;
+    const lang = searchParams.get('lang') || 'en';
+
     const entry = getJournalEntryById(id);
 
     if (!entry) {
@@ -17,7 +20,7 @@ export async function GET(
     }
 
     const appSettings = await getSettings();
-    const pdf = await generateJournalEntryPDF(entry, appSettings);
+    const pdf = await generateJournalEntryPDF(entry, appSettings, undefined, lang);
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
 
     return new NextResponse(pdfBuffer, {

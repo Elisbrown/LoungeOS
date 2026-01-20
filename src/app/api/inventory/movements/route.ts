@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getInventoryMovements, addInventoryMovement, getInventoryItemById, bulkAddInventoryMovements } from '@/lib/db/inventory';
 import { addActivityLog } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
+import { createInventoryMovementJournalEntry } from '@/lib/accounting/automation';
 
 export const runtime = 'nodejs';
 
@@ -82,12 +83,15 @@ export async function POST(request: NextRequest) {
             action,
             `${action.replace('_', ' ')} for item: ${item?.name || 'Unknown'}`,
             item?.sku || String(movementData.item_id),
-            { 
-                quantity: movementData.quantity, 
-                type: movementData.reference_type, 
-                notes: movementData.notes 
+            {
+                quantity: movementData.quantity,
+                type: movementData.reference_type,
+                notes: movementData.notes
             }
         );
+
+        // Accounting Automation
+        await createInventoryMovementJournalEntry(newMovement, actorId || 1);
 
         return NextResponse.json(newMovement, { status: 201 });
     } catch (error: any) {

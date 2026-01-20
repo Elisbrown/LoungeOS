@@ -51,7 +51,7 @@ export function SuppliersTable() {
   const { toast } = useToast()
   const { user } = useAuth()
   const { t } = useTranslation()
-  
+
   const canManage = user?.role === "Stock Manager" || user?.role === "Manager" || user?.role === "Super Admin"
 
   const handleUpdate = async (updated: any) => {
@@ -90,7 +90,7 @@ export function SuppliersTable() {
 
   const handleBulkDelete = async () => {
     if (selectedSuppliers.size === 0) return;
-    
+
     try {
       const promises = Array.from(selectedSuppliers).map(id => deleteSupplier(id.toString()));
       await Promise.all(promises);
@@ -117,7 +117,7 @@ export function SuppliersTable() {
       s.email || "",
       s.address || ""
     ]);
-    
+
     const csvContent = [headers, ...csvData].map(row => row.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -131,7 +131,9 @@ export function SuppliersTable() {
 
   const downloadTemplate = () => {
     const headers = ["Name", "Contact Person", "Phone", "Email", "Address"];
-    const csvContent = headers.join(",") + "\n";
+    // Add sample row
+    const sampleRow = "ACME Supplies,John Smith,555-1234,john@acme.com,123 Business Rd";
+    const csvContent = headers.join(",") + "\n" + sampleRow + "\n";
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -151,7 +153,8 @@ export function SuppliersTable() {
       const text = event.target?.result as string;
       const lines = text.split("\n");
       const headers = lines[0].split(",");
-      const data = lines.slice(1).filter(line => line.trim() !== "");
+      // Skip header (0) and sample row (1)
+      const data = lines.slice(2).filter(line => line.trim() !== "");
 
       let successCount = 0;
       let failCount = 0;
@@ -204,9 +207,9 @@ export function SuppliersTable() {
   // Filter suppliers based on search term
   const filteredSuppliers = useMemo(() => {
     if (!searchTerm) return suppliers;
-    
+
     const search = searchTerm.toLowerCase();
-    return suppliers.filter(supplier => 
+    return suppliers.filter(supplier =>
       supplier.name.toLowerCase().includes(search) ||
       supplier.contact_person?.toLowerCase().includes(search) ||
       supplier.email?.toLowerCase().includes(search) ||
@@ -233,31 +236,31 @@ export function SuppliersTable() {
     <>
       <div className="flex justify-between items-center mb-4">
         <div className="flex gap-2">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept=".csv" 
-              onChange={handleImport} 
-            />
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()}>
-              <Upload className="h-4 w-4" />
-              Import
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept=".csv"
+            onChange={handleImport}
+          />
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="h-4 w-4" />
+            Import
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+          <Button variant="secondary" size="sm" className="gap-2" onClick={downloadTemplate}>
+            <FileText className="h-4 w-4" />
+            Template
+          </Button>
+          {selectedSuppliers.size > 0 && (
+            <Button variant="destructive" size="sm" className="gap-2" onClick={handleBulkDelete}>
+              <Trash2 className="h-4 w-4" />
+              Delete Selected ({selectedSuppliers.size})
             </Button>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-            <Button variant="secondary" size="sm" className="gap-2" onClick={downloadTemplate}>
-              <FileText className="h-4 w-4" />
-              Template
-            </Button>
-            {selectedSuppliers.size > 0 && (
-              <Button variant="destructive" size="sm" className="gap-2" onClick={handleBulkDelete}>
-                <Trash2 className="h-4 w-4" />
-                Delete Selected ({selectedSuppliers.size})
-              </Button>
-            )}
+          )}
         </div>
         <AddSupplierForm onAddSupplier={addSupplier} />
       </div>
@@ -305,7 +308,7 @@ export function SuppliersTable() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[40px]">
-                    <Checkbox 
+                    <Checkbox
                       checked={selectedSuppliers.size > 0 && selectedSuppliers.size === filteredSuppliers.length}
                       onCheckedChange={toggleSelectAll}
                     />
@@ -325,7 +328,7 @@ export function SuppliersTable() {
                   paginatedSuppliers.map((supplier) => (
                     <TableRow key={supplier.id}>
                       <TableCell>
-                        <Checkbox 
+                        <Checkbox
                           checked={selectedSuppliers.has(supplier.id)}
                           onCheckedChange={() => toggleSelect(supplier.id)}
                         />
@@ -347,11 +350,11 @@ export function SuppliersTable() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>{t('inventory.actions')}</DropdownMenuLabel>
                               <DropdownMenuItem onSelect={() => setEditingSupplier(supplier)}>
-                                <Edit className="mr-2 h-4 w-4"/>
+                                <Edit className="mr-2 h-4 w-4" />
                                 {t('dialogs.edit')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => setDeletingSupplier(supplier)} className="text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4"/>
+                                <Trash2 className="mr-2 h-4 w-4" />
                                 {t('dialogs.delete')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -390,7 +393,7 @@ export function SuppliersTable() {
           )}
         </CardContent>
       </Card>
-      
+
       {editingSupplier && (
         <EditSupplierForm
           supplier={editingSupplier}
@@ -402,11 +405,11 @@ export function SuppliersTable() {
 
       {deletingSupplier && (
         <DeleteConfirmationDialog
-            open={!!deletingSupplier}
-            onOpenChange={(isOpen) => !isOpen && setDeletingSupplier(null)}
-            onConfirm={() => handleDelete(deletingSupplier.id)}
-            title={t('dialogs.deleteSupplierTitle')}
-            description={t('dialogs.deleteSupplierDesc', { name: deletingSupplier.name })}
+          open={!!deletingSupplier}
+          onOpenChange={(isOpen) => !isOpen && setDeletingSupplier(null)}
+          onConfirm={() => handleDelete(deletingSupplier.id)}
+          title={t('dialogs.deleteSupplierTitle')}
+          description={t('dialogs.deleteSupplierDesc', { name: deletingSupplier.name })}
         />
       )}
     </>

@@ -49,52 +49,89 @@ if (fs.existsSync(publicSrc)) {
 
 console.log('Standalone build preparation complete.');
 
-// Fix: Copy the Electron-rebuilt better-sqlite3 from root node_modules
-// to the standalone node_modules, replacing the incompatible version.
-const betterSqliteSrc = path.join(projectRoot, 'node_modules', 'better-sqlite3');
-const standaloneNodeModules = path.join(standaloneDir, 'node_modules');
+// First: Rebuild better-sqlite3 for Electron (not system Node.js)
+console.log('Rebuilding better-sqlite3 for Electron...');
+const { execSync } = require('child_process');
 
-// Helper to find deep node_modules in standalone (Next.js 13+ bundles deps inside .next/server/...)
-// But for native modules, we might need to manually ensure the right .node file is present.
-// The error log shows: .next\node_modules\better-sqlite3-...\build\Release\better_sqlite3.node
-// This suggests Next.js bundled it uniquely.
-// simpler approach: The standalone build respects the ordinary node_modules structure if present.
-// We will copy the rebuilt module to the standalone root node_modules to ensure it's available.
-
-if (fs.existsSync(betterSqliteSrc)) {
-    const betterSqliteDest = path.join(standaloneNodeModules, 'better-sqlite3');
-    console.log(`Copying compatible better-sqlite3: ${betterSqliteSrc} -> ${betterSqliteDest}`);
-    copyDir(betterSqliteSrc, betterSqliteDest);
-} else {
-    console.warn(`Warning: better-sqlite3 not found at ${betterSqliteSrc}`);
-}
-
-// Rebuild native modules inside the standalone directory for Electron
-// Rebuild native modules inside the standalone directory for Electron
-console.log('Rebuilding native modules for Electron...');
 try {
-    const { execSync } = require('child_process');
-
-    // Get installed Electron version
+    // Get Electron version
     const electronPkg = require('electron/package.json');
     const electronVersion = electronPkg.version;
-    console.log(`Detected Electron version: ${electronVersion}`);
+    console.log(`  Electron version: ${electronVersion}`);
 
-    // We need to run inside .next/standalone
-    // We explicitly set npm_config_target to ensuring it builds for this Electron version
-    execSync('npx electron-builder install-app-deps', {
-        cwd: standaloneDir,
-        stdio: 'inherit',
-        env: {
-            ...process.env,
-            npm_config_target: electronVersion,
-            npm_config_runtime: 'electron',
-            npm_config_disturl: 'https://electronjs.org/headers',
-            ELECTRON_VERSION: electronVersion
-        }
+    // Use @electron/rebuild to compile for correct Electron version
+    execSync(`npx @electron/rebuild -v ${electronVersion} -m ${projectRoot} -o better-sqlite3`, {
+        cwd: projectRoot,
+        stdio: 'inherit'
     });
-    console.log('Native modules rebuilt successfully.');
+    console.log('  ✓ better-sqlite3 rebuilt for Electron');
 } catch (error) {
-    console.error('Failed to rebuild native modules:', error);
+    console.error('Failed to rebuild for Electron:', error.message);
+    // Continue anyway - the binary might already be correct
+}
+
+// Fix: Replace ALL better_sqlite3.node binaries in standalone with the Electron-rebuilt version
+// Next.js bundles native modules with hashed paths like: .next/node_modules/better-sqlite3-HASH/build/Release/better_sqlite3.node
+// We need to find those and replace them with the correctly compiled version
+
+const electronRebuildNodeFile = path.join(projectRoot, 'node_modules', 'better-sqlite3', 'build', 'Release', 'better_sqlite3.node');
+
+if (!fs.existsSync(electronRebuildNodeFile)) {
+    console.warn(`Warning: Electron-rebuilt better_sqlite3.node not found at ${electronRebuildNodeFile}`);
+    console.warn('Run "npm rebuild better-sqlite3" first');
     process.exit(1);
 }
+
+console.log(`Found Electron-rebuilt native module: ${electronRebuildNodeFile}`);
+
+// Recursively find all better_sqlite3.node files in .next/standalone
+function findFiles(dir, filename, results = []) {
+    if (!fs.existsSync(dir)) return results;
+
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+            findFiles(fullPath, filename, results);
+        } else if (entry.name === filename) {
+            results.push(fullPath);
+        }
+    }
+    return results;
+}
+
+// Also need to scan the main .next directory (Turbopack creates .next/node_modules too!)
+const nextDir = path.join(projectRoot, '.next');
+const targetFiles = [
+    ...findFiles(standaloneDir, 'better_sqlite3.node'),
+    ...findFiles(nextDir, 'better_sqlite3.node')
+        // Filter out standalone to avoid duplicates
+        .filter(f => !f.includes('standalone'))
+];
+// Deduplicate paths
+const uniqueTargets = [...new Set(targetFiles)];
+console.log(`Found ${uniqueTargets.length} native module(s) to replace:`);
+
+for (const targetFile of uniqueTargets) {
+    console.log(`  Replacing: ${targetFile}`);
+    try {
+        fs.copyFileSync(electronRebuildNodeFile, targetFile);
+        console.log(`  ✓ Replaced successfully`);
+    } catch (err) {
+        console.error(`  ✗ Failed to replace: ${err.message}`);
+        process.exit(1);
+    }
+}
+
+if (uniqueTargets.length === 0) {
+    // Fallback: copy to standard location
+    const standardPath = path.join(standaloneDir, 'node_modules', 'better-sqlite3', 'build', 'Release');
+    if (!fs.existsSync(standardPath)) {
+        fs.mkdirSync(standardPath, { recursive: true });
+    }
+    const destFile = path.join(standardPath, 'better_sqlite3.node');
+    console.log(`No existing .node files found. Copying to standard path: ${destFile}`);
+    fs.copyFileSync(electronRebuildNodeFile, destFile);
+}
+
+console.log('Native module replacement complete.');

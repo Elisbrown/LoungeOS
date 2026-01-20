@@ -31,12 +31,12 @@ const profileFormSchema = z.object({
 })
 
 const passwordFormSchema = z.object({
-    currentPassword: z.string().min(1, { message: "Current password is required." }),
-    newPassword: z.string().min(6, { message: "New password must be at least 6 characters." }),
-    confirmPassword: z.string(),
+  currentPassword: z.string().min(1, { message: "Current password is required." }),
+  newPassword: z.string().min(6, { message: "New password must be at least 6 characters." }),
+  confirmPassword: z.string(),
 }).refine(data => data.newPassword === data.confirmPassword, {
-    message: "Passwords do not match.",
-    path: ["confirmPassword"],
+  message: "Passwords do not match.",
+  path: ["confirmPassword"],
 })
 
 export default function SettingsPage() {
@@ -56,80 +56,80 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (user) {
-        profileForm.reset({
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar,
-        })
+      profileForm.reset({
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+      })
     }
   }, [user, profileForm])
 
   const passwordForm = useForm<z.infer<typeof passwordFormSchema>>({
     resolver: zodResolver(passwordFormSchema),
     defaultValues: {
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
     }
   })
 
   async function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
     if (!user) return;
     try {
-        const response = await fetch(`/api/staff?email=${encodeURIComponent(user.email)}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...user, ...values }),
-        });
+      const response = await fetch(`/api/staff?email=${encodeURIComponent(user.email)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...user, ...values }),
+      });
 
-        const updatedUser = await response.json();
-        if (!response.ok) throw new Error(updatedUser.message || 'Failed to update profile');
+      const updatedUser = await response.json();
+      if (!response.ok) throw new Error(updatedUser.message || 'Failed to update profile');
 
-        login(updatedUser); // Update auth context
-        toast({
-            title: t('toasts.profileUpdated'),
-            description: t('toasts.profileUpdatedDesc'),
-        });
+      login(updatedUser); // Update auth context
+      toast({
+        title: t('toasts.profileUpdated'),
+        description: t('toasts.profileUpdatedDesc'),
+      });
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+      toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
     }
   }
 
   async function onPasswordSubmit(values: z.infer<typeof passwordFormSchema>) {
-     if (!user) return;
+    if (!user) return;
     try {
-        // First, verify the current password
-        const verifyResponse = await fetch('/api/auth/verify-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: user.email, password: values.currentPassword }),
-        });
-        const { success } = await verifyResponse.json();
-        if (!verifyResponse.ok || !success) {
-            throw new Error('Current password is incorrect.');
-        }
+      // First, verify the current password
+      const verifyResponse = await fetch('/api/auth/verify-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email, password: values.currentPassword }),
+      });
+      const { success } = await verifyResponse.json();
+      if (!verifyResponse.ok || !success) {
+        throw new Error('Current password is incorrect.');
+      }
 
-        // If correct, proceed to update the password
-        const resetResponse = await fetch('/api/auth/reset-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: user.email, newPassword: values.newPassword })
-        });
+      // If correct, proceed to update the password
+      const resetResponse = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email, newPassword: values.newPassword })
+      });
 
-        const updatedUser = await resetResponse.json();
-        if (!resetResponse.ok) {
-            throw new Error(updatedUser.message || 'Failed to reset password');
-        }
-        
-        login(updatedUser);
-        toast({
-            title: t('toasts.passwordUpdated'),
-            description: t('toasts.passwordUpdatedDesc'),
-        });
-        passwordForm.reset();
+      const updatedUser = await resetResponse.json();
+      if (!resetResponse.ok) {
+        throw new Error(updatedUser.message || 'Failed to reset password');
+      }
+
+      login(updatedUser);
+      toast({
+        title: t('toasts.passwordUpdated'),
+        description: t('toasts.passwordUpdatedDesc'),
+      });
+      passwordForm.reset();
 
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+      toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
     }
   }
 
@@ -140,26 +140,26 @@ export default function SettingsPage() {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && user) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('type', 'staff');
-        formData.append('userEmail', user.email);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'staff');
+      formData.append('userEmail', user.email);
 
-        try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message || 'Upload failed');
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message || 'Upload failed');
 
-            const newAvatarPath = result.path;
-            profileForm.setValue("avatar", newAvatarPath);
-            await onProfileSubmit({ ...profileForm.getValues(), avatar: newAvatarPath });
+        const newAvatarPath = result.path;
+        profileForm.setValue("avatar", newAvatarPath);
+        await onProfileSubmit({ ...profileForm.getValues(), avatar: newAvatarPath });
 
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: "Upload Failed", description: error.message });
-        }
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: "Upload Failed", description: error.message });
+      }
     }
   };
 
@@ -179,10 +179,10 @@ export default function SettingsPage() {
               <CardContent className="flex flex-col md:flex-row gap-8">
                 <div className="relative w-fit group">
                   <Avatar className="h-32 w-32 border-2 border-primary">
-                    <AvatarImage src={profileForm.watch("avatar") || "https://placehold.co/128x128.png"} alt={user?.name} data-ai-hint="person portrait" />
+                    <AvatarImage src={profileForm.watch("avatar") || "https://placehold.co/128x128.png"} alt={user?.name} data-ai-hint="person portrait" className="object-cover" />
                     <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <Button onClick={handlePictureUpload} size="icon" className="absolute bottom-0 right-0 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button onClick={handlePictureUpload} size="icon" className="absolute bottom-0 right-0 h-8 w-8 rounded-full">
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Edit profile picture</span>
                   </Button>
@@ -218,7 +218,7 @@ export default function SettingsPage() {
                           <FormControl>
                             <Input placeholder="Your email" {...field} disabled />
                           </FormControl>
-                           <FormMessage />
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -247,11 +247,11 @@ export default function SettingsPage() {
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
-                           <FormMessage />
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
-                     <FormField
+                    <FormField
                       control={passwordForm.control}
                       name="newPassword"
                       render={({ field }) => (
@@ -260,11 +260,11 @@ export default function SettingsPage() {
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
-                           <FormMessage />
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
-                     <FormField
+                    <FormField
                       control={passwordForm.control}
                       name="confirmPassword"
                       render={({ field }) => (
@@ -273,7 +273,7 @@ export default function SettingsPage() {
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
-                           <FormMessage />
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -284,15 +284,15 @@ export default function SettingsPage() {
             </Card>
 
             <Card>
-                <CardHeader>
-                    <CardTitle>{t('settings.language.title')}</CardTitle>
-                    <CardDescription>
-                        {t('settings.language.description')}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <LanguageSwitcher />
-                </CardContent>
+              <CardHeader>
+                <CardTitle>{t('settings.language.title')}</CardTitle>
+                <CardDescription>
+                  {t('settings.language.description')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LanguageSwitcher />
+              </CardContent>
             </Card>
 
           </div>

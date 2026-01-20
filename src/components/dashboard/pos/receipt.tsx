@@ -8,25 +8,25 @@ import Image from 'next/image';
 import { cn, formatCurrency } from '@/lib/utils';
 
 function LoungeChairIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            className={className}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M14 17a2 2 0 1 0-4 0" />
-            <path d="M6 10h12" />
-            <path d="M16 4h-8" />
-            <path d="M6 4v13" />
-            <path d="M18 4v13" />
-            <path d="M5 17h14" />
-        </svg>
-    )
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14 17a2 2 0 1 0-4 0" />
+      <path d="M6 10h12" />
+      <path d="M16 4h-8" />
+      <path d="M6 4v13" />
+      <path d="M18 4v13" />
+      <path d="M5 17h14" />
+    </svg>
+  )
 }
 
 export type ReceiptProps = {
@@ -54,32 +54,32 @@ export type ReceiptProps = {
 
 export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
   (props, ref) => {
-    const { 
-        orderId, type, table, items, subtotal, total, totalPaid, totalDue, amountTendered, change, paymentMethod,
-        timestamp, cashierName, waiterName, settings, discount, tax, taxRate, discountName
+    const {
+      orderId, type, table, items, subtotal, total, totalPaid, totalDue, amountTendered, change, paymentMethod,
+      timestamp, cashierName, waiterName, settings, discount, tax, taxRate, discountName
     } = props;
-    
+
     const fontClass = {
-        mono: 'font-mono',
-        sans: 'font-sans',
-        serif: 'font-serif'
+      mono: 'font-mono',
+      sans: 'font-sans',
+      serif: 'font-serif'
     }[settings.receiptFont] || 'font-mono';
 
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-      <div 
-        ref={ref} 
+      <div
+        ref={ref}
         className={cn("p-4 bg-white text-black text-[12px] w-[302px] mx-auto", fontClass)}
         style={{ lineHeight: settings.receiptLineSpacing || 1.2, fontFamily: 'monospace' }}
       >
         {/* Header - Centered */}
-        <div className="text-center mb-4 space-y-1">
+        <div className="w-full text-center mb-4 space-y-1">
           <div className="flex items-center justify-center mb-2">
             {settings.platformLogo ? (
               <Image src={settings.platformLogo} alt="logo" width={50} height={50} className="h-12 w-12 object-contain" />
             ) : (
-              <LoungeChairIcon className="h-10 w-10 text-black" />
+              <LoungeChairIcon className="h-10 w-10 text-black mx-auto" />
             )}
           </div>
           <h1 className="text-base font-bold uppercase">{settings.organizationName}</h1>
@@ -147,19 +147,19 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             <span>Subtotal:</span>
             <span>{formatCurrency(subtotal, settings.defaultCurrency)}</span>
           </div>
-          
+
           <div className="flex justify-between">
             <span>Discount{discountName ? ` (${discountName})` : ''}:</span>
             <span>-{formatCurrency(discount || 0, settings.defaultCurrency)}</span>
           </div>
-          
+
           <div className="flex justify-between">
             <span>Tax{taxRate ? ` (${taxRate}%)` : ''}:</span>
             <span>{formatCurrency(tax || 0, settings.defaultCurrency)}</span>
           </div>
-          
+
           <div className="border-t border-black my-1" />
-          
+
           <div className="flex justify-between font-bold text-[14px]">
             <span>TOTAL:</span>
             <span>{formatCurrency(total, settings.defaultCurrency)}</span>
@@ -185,16 +185,16 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             </div>
           </>
         )}
-        
+
         <div className="border-t border-dashed border-black my-2" />
-        
+
         {/* Footer - Centered */}
         <div className="text-center mt-4 space-y-2">
           <div className="space-y-0.5">
             <p className="font-bold uppercase text-[11px]">{settings.receiptFooter || 'Thank you for your business!'}</p>
             <p className="text-[10px]">Please come again!</p>
           </div>
-          
+
           <div className="border-t border-dotted border-black/20 pt-2 space-y-0.5 opacity-70">
             <p className="text-[9px] font-medium">Software: LoungeOS</p>
             <p className="text-[9px]">Developed by SIGALIX</p>

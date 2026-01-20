@@ -46,13 +46,13 @@ export function InventoryTable() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  
+
   // Dialog states
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [movementsDialogOpen, setMovementsDialogOpen] = useState(false);
@@ -70,15 +70,15 @@ export function InventoryTable() {
         return "destructive";
     }
   };
-  
+
   const filteredItems = useMemo(() => {
     return items.filter(item => {
-        const matchesSearch = searchTerm === "" || 
-                              item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                              item.sku.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === "All" || item.status === statusFilter;
-        const matchesCategory = categoryFilter === "All" || item.category === categoryFilter;
-        return matchesSearch && matchesStatus && matchesCategory;
+      const matchesSearch = searchTerm === "" ||
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.sku.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "All" || item.status === statusFilter;
+      const matchesCategory = categoryFilter === "All" || item.category === categoryFilter;
+      return matchesSearch && matchesStatus && matchesCategory;
     });
   }, [items, searchTerm, statusFilter, categoryFilter]);
 
@@ -91,7 +91,8 @@ export function InventoryTable() {
   }, [items]);
 
   const handleDownloadTemplate = () => {
-    const csvContent = "data:text/csv;charset=utf-8,sku,name,category,description,unit,min_stock_level,max_stock_level,current_stock,cost_per_unit,supplier_id\n";
+    // Add sample row
+    const csvContent = "data:text/csv;charset=utf-8,sku,name,category,description,unit,min_stock_level,max_stock_level,current_stock,cost_per_unit,supplier_id\nITEM-001,Sample Item,General,Description here,pieces,5,20,10,10.00,\n";
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -115,34 +116,42 @@ export function InventoryTable() {
       try {
         const lines = text.split('\n').filter(line => line.trim() !== '');
         if (lines.length <= 1) {
-            toast({ variant: "destructive", title: t('toasts.csvError'), description: t('toasts.csvEmpty') });
-            return;
+          toast({ variant: "destructive", title: t('toasts.csvError'), description: t('toasts.csvEmpty') });
+          return;
         }
         const headers = lines[0].split(',').map(h => h.trim());
         const requiredHeaders = ['sku', 'name', 'category', 'current_stock'];
         if (!requiredHeaders.every(h => headers.includes(h))) {
-            toast({ variant: "destructive", title: t('toasts.csvError'), description: t('toasts.csvHeaders') });
-            return;
+          toast({ variant: "destructive", title: t('toasts.csvError'), description: t('toasts.csvHeaders') });
+          return;
         }
 
-        // Process CSV import
-        const itemsToImport = lines.slice(1).map(line => {
-            const values = line.split(',').map(v => v.trim());
-            const item: any = {};
-            headers.forEach((header, index) => {
-                const value = values[index];
-                if (header === 'current_stock' || header === 'min_stock_level' || header === 'cost_per_unit') {
-                    item[header] = parseFloat(value) || 0;
-                } else {
-                    item[header] = value;
-                }
-            });
-            
-            // Add default values for missing required fields
-            if (!item.unit) item.unit = 'pieces';
-            if (!item.min_stock_level) item.min_stock_level = 0;
-            
-            return item;
+        // Process CSV import - Skip header (0) and sample row (1) if it exists/matches
+        // User requested adding a sample row and ignoring it.
+        const dataLines = lines.slice(2);
+
+        if (dataLines.length === 0) {
+          toast({ variant: "destructive", title: t('toasts.csvError'), description: "No data found to import (ignoring sample row)." });
+          return;
+        }
+
+        const itemsToImport = dataLines.map(line => {
+          const values = line.split(',').map(v => v.trim());
+          const item: any = {};
+          headers.forEach((header, index) => {
+            const value = values[index];
+            if (header === 'current_stock' || header === 'min_stock_level' || header === 'cost_per_unit') {
+              item[header] = parseFloat(value) || 0;
+            } else {
+              item[header] = value;
+            }
+          });
+
+          // Add default values for missing required fields
+          if (!item.unit) item.unit = 'pieces';
+          if (!item.min_stock_level) item.min_stock_level = 0;
+
+          return item;
         });
 
         await bulkAddItems(itemsToImport);
@@ -151,14 +160,14 @@ export function InventoryTable() {
         toast({ variant: "destructive", title: t('toasts.importFailed'), description: t('toasts.importFailedDesc') });
         console.error("CSV Parsing Error:", error);
       } finally {
-        if(event.target) {
+        if (event.target) {
           event.target.value = '';
         }
       }
     };
     reader.readAsText(file);
   };
-  
+
   const handleExportCSV = () => {
     const headers = ["SKU", "Name", "Category", "Description", "Unit", "Min Stock", "Max Stock", "Current Stock", "Cost/Unit", "Status", "Supplier"];
     const rows = paginatedItems.map(item => [
@@ -175,10 +184,10 @@ export function InventoryTable() {
       item.supplier?.name || ''
     ]);
 
-    let csvContent = "data:text/csv;charset=utf-8," 
-        + headers.join(",") + "\n" 
-        + rows.map(e => e.join(",")).join("\n");
-        
+    let csvContent = "data:text/csv;charset=utf-8,"
+      + headers.join(",") + "\n"
+      + rows.map(e => e.join(",")).join("\n");
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -229,7 +238,7 @@ export function InventoryTable() {
     <div>
       <div className="flex items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
-          <Input 
+          <Input
             placeholder={t('inventory.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -258,8 +267,8 @@ export function InventoryTable() {
               ))}
             </SelectContent>
           </Select>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => {
               setSearchTerm("")
@@ -274,31 +283,31 @@ export function InventoryTable() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-muted/30 p-1 rounded-md border gap-1 mr-2">
-             <Button 
-               variant="ghost" 
-               size="sm" 
-               className="h-8 text-xs gap-1 hover:bg-green-500/10 hover:text-green-600 dark:hover:text-green-400"
-               onClick={() => {
-                 setMovementType('IN');
-                 setBulkMovementDialogOpen(true);
-               }}
-             >
-               <TrendingUp className="h-3.5 w-3.5" />
-               Stock In
-             </Button>
-             <div className="w-px h-4 bg-border" />
-             <Button 
-               variant="ghost" 
-               size="sm" 
-               className="h-8 text-xs gap-1 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400"
-               onClick={() => {
-                 setMovementType('OUT');
-                 setBulkMovementDialogOpen(true);
-               }}
-             >
-               <TrendingDown className="h-3.5 w-3.5" />
-               Stock Out
-             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs gap-1 hover:bg-green-500/10 hover:text-green-600 dark:hover:text-green-400"
+              onClick={() => {
+                setMovementType('IN');
+                setBulkMovementDialogOpen(true);
+              }}
+            >
+              <TrendingUp className="h-3.5 w-3.5" />
+              Stock In
+            </Button>
+            <div className="w-px h-4 bg-border" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs gap-1 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400"
+              onClick={() => {
+                setMovementType('OUT');
+                setBulkMovementDialogOpen(true);
+              }}
+            >
+              <TrendingDown className="h-3.5 w-3.5" />
+              Stock Out
+            </Button>
           </div>
           <AddInventoryItemDialog />
           <DropdownMenu>
@@ -364,82 +373,82 @@ export function InventoryTable() {
               </TableRow>
             ) : (
               paginatedItems.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={item.image || "https://placehold.co/100x100.png"} alt={item.name} />
-                      <AvatarFallback>{item.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={item.image || "https://placehold.co/100x100.png"} alt={item.name} />
+                        <AvatarFallback>{item.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{item.name}</div>
+                        {item.description && (
+                          <div className="text-sm text-muted-foreground">{item.description}</div>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{item.sku}</TableCell>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell>
                     <div>
-                      <div className="font-medium">{item.name}</div>
-                      {item.description && (
-                        <div className="text-sm text-muted-foreground">{item.description}</div>
-                      )}
+                      <div className="font-medium">{item.current_stock} {item.unit}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Min: {item.min_stock_level} {item.max_stock_level && `| Max: ${item.max_stock_level}`}
+                      </div>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell>{item.sku}</TableCell>
-                <TableCell>{item.category}</TableCell>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{item.current_stock} {item.unit}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Min: {item.min_stock_level} {item.max_stock_level && `| Max: ${item.max_stock_level}`}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {item.cost_per_unit ? formatCurrency(item.cost_per_unit, settings.defaultCurrency) : '-'}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getStatusVariant(item.status)}>
-                    {t(`inventory.${item.status.toLowerCase().replace(' ', '')}`)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {item.supplier?.name || '-'}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>{t('inventory.actions')}</DropdownMenuLabel>
-                      <DropdownMenuItem onSelect={() => handleViewMovements(item)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        {t('inventory.viewMovements')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => handleEditItem(item)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        {t('dialogs.edit')}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onSelect={() => handleStockMovement(item, 'IN')}>
-                        <TrendingUp className="mr-2 h-4 w-4" />
-                        {t('inventory.stockIn')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => handleStockMovement(item, 'OUT')}>
-                        <TrendingDown className="mr-2 h-4 w-4" />
-                        {t('inventory.stockOut')}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onSelect={() => handleDelete(item)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {t('dialogs.delete')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
+                  </TableCell>
+                  <TableCell>
+                    {item.cost_per_unit ? formatCurrency(item.cost_per_unit, settings.defaultCurrency) : '-'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusVariant(item.status)}>
+                      {t(`inventory.${item.status.toLowerCase().replace(' ', '')}`)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {item.supplier?.name || '-'}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>{t('inventory.actions')}</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => handleViewMovements(item)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('inventory.viewMovements')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleEditItem(item)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          {t('dialogs.edit')}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={() => handleStockMovement(item, 'IN')}>
+                          <TrendingUp className="mr-2 h-4 w-4" />
+                          {t('inventory.stockIn')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleStockMovement(item, 'OUT')}>
+                          <TrendingDown className="mr-2 h-4 w-4" />
+                          {t('inventory.stockOut')}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onSelect={() => handleDelete(item)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {t('dialogs.delete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
@@ -447,10 +456,10 @@ export function InventoryTable() {
 
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-muted-foreground">
-          {t('inventory.showingResults', { 
-            start: (currentPage - 1) * itemsPerPage + 1, 
+          {t('inventory.showingResults', {
+            start: (currentPage - 1) * itemsPerPage + 1,
             end: Math.min(currentPage * itemsPerPage, filteredItems.length),
-            total: filteredItems.length 
+            total: filteredItems.length
           })}
         </div>
         <div className="flex items-center gap-2">
@@ -495,13 +504,13 @@ export function InventoryTable() {
             open={movementsDialogOpen}
             onOpenChange={setMovementsDialogOpen}
           />
-          
+
           <EditInventoryItemDialog
             item={selectedItem}
             open={editDialogOpen}
             onOpenChange={setEditDialogOpen}
           />
-          
+
           <StockMovementDialog
             item={selectedItem}
             type={movementType}
@@ -511,7 +520,7 @@ export function InventoryTable() {
         </>
       )}
 
-      <BulkMovementDialog 
+      <BulkMovementDialog
         open={bulkMovementDialogOpen}
         onOpenChange={setBulkMovementDialogOpen}
         type={movementType}

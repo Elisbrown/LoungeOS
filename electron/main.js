@@ -504,14 +504,15 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    show: false,
+    show: true, // Show immediately with loading screen
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
+      backgroundThrottling: false, // Allow audio and timers when window is inactive
     },
     title: "LoungeOS v1.2",
-    icon: path.join(__dirname, "../public/logo.png"), // Set window icon
+    icon: path.join(__dirname, "../public/logo.png"),
   });
 
   // In Dev mode, connect to the external Next.js dev server (port 9002)
@@ -520,21 +521,131 @@ function createWindow() {
     ? "http://localhost:9002"
     : `http://localhost:${appPort}`;
 
-  log.info(`Loading URL: ${startUrl}`);
-  mainWindow.loadURL(startUrl);
+  // Show loading screen first
+  const loadingHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>LoungeOS - Starting...</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+          color: white;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+        .logo { font-size: 3rem; font-weight: bold; margin-bottom: 2rem; }
+        .logo span { color: #e94560; }
+        .spinner {
+          width: 50px; height: 50px;
+          border: 4px solid rgba(255,255,255,0.2);
+          border-top-color: #e94560;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-bottom: 1.5rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .status { font-size: 1.1rem; color: #aaa; margin-bottom: 0.5rem; }
+        .detail { font-size: 0.9rem; color: #666; }
+        .retry-btn {
+          display: none;
+          margin-top: 1.5rem;
+          padding: 0.8rem 2rem;
+          background: #e94560;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: background 0.3s;
+        }
+        .retry-btn:hover { background: #d63050; }
+        .error { color: #ff6b6b; }
+      </style>
+    </head>
+    <body>
+      <div class="logo">Lounge<span>OS</span></div>
+      <div class="spinner" id="spinner"></div>
+      <div class="status" id="status">Starting server...</div>
+      <div class="detail" id="detail">Please wait</div>
+      <button class="retry-btn" id="retryBtn" onclick="window.location.reload()">Retry</button>
+    </body>
+    </html>
+  `;
 
-  mainWindow.on("ready-to-show", () => {
-    mainWindow.show();
-  });
+  mainWindow.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(loadingHtml));
+
+  log.info(`Loading URL: ${startUrl}`);
+
+  // Wait for server to be ready
+  waitForServer(startUrl, 60000) // 60 second timeout
+    .then(() => {
+      log.info("Server is ready, loading app...");
+      mainWindow.loadURL(startUrl);
+    })
+    .catch((err) => {
+      log.error("Failed to connect to server:", err.message);
+      // Show error in loading screen
+      mainWindow.webContents.executeJavaScript(`
+        document.getElementById('spinner').style.display = 'none';
+        document.getElementById('status').className = 'status error';
+        document.getElementById('status').textContent = 'Failed to start server';
+        document.getElementById('detail').textContent = 'Check logs for details or click Retry';
+        document.getElementById('retryBtn').style.display = 'block';
+      `);
+    });
 
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
+}
 
-  // Open devtools in dev mode (optional, commented out to reduce noise)
-  // if (isDev) {
-  //   mainWindow.webContents.openDevTools();
-  // }
+// Helper function to poll server until ready
+function waitForServer(url, timeout) {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+    const http = require("http");
+
+    const checkServer = () => {
+      if (Date.now() - startTime > timeout) {
+        return reject(new Error("Server startup timeout"));
+      }
+
+      const urlObj = new URL(url);
+      const req = http.get({ hostname: urlObj.hostname, port: urlObj.port, path: "/", timeout: 2000 }, (res) => {
+        // Server responded (any status means it's running)
+        log.info(`Server responded with status: ${res.statusCode}`);
+        resolve();
+      });
+
+      req.on("error", (err) => {
+        log.info(`Waiting for server... (${Math.round((Date.now() - startTime) / 1000)}s)`);
+        // Update loading screen status
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          const elapsed = Math.round((Date.now() - startTime) / 1000);
+          mainWindow.webContents.executeJavaScript(
+            "document.getElementById('detail').textContent = 'Connecting... " + elapsed + "s';"
+          );
+        }
+        setTimeout(checkServer, 500);
+      });
+
+      req.on("timeout", () => {
+        req.destroy();
+        setTimeout(checkServer, 500);
+      });
+    };
+
+    // Start checking after a brief delay
+    setTimeout(checkServer, 500);
+  });
 }
 
 function startServer() {
@@ -599,7 +710,7 @@ function startServer() {
   // Check if script/bin exists
   const targetScript = app.isPackaged ? serverScript : args[0];
   if (!fs.existsSync(targetScript)) {
-    log.error(`Server script/binary not found at: ${targetScript}`);
+    log.error(`Server script / binary not found at: ${targetScript}`);
   }
 
   serverProcess = spawn(nodeExecutable, args, {
@@ -636,7 +747,7 @@ function startServer() {
   });
 
   serverProcess.on("exit", (code) => {
-    log.info(`Server process exited with code ${code}`);
+    log.info(`Server process exited with code ${code} `);
   });
 }
 
