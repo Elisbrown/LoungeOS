@@ -16,6 +16,7 @@ export type OrderItem = {
   category: string;
   image: string;
   isPersisted?: boolean;
+  persistedQuantity?: number; // The original quantity from a persisted order (minimum allowed)
 };
 
 export type OrderStatus = "Pending" | "In Progress" | "Ready" | "Completed" | "Canceled";
@@ -40,7 +41,7 @@ export type Order = {
 
 type OrderContextType = {
   orders: Order[];
-  addOrder: (order: Omit<Order, 'id' | 'timestamp'> & {id?: string; timestamp?: Date; waiter_id?: number;}) => Promise<boolean>;
+  addOrder: (order: Omit<Order, 'id' | 'timestamp'> & { id?: string; timestamp?: Date; waiter_id?: number; }) => Promise<boolean>;
   updateOrder: (order: Order) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus, cancellation?: { cancelled_by?: number, reason?: string }) => Promise<void>;
   splitOrder: (orderId: string, itemsToSplit: OrderItem[]) => Promise<void>;
@@ -61,39 +62,46 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
 
 
   const fetchOrders = useCallback(async () => {
+    try {
       const response = await fetch('/api/orders');
       const data = await response.json();
-      if(response.ok) {
-          setOrders(data.map((o: any) => ({ ...o, timestamp: new Date(o.timestamp) })));
+      if (response.ok) {
+        setOrders(data.map((o: any) => ({ ...o, timestamp: new Date(o.timestamp) })));
       } else {
-          console.error("Failed to fetch orders:", data.message);
+        console.error("Failed to fetch orders:", data.message);
       }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
   }, []);
 
+  // Initial fetch and polling for background auto-refresh
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(); // Initial fetch
+    const interval = setInterval(fetchOrders, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
   }, [fetchOrders]);
 
-  const addOrder = useCallback(async (order: Omit<Order, 'id' | 'timestamp'> & {id?: string; timestamp?: Date; waiter_id?: number}) => {
+  const addOrder = useCallback(async (order: Omit<Order, 'id' | 'timestamp'> & { id?: string; timestamp?: Date; waiter_id?: number }) => {
     try {
       const response = await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...order, userEmail: user?.email })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...order, userEmail: user?.email })
       });
-      
+
       if (response.ok) {
-          addNotification({
-              title: "New Order Placed",
-              description: `A new order has been placed for table ${order.table}.`,
-              type: 'info'
-          });
-          await fetchOrders();
-          return true;
+        addNotification({
+          title: "New Order Placed",
+          description: `A new order has been placed for table ${order.table}.`,
+          type: 'info'
+        });
+        await fetchOrders();
+        return true;
       } else {
-          const error = await response.json();
-          console.error("Failed to add order:", error.message);
-          return false;
+        const error = await response.json();
+        console.error("Failed to add order:", error.message);
+        return false;
       }
     } catch (err) {
       console.error("Error adding order:", err);
@@ -103,111 +111,111 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
 
   const updateOrder = useCallback(async (updatedOrder: Order) => {
     const response = await fetch(`/api/orders?id=${updatedOrder.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...updatedOrder, userEmail: user?.email })
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...updatedOrder, userEmail: user?.email })
     });
-    
+
     if (response.ok) {
-        await fetchOrders();
+      await fetchOrders();
     } else {
-        const error = await response.json();
-        console.error("Failed to update order:", error);
-        throw new Error(error.message || 'Failed to update order');
+      const error = await response.json();
+      console.error("Failed to update order:", error);
+      throw new Error(error.message || 'Failed to update order');
     }
   }, [fetchOrders, user?.email]);
 
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus, cancellation?: { cancelled_by?: number, reason?: string }) => {
     const orderToUpdate = orders.find(o => o.id === orderId);
-    if(orderToUpdate) {
-        const updatedOrder = { 
-            ...orderToUpdate, 
-            status, 
-            timestamp: new Date(),
-            ...(cancellation && {
-                cancelled_by: cancellation.cancelled_by,
-                cancellation_reason: cancellation.reason,
-                cancelled_at: new Date()
-            })
-        };
-        
-        // Update table status if order is completed or canceled
-        if(status === "Completed" || status === "Canceled") {
-            updateTableStatus(orderToUpdate.table, "Available");
-        }
-        
-        // Update the order in the database
-        const response = await fetch(`/api/orders?id=${orderId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                id: orderId, 
-                status, 
-                timestamp: new Date(),
-                userEmail: user?.email,
-                ...(cancellation && {
-                    cancelled_by: cancellation.cancelled_by,
-                    cancellation_reason: cancellation.reason,
-                    cancelled_at: new Date()
-                })
-            })
+    if (orderToUpdate) {
+      const updatedOrder = {
+        ...orderToUpdate,
+        status,
+        timestamp: new Date(),
+        ...(cancellation && {
+          cancelled_by: cancellation.cancelled_by,
+          cancellation_reason: cancellation.reason,
+          cancelled_at: new Date()
+        })
+      };
+
+      // Update table status if order is completed or canceled
+      if (status === "Completed" || status === "Canceled") {
+        updateTableStatus(orderToUpdate.table, "Available");
+      }
+
+      // Update the order in the database
+      const response = await fetch(`/api/orders?id=${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: orderId,
+          status,
+          timestamp: new Date(),
+          userEmail: user?.email,
+          ...(cancellation && {
+            cancelled_by: cancellation.cancelled_by,
+            cancellation_reason: cancellation.reason,
+            cancelled_at: new Date()
+          })
+        })
+      });
+
+      // Send notification if status changed to Ready
+      if (status === 'Ready' && orderToUpdate.status === 'In Progress') {
+        addNotification({
+          title: "Order Ready",
+          description: `Order ${orderId} for table ${orderToUpdate.table} is ready for pickup.`,
+          type: 'info'
         });
-        
-        // Send notification if status changed to Ready
-        if (status === 'Ready' && orderToUpdate.status === 'In Progress') {
-             addNotification({
-                title: "Order Ready",
-                description: `Order ${orderId} for table ${orderToUpdate.table} is ready for pickup.`,
-                type: 'info'
-            });
-        }
-        
-        if (response.ok) {
-            // Update local state immediately for better UX
-            setOrders(prevOrders => 
-                prevOrders.map(order => 
-                    order.id === orderId ? updatedOrder as Order : order
-                )
-            );
-        } else {
-            console.error("Failed to update order status");
-            // Revert local state if database update failed
-            await fetchOrders();
-        }
+      }
+
+      if (response.ok) {
+        // Update local state immediately for better UX
+        setOrders(prevOrders =>
+          prevOrders.map(order =>
+            order.id === orderId ? updatedOrder as Order : order
+          )
+        );
+      } else {
+        console.error("Failed to update order status");
+        // Revert local state if database update failed
+        await fetchOrders();
+      }
     }
   }, [orders, updateTableStatus, fetchOrders, addNotification, user?.email]);
-  
+
   const deleteOrder = useCallback(async (orderId: string) => {
     await fetch(`/api/orders?id=${orderId}&userEmail=${encodeURIComponent(user?.email || '')}`, {
-        method: 'DELETE',
+      method: 'DELETE',
     });
     await fetchOrders();
   }, [fetchOrders, user?.email]);
 
   const splitOrder = useCallback(async (orderId: string, itemsToSplit: OrderItem[]) => {
-      const response = await fetch('/api/orders/split', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId, itemsToSplit, userEmail: user?.email })
-      });
-      if(response.ok) {
-        await fetchOrders();
-        const { newOrder } = await response.json();
-        toast({ title: t('toasts.orderSplit'), description: t('toasts.orderSplitDesc', { newOrderId: newOrder.id }) });
-      } else {
-        const error = await response.json();
-        toast({ variant: 'destructive', title: "Split Failed", description: error.message });
-      }
+    const response = await fetch('/api/orders/split', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, itemsToSplit, userEmail: user?.email })
+    });
+    if (response.ok) {
+      await fetchOrders();
+      const { newOrder } = await response.json();
+      toast({ title: t('toasts.orderSplit'), description: t('toasts.orderSplitDesc', { newOrderId: newOrder.id }) });
+    } else {
+      const error = await response.json();
+      toast({ variant: 'destructive', title: "Split Failed", description: error.message });
+    }
   }, [fetchOrders, t, toast, user?.email]);
 
   const mergeOrders = useCallback(async (fromOrderId: string, toOrderId: string) => {
-      await fetch('/api/orders/merge', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fromOrderId, toOrderId, userEmail: user?.email })
-      });
-      await fetchOrders();
-      toast({ title: t('toasts.orderMerged'), description: t('toasts.orderMergedDesc', { fromId: fromOrderId, toId: toOrderId }) });
+    await fetch('/api/orders/merge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fromOrderId, toOrderId, userEmail: user?.email })
+    });
+    await fetchOrders();
+    toast({ title: t('toasts.orderMerged'), description: t('toasts.orderMergedDesc', { fromId: fromOrderId, toId: toOrderId }) });
   }, [fetchOrders, t, toast, user?.email]);
 
   return (

@@ -25,25 +25,25 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const getLandingPageRouteForRole = (role: StaffRole): string => {
-    switch (role) {
-        case "Manager":
-        case "Super Admin":
-            return "/dashboard";
-        case "Waiter":
-            return "/dashboard/tables";
-        case "Chef":
-            return "/dashboard/kitchen";
-        case "Bartender":
-            return "/dashboard/bar";
-        case "Cashier":
-            return "/dashboard/orders";
-        case "Accountant":
-            return "/dashboard/accounting";
-        case "Stock Manager":
-            return "/dashboard/inventory";
-        default:
-            return "/dashboard";
-    }
+  switch (role) {
+    case "Manager":
+    case "Super Admin":
+      return "/dashboard";
+    case "Waiter":
+      return "/dashboard/tables";
+    case "Chef":
+      return "/dashboard/kitchen";
+    case "Bartender":
+      return "/dashboard/bar";
+    case "Cashier":
+      return "/dashboard/orders";
+    case "Accountant":
+      return "/dashboard/accounting";
+    case "Stock Manager":
+      return "/dashboard/inventory";
+    default:
+      return "/dashboard";
+  }
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       router.push('/setup');
       return;
     }
-    
+
     if (setupStatus === true && currentPath === '/setup') {
       router.push('/login');
       return;
@@ -70,6 +70,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         router.push(getLandingPageRouteForRole(currentUser.role));
       } else if (['/login', '/forgot-password', '/', '/setup'].includes(currentPath)) {
         router.push(getLandingPageRouteForRole(currentUser.role));
+      } else if (currentPath === '/dashboard' && !['Manager', 'Super Admin'].includes(currentUser.role)) {
+        // Redirect non-admins away from main dashboard to their specific view
+        router.push(getLandingPageRouteForRole(currentUser.role));
       }
     } else {
       if (!['/login', '/forgot-password', '/password-reset', '/setup'].includes(currentPath)) {
@@ -80,45 +83,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const checkSetupAndUser = async () => {
-        try {
-          // Check setup status
-          const setupRes = await fetch('/api/auth/setup-check');
-          const setupData = await setupRes.json();
-          setIsSetup(setupData.isSetup);
+      try {
+        // Check setup status
+        const setupRes = await fetch('/api/auth/setup-check');
+        const setupData = await setupRes.json();
+        setIsSetup(setupData.isSetup);
 
-          const storedUser = sessionStorage.getItem('loungeos-user');
-          const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-          if (parsedUser && parsedUser.hireDate) {
-            parsedUser.hireDate = new Date(parsedUser.hireDate);
-          }
-          
-          if (user?.email !== parsedUser?.email) {
-              setUser(parsedUser);
-          }
-          handleRedirects(parsedUser, pathname, setupData.isSetup);
-        } catch (e) {
-            console.error("Failed to check setup or user session", e);
-            handleRedirects(null, pathname, isSetup);
+        const storedUser = localStorage.getItem('loungeos-user');
+        const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+        if (parsedUser && parsedUser.hireDate) {
+          parsedUser.hireDate = new Date(parsedUser.hireDate);
         }
+
+        if (user?.email !== parsedUser?.email) {
+          setUser(parsedUser);
+        }
+        handleRedirects(parsedUser, pathname, setupData.isSetup);
+      } catch (e) {
+        console.error("Failed to check setup or user session", e);
+        handleRedirects(null, pathname, isSetup);
+      }
     };
 
     checkSetupAndUser();
   }, [pathname, handleRedirects, user?.email]);
 
   const login = (userData: User) => {
-    // Directly set the user state and session storage without an extra fetch
+    // Directly set the user state and local storage without an extra fetch
     const userToStore = {
-        ...userData,
-        hireDate: userData.hireDate ? new Date(userData.hireDate).toISOString() : undefined
+      ...userData,
+      hireDate: userData.hireDate ? new Date(userData.hireDate).toISOString() : undefined
     };
     setUser(userData);
-    sessionStorage.setItem('loungeos-user', JSON.stringify(userToStore));
+    localStorage.setItem('loungeos-user', JSON.stringify(userToStore));
     handleRedirects(userData, pathname, isSetup);
   };
 
   const logout = () => {
     setUser(null);
-    sessionStorage.removeItem('loungeos-user');
+    localStorage.removeItem('loungeos-user');
     router.push('/login');
   };
 
@@ -130,10 +133,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);
       if (user) {
-          timeoutId = setTimeout(() => {
-            console.log("Session expired due to inactivity");
-            logout();
-          }, SESSION_TIMEOUT);
+        timeoutId = setTimeout(() => {
+          console.log("Session expired due to inactivity");
+          logout();
+        }, SESSION_TIMEOUT);
       }
     };
 
@@ -142,13 +145,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     if (user) {
-        window.addEventListener('mousemove', handleUserActivity);
-        window.addEventListener('keydown', handleUserActivity);
-        window.addEventListener('click', handleUserActivity);
-        window.addEventListener('scroll', handleUserActivity);
-        
-        // Initial timer start
-        resetTimer();
+      window.addEventListener('mousemove', handleUserActivity);
+      window.addEventListener('keydown', handleUserActivity);
+      window.addEventListener('click', handleUserActivity);
+      window.addEventListener('scroll', handleUserActivity);
+
+      // Initial timer start
+      resetTimer();
     }
 
     return () => {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from 'react'
-import { CreditCard, DollarSign, Users, Activity, History, XCircle, CheckCircle2, PackageSearch, TrendingUp, TrendingDown, Clock, Calendar, FileText, Receipt, BarChart3, LineChart, PieChart } from 'lucide-react'
+import { CreditCard, DollarSign, Users, Activity, History, XCircle, CheckCircle2, PackageSearch, TrendingUp, TrendingDown, Clock, Calendar, FileText, Receipt, BarChart3, LineChart, PieChart, Lock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Header } from '@/components/dashboard/header'
 import { KpiCard } from '@/components/dashboard/kpi-card'
@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { DateRange } from 'react-day-picker'
 import { CategorySalesChart } from '@/components/dashboard/charts/category-sales-chart'
 import { RevenueDistributionChart } from '@/components/dashboard/charts/revenue-distribution-chart'
+import { useAuth } from '@/context/auth-context'
 
 type DashboardData = {
   totalRevenue: number;
@@ -63,23 +64,24 @@ type DashboardData = {
 }
 
 function KpiSkeleton() {
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-2/5" />
-                <Skeleton className="h-4 w-4" />
-            </CardHeader>
-            <CardContent>
-                <Skeleton className="h-8 w-3/5 mb-2" />
-                <Skeleton className="h-3 w-4/5" />
-            </CardContent>
-        </Card>
-    )
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Skeleton className="h-4 w-2/5" />
+        <Skeleton className="h-4 w-4" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-8 w-3/5 mb-2" />
+        <Skeleton className="h-3 w-4/5" />
+      </CardContent>
+    </Card>
+  )
 }
 
 export default function DashboardPage() {
   const { t } = useTranslation()
   const { settings } = useSettings()
+  const { user } = useAuth()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -92,13 +94,41 @@ export default function DashboardPage() {
 
   const recentLogs = logs.slice(0, 5);
 
+  // Access control - only Super Admin and Manager can view dashboard
+  const canViewPage = () => {
+    if (!user) return false;
+    const allowedRoles = ["Manager", "Super Admin"];
+    return allowedRoles.includes(user.role);
+  }
+
+  if (!canViewPage()) {
+    return (
+      <div className="flex min-h-screen w-full flex-col">
+        <Header title={t('dashboard.title')} />
+        <main className="flex flex-1 flex-col items-center justify-center p-4 md:p-8">
+          <Card className="flex flex-col items-center justify-center p-10 text-center">
+            <CardHeader>
+              <div className="mx-auto bg-muted rounded-full p-4">
+                <Lock className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <CardTitle className="mt-4">{t('dashboard.accessDeniedTitle') || 'Access Denied'}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">{t('dashboard.accessDeniedDescription') || 'You do not have permission to view this page. Only Managers and Administrators can access the dashboard.'}</p>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
+
   const handlePeriodChange = (period: string) => {
     setSelectedPeriod(period);
-    
+
     const now = new Date();
     let from: Date;
     let to: Date = now;
-    
+
     switch (period) {
       case 'today':
         from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -133,7 +163,7 @@ export default function DashboardPage() {
       default:
         from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     }
-    
+
     setDateRange({ from, to });
   };
 
@@ -147,47 +177,47 @@ export default function DashboardPage() {
       const params = new URLSearchParams();
       if (dateRange?.from) params.append('from', dateRange.from.toISOString());
       if (dateRange?.to) params.append('to', dateRange.to.toISOString());
-      
+
       const response = await fetch(`/api/dashboard-stats?${params.toString()}`);
       if (!response.ok) {
-          throw new Error('Failed to fetch dashboard stats');
+        throw new Error('Failed to fetch dashboard stats');
       }
       const dashboardData = await response.json();
       setData(dashboardData);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error)
       setData({
-          totalRevenue: 0,
-          totalSales: 0,
-          totalExpenses: 0,
-          totalOrders: 0,
-          completedOrders: 0,
-          canceledOrders: 0,
-          pendingOrders: 0,
-          activeTables: "0 / 0",
-          topSellingProducts: [],
-          recentSales: [],
-          dailySales: 0,
-          yesterdaySales: 0,
-          salesChange: 0,
-          ordersChange: 0,
-          revenueChange: 0,
-          dailyExpenditure: 0,
-          dailyExpenditureChange: 0,
-          staffPerformance: [],
-          categorySales: [],
-          revenueDistribution: [],
-          chartData: {
-            sales: [],
-            revenue: []
-          },
-          inventory: {
-            totalItems: 0,
-            lowStockItems: 0,
-            outOfStockItems: 0,
-            totalValue: 0,
-            recentMovements: 0
-          }
+        totalRevenue: 0,
+        totalSales: 0,
+        totalExpenses: 0,
+        totalOrders: 0,
+        completedOrders: 0,
+        canceledOrders: 0,
+        pendingOrders: 0,
+        activeTables: "0 / 0",
+        topSellingProducts: [],
+        recentSales: [],
+        dailySales: 0,
+        yesterdaySales: 0,
+        salesChange: 0,
+        ordersChange: 0,
+        revenueChange: 0,
+        dailyExpenditure: 0,
+        dailyExpenditureChange: 0,
+        staffPerformance: [],
+        categorySales: [],
+        revenueDistribution: [],
+        chartData: {
+          sales: [],
+          revenue: []
+        },
+        inventory: {
+          totalItems: 0,
+          lowStockItems: 0,
+          outOfStockItems: 0,
+          totalValue: 0,
+          recentMovements: 0
+        }
       });
     } finally {
       setLoading(false);
@@ -267,55 +297,55 @@ export default function DashboardPage() {
             </>
           ) : (
             <>
-              <KpiCard 
+              <KpiCard
                 title={t('dashboard.totalRevenue')}
                 value={formatCurrency(data.totalRevenue, settings.defaultCurrency)}
                 change={formatChange(data.revenueChange)}
                 icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
                 trendColor={getChangeColor(data.revenueChange)}
               />
-              <KpiCard 
+              <KpiCard
                 title={t('dashboard.dailySales')}
                 value={formatCurrency(data.dailySales, settings.defaultCurrency)}
                 change={formatChange(data.salesChange)}
                 icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
                 trendColor={getChangeColor(data.salesChange)}
               />
-              <KpiCard 
+              <KpiCard
                 title={t('dashboard.outOfStock') || "Out of Stock"}
                 value={data.inventory.outOfStockItems.toString()}
                 change={t('dashboard.lowStockCount', { count: data.inventory.lowStockItems })}
                 icon={<PackageSearch className="h-4 w-4 text-muted-foreground" />}
                 variant={data.inventory.outOfStockItems > 0 ? "destructive" : "default"}
               />
-              <KpiCard 
+              <KpiCard
                 title={t('dashboard.totalOrders')}
                 value={data.totalOrders.toLocaleString()}
                 change={formatChange(data.ordersChange)}
                 icon={<PackageSearch className="h-4 w-4 text-muted-foreground" />}
                 trendColor={getChangeColor(data.ordersChange)}
               />
-              <KpiCard 
+              <KpiCard
                 title={t('dashboard.completedOrders')}
                 value={data.completedOrders.toLocaleString()}
                 change={`${((data.completedOrders / data.totalOrders) * 100).toFixed(1)}%`}
                 icon={<CheckCircle2 className="h-4 w-4 text-muted-foreground" />}
               />
-              <KpiCard 
+              <KpiCard
                 title={t('dashboard.pendingOrders')}
                 value={data.pendingOrders.toLocaleString()}
                 change={t('dashboard.active')}
                 icon={<Clock className="h-4 w-4 text-muted-foreground" />}
                 variant="warning"
               />
-              <KpiCard 
+              <KpiCard
                 title={t('dashboard.canceledOrders')}
                 value={data.canceledOrders.toLocaleString()}
                 change={`${((data.canceledOrders / data.totalOrders) * 100).toFixed(1)}%`}
                 icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
                 variant="destructive"
               />
-              <KpiCard 
+              <KpiCard
                 title={t('dashboard.activeTables')}
                 value={data.activeTables}
                 change={t('dashboard.current')}

@@ -4,6 +4,7 @@ const { app } = require("electron");
 const log = require("electron-log");
 
 let tunnelProcess = null;
+let currentUrl = null; // Store the current tunnel URL
 
 /**
  * Get the path to the bundled cloudflared binary.
@@ -12,11 +13,12 @@ let tunnelProcess = null;
  */
 function getBinaryPath() {
   const isDev = !app.isPackaged;
+  const binaryName = process.platform === "win32" ? "cloudflared.exe" : "cloudflared";
   if (isDev) {
-    return path.join(process.cwd(), "resources", "bin", "cloudflared");
+    return path.join(process.cwd(), "resources", "bin", binaryName);
   } else {
     // In production, extraResources puts it in Contents/Resources/bin on Mac
-    return path.join(process.resourcesPath, "bin", "cloudflared");
+    return path.join(process.resourcesPath, "bin", binaryName);
   }
 }
 
@@ -63,6 +65,7 @@ function startTunnel(localPort) {
       if (match && !resolved) {
         resolved = true;
         const url = match[0];
+        currentUrl = url; // Store the URL
         log.info(`Tunnel started at: ${url}`);
         resolve(url);
       }
@@ -71,6 +74,7 @@ function startTunnel(localPort) {
     tunnelProcess.on("close", (code) => {
       log.info(`cloudflared exited with code ${code}`);
       tunnelProcess = null;
+      currentUrl = null; // Clear URL when tunnel stops
       if (!resolved) {
         reject(new Error(`Tunnel process exited with code ${code}`));
       }
@@ -87,6 +91,7 @@ function stopTunnel() {
   if (tunnelProcess) {
     tunnelProcess.kill();
     tunnelProcess = null;
+    currentUrl = null; // Clear URL when stopped
     log.info("Tunnel stopped");
     return true;
   }
@@ -96,6 +101,7 @@ function stopTunnel() {
 function getTunnelStatus() {
   return {
     isRunning: !!tunnelProcess,
+    url: currentUrl, // Include the URL in status
   };
 }
 

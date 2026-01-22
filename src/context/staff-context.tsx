@@ -30,6 +30,7 @@ type StaffContextType = {
   bulkDeleteStaff: (emails: string[]) => Promise<void>;
   bulkUpdateStaffStatus: (emails: string[], status: "Active" | "Away" | "Inactive") => Promise<void>;
   fetchStaff: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 };
 
 const StaffContext = createContext<StaffContextType | undefined>(undefined);
@@ -39,13 +40,17 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // ... existing code ...
+
+
+
   const fetchStaff = useCallback(async () => {
     const response = await fetch('/api/staff');
     const data = await response.json();
     if (response.ok) {
-        setStaff(data.map((s: any) => ({...s, hireDate: s.hireDate ? new Date(s.hireDate) : undefined})));
+      setStaff(data.map((s: any) => ({ ...s, hireDate: s.hireDate ? new Date(s.hireDate) : undefined })));
     } else {
-        console.error("Failed to fetch staff:", data.message);
+      console.error("Failed to fetch staff:", data.message);
     }
   }, []);
 
@@ -62,7 +67,7 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
         userEmail: user?.email // Pass current user's email for activity logging
       })
     });
-    
+
     if (response.ok) {
       await fetchStaff();
     } else {
@@ -85,7 +90,7 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
         userEmail: user?.email // Pass current user's email for activity logging
       })
     });
-    
+
     if (response.ok) {
       await fetchStaff();
     } else {
@@ -103,7 +108,7 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
     const response = await fetch(`/api/staff?email=${encodeURIComponent(email)}&userEmail=${encodeURIComponent(user?.email || '')}`, {
       method: 'DELETE'
     });
-    
+
     if (response.ok) {
       await fetchStaff();
     } else {
@@ -118,42 +123,69 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchStaff, toast, user?.email]);
 
   const bulkDeleteStaff = useCallback(async (emails: string[]) => {
-      const response = await fetch('/api/staff', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              action: 'bulk_delete',
-              emails,
-              userEmail: user?.email
-          })
-      });
-      if (response.ok) {
-          await fetchStaff();
-      } else {
-          console.error("Failed to bulk delete staff members");
-      }
+    const response = await fetch('/api/staff', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'bulk_delete',
+        emails,
+        userEmail: user?.email
+      })
+    });
+    if (response.ok) {
+      await fetchStaff();
+    } else {
+      console.error("Failed to bulk delete staff members");
+    }
   }, [fetchStaff, user?.email]);
 
   const bulkUpdateStaffStatus = useCallback(async (emails: string[], status: "Active" | "Away" | "Inactive") => {
-      const response = await fetch('/api/staff', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              action: 'bulk_update_status',
-              emails,
-              status,
-              userEmail: user?.email
-          })
-      });
-      if (response.ok) {
-          await fetchStaff();
-      } else {
-          console.error("Failed to bulk update staff status");
-      }
+    const response = await fetch('/api/staff', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'bulk_update_status',
+        emails,
+        status,
+        userEmail: user?.email
+      })
+    });
+    if (response.ok) {
+      await fetchStaff();
+    } else {
+      console.error("Failed to bulk update staff status");
+    }
   }, [fetchStaff, user?.email]);
 
+  const resetPassword = useCallback(async (email: string) => {
+    const response = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        newPassword: '12345678', // Default password
+        changerEmail: user?.email
+      })
+    });
+
+    if (response.ok) {
+      toast({
+        title: "Password Reset",
+        description: "Password has been reset to default (12345678). User must change it on next login.",
+      });
+      await fetchStaff(); // Refresh to update force_password_change flag in UI if needed
+    } else {
+      const data = await response.json();
+      toast({
+        variant: "destructive",
+        title: "Reset Failed",
+        description: data.message || "Failed to reset password",
+      });
+    }
+  }, [user?.email, toast, fetchStaff]);
+
   return (
-    <StaffContext.Provider value={{ staff, addStaff, updateStaff, deleteStaff, bulkDeleteStaff, bulkUpdateStaffStatus, fetchStaff }}>
+    <StaffContext.Provider value={{ staff, addStaff, updateStaff, deleteStaff, bulkDeleteStaff, bulkUpdateStaffStatus, fetchStaff, resetPassword }}>
       {children}
     </StaffContext.Provider>
   );

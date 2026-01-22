@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const asOfDate = searchParams.get('asOfDate');
+    const lang = searchParams.get('lang') || 'en';
 
     if (!asOfDate) {
       return NextResponse.json(
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const report = generateBalanceSheet(asOfDate);
     const appSettings = await getSettings();
-    const pdf = await generateBalanceSheetPDF(report, appSettings);
+    const pdf = await generateBalanceSheetPDF(report, appSettings, undefined, lang);
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
 
     return new NextResponse(pdfBuffer, {

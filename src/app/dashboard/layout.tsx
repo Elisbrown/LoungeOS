@@ -18,6 +18,7 @@ import { OnboardingProvider } from '@/context/onboarding-context'
 import { useOutsideClick } from '@/hooks/use-outside-click'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { BackupSchedulerProvider } from '@/context/backup-scheduler-context'
+import { FullscreenToggle } from '@/components/fullscreen-toggle'
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const { isMobile, setOpenMobile } = useSidebar();
@@ -36,48 +37,49 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             <SidebarInset>
                 {children}
             </SidebarInset>
+            <FullscreenToggle />
         </>
     )
 }
 
 
 export default function DashboardLayout({
-  children,
+    children,
 }: {
-  children: React.ReactNode
+    children: React.ReactNode
 }) {
-  const [open, setOpen] = React.useState(false)
-  const isMobile = useIsMobile();
+    const [open, setOpen] = React.useState(false)
+    const isMobile = useIsMobile();
 
-  return (
-      <StaffProvider>
-        <ActivityLogProvider>
-            <NotificationProvider>
-                <ProductProvider>
-                    <CategoryProvider>
-                        <InventoryProvider>
-                            <FloorProvider>
-                            <TableProvider>
-                                <OrderProvider>
-                                    <TicketProvider>
-                                    <OnboardingProvider>
-                                    <BackupSchedulerProvider>
-                                    <SidebarProvider defaultOpen={isMobile ? false : true} open={open} onOpenChange={setOpen}>
-                                        <DashboardContent>
-                                            {children}
-                                        </DashboardContent>
-                                    </SidebarProvider>
-                                    </BackupSchedulerProvider>
-                                </OnboardingProvider>
-                                </TicketProvider>
-                            </OrderProvider>
-                        </TableProvider>
-                        </FloorProvider>
-                        </InventoryProvider>
-                    </CategoryProvider>
-                </ProductProvider>
-            </NotificationProvider>
-        </ActivityLogProvider>
-      </StaffProvider>
-  )
+    return (
+        <StaffProvider>
+            <ActivityLogProvider>
+                <NotificationProvider>
+                    <ProductProvider>
+                        <CategoryProvider>
+                            <InventoryProvider>
+                                <FloorProvider>
+                                    <TableProvider>
+                                        <OrderProvider>
+                                            <TicketProvider>
+                                                <OnboardingProvider>
+                                                    <BackupSchedulerProvider>
+                                                        <SidebarProvider defaultOpen={isMobile ? false : true} open={open} onOpenChange={setOpen}>
+                                                            <DashboardContent>
+                                                                {children}
+                                                            </DashboardContent>
+                                                        </SidebarProvider>
+                                                    </BackupSchedulerProvider>
+                                                </OnboardingProvider>
+                                            </TicketProvider>
+                                        </OrderProvider>
+                                    </TableProvider>
+                                </FloorProvider>
+                            </InventoryProvider>
+                        </CategoryProvider>
+                    </ProductProvider>
+                </NotificationProvider>
+            </ActivityLogProvider>
+        </StaffProvider>
+    )
 }

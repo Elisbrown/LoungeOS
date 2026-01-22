@@ -113,7 +113,7 @@ function InventoryDashboardContent() {
               <p className="text-xs text-muted-foreground">{t('inventory.dashboard.itemsInStock')}</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t('inventory.dashboard.lowStock')}</CardTitle>
@@ -124,7 +124,7 @@ function InventoryDashboardContent() {
               <p className="text-xs text-muted-foreground">{t('inventory.dashboard.needsRestocking')}</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t('inventory.dashboard.outOfStock')}</CardTitle>
@@ -135,7 +135,7 @@ function InventoryDashboardContent() {
               <p className="text-xs text-muted-foreground">{t('inventory.dashboard.urgentRestock')}</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t('inventory.dashboard.totalValue')}</CardTitle>
@@ -263,7 +263,7 @@ function InventoryDashboardContent() {
                   </div>
                 </Button>
               </Link>
-              
+
               <Link href="/dashboard/inventory/suppliers">
                 <Button variant="outline" className="w-full justify-start h-auto py-4">
                   <div className="flex items-start gap-3 text-left">
@@ -312,17 +312,16 @@ function InventoryDashboardContent() {
                 <div className="space-y-4">
                   {dashboardData.recentActivities.slice(0, 3).map((activity) => (
                     <div key={activity.id} className="flex items-center space-x-4">
-                      <div className={`h-2 w-2 rounded-full ${
-                        activity.movementType === 'IN' ? 'bg-green-500' :
-                        activity.movementType === 'OUT' ? 'bg-orange-500' :
-                        activity.movementType === 'WASTE' ? 'bg-red-500' : 'bg-blue-500'
-                      }`}></div>
+                      <div className={`h-2 w-2 rounded-full ${activity.movementType === 'IN' ? 'bg-green-500' :
+                          activity.movementType === 'OUT' ? 'bg-orange-500' :
+                            activity.movementType === 'WASTE' ? 'bg-red-500' : 'bg-blue-500'
+                        }`}></div>
                       <div className="flex-1 space-y-1">
                         <p className="text-sm font-medium">
                           {activity.movementType === 'IN' ? t('inventory.dashboard.stockReceived') :
-                           activity.movementType === 'OUT' ? t('inventory.dashboard.stockUsed') :
-                           activity.movementType === 'WASTE' ? t('inventory.dashboard.stockWaste') :
-                           t('inventory.dashboard.stockMovement')}
+                            activity.movementType === 'OUT' ? t('inventory.dashboard.stockUsed') :
+                              activity.movementType === 'WASTE' ? t('inventory.dashboard.stockWaste') :
+                                t('inventory.dashboard.stockMovement')}
                         </p>
                         <p className="text-xs text-muted-foreground">{activity.text}</p>
                       </div>
@@ -381,7 +380,7 @@ function InventoryDashboardContent() {
                                     style={{ backgroundColor: item.color }}
                                   />
                                   <span className="text-sm font-medium">
-                                    {item.dataKey}: {item.value}%
+                                    {item.dataKey}: {item.value}
                                   </span>
                                 </div>
                               ))}
@@ -422,18 +421,18 @@ export default function InventoryPage() {
       <div className="flex min-h-screen w-full flex-col">
         <Header title={t('inventory.dashboard.title')} />
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-           <Card className="flex flex-col items-center justify-center p-10 text-center">
+          <Card className="flex flex-col items-center justify-center p-10 text-center">
             <CardHeader>
-                <div className="mx-auto bg-muted rounded-full p-4">
-                    <Lock className="h-12 w-12 text-muted-foreground" />
-                </div>
-                <CardTitle className="mt-4">{t('dialogs.accessDenied')}</CardTitle>
+              <div className="mx-auto bg-muted rounded-full p-4">
+                <Lock className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <CardTitle className="mt-4">{t('dialogs.accessDenied')}</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">{t('dialogs.permissionDenied')}</p>
-                <p className="text-sm text-muted-foreground mt-2">{t('dialogs.contactAdmin')}</p>
+              <p className="text-muted-foreground">{t('dialogs.permissionDenied')}</p>
+              <p className="text-sm text-muted-foreground mt-2">{t('dialogs.contactAdmin')}</p>
             </CardContent>
-           </Card>
+          </Card>
         </main>
       </div>
     )

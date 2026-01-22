@@ -26,50 +26,57 @@ const TableContext = createContext<TableContextType | undefined>(undefined);
 export const TableProvider = ({ children }: { children: ReactNode }) => {
   const [tables, setTables] = useState<Table[]>([]);
   const { user } = useAuth();
-  
+
   const fetchTables = useCallback(async () => {
-    const response = await fetch('/api/tables');
-    if (response.ok) {
+    try {
+      const response = await fetch('/api/tables');
+      if (response.ok) {
         const data = await response.json();
         setTables(data);
-    } else {
+      } else {
         console.error("Failed to fetch tables");
+      }
+    } catch (error) {
+      console.error("Error fetching tables:", error);
     }
   }, []);
 
+  // Initial fetch and polling for background auto-refresh
   useEffect(() => {
-    fetchTables();
+    fetchTables(); // Initial fetch
+    const interval = setInterval(fetchTables, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
   }, [fetchTables]);
 
   const addTable = useCallback(async (newTableData: Omit<Table, 'status' | 'id'>) => {
     await fetch('/api/tables', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newTableData, userEmail: user?.email })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...newTableData, userEmail: user?.email })
     });
     await fetchTables();
   }, [fetchTables, user?.email]);
 
   const updateTable = useCallback(async (updatedTableData: Table) => {
     await fetch(`/api/tables?id=${updatedTableData.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...updatedTableData, userEmail: user?.email })
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...updatedTableData, userEmail: user?.email })
     });
     await fetchTables();
   }, [fetchTables, user?.email]);
 
   const updateTableStatus = useCallback(async (tableName: string, status: Table['status']) => {
     const tableToUpdate = tables.find(table => table.name === tableName);
-    if(tableToUpdate) {
-        const updatedTable = { ...tableToUpdate, status };
-        await updateTable(updatedTable);
+    if (tableToUpdate) {
+      const updatedTable = { ...tableToUpdate, status };
+      await updateTable(updatedTable);
     }
   }, [tables, updateTable]);
 
   const deleteTable = useCallback(async (tableId: string) => {
     await fetch(`/api/tables?id=${tableId}&userEmail=${encodeURIComponent(user?.email || '')}`, {
-        method: 'DELETE',
+      method: 'DELETE',
     });
     await fetchTables();
   }, [fetchTables, user?.email]);

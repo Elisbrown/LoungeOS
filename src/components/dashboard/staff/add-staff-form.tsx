@@ -10,6 +10,7 @@ import type { StaffMember, StaffRole } from "@/context/staff-context"
 import { useFloors } from "@/context/floor-context"
 import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
+import { useAuth } from "@/context/auth-context"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -45,7 +46,7 @@ const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
   phone: z.string().optional(),
   hireDate: z.date().optional(),
-  role: z.enum(["Manager", "Accountant", "Waiter", "Chef", "Stock Manager", "Cashier", "Bartender"], {
+  role: z.enum(["Super Admin", "Manager", "Accountant", "Waiter", "Chef", "Stock Manager", "Cashier", "Bartender"], {
     required_error: "Role is required.",
   }),
   floor: z.string().optional(),
@@ -53,13 +54,13 @@ const formSchema = z.object({
   emergency_contact_relationship: z.string().optional(),
   emergency_contact_phone: z.string().optional(),
 }).refine(data => {
-    if (["Waiter", "Cashier"].includes(data.role)) {
-        return !!data.floor && data.floor.length > 0;
-    }
-    return true;
+  if (["Waiter", "Cashier"].includes(data.role)) {
+    return !!data.floor && data.floor.length > 0;
+  }
+  return true;
 }, {
-    message: "Floor assignment is required for this role.",
-    path: ["floor"],
+  message: "Floor assignment is required for this role.",
+  path: ["floor"],
 });
 
 type AddStaffFormProps = {
@@ -70,6 +71,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
   const { toast } = useToast()
   const { floors } = useFloors()
   const { t } = useTranslation()
+  const { user } = useAuth()
   const [open, setOpen] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -86,7 +88,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
       emergency_contact_phone: "",
     },
   })
-  
+
   const selectedRole = form.watch("role");
 
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -152,7 +154,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="phone"
               render={({ field }) => (
@@ -165,7 +167,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="hireDate"
               render={({ field }) => (
@@ -212,13 +214,14 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('staff.role')}</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t('staff.selectRole')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      {user?.role === "Super Admin" && <SelectItem value="Super Admin">Super Admin</SelectItem>}
                       <SelectItem value="Manager">Manager</SelectItem>
                       <SelectItem value="Accountant">Accountant</SelectItem>
                       <SelectItem value="Waiter">Waiter</SelectItem>
@@ -232,80 +235,80 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
                 </FormItem>
               )}
             />
-             {(["Waiter", "Cashier"].includes(selectedRole || '')) && (
-                <FormField
+            {(["Waiter", "Cashier"].includes(selectedRole || '')) && (
+              <FormField
                 control={form.control}
                 name="floor"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <FormLabel>{t('staff.assignedFloor')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value} disabled={floors.length === 0}>
-                        <FormControl>
+                      <FormControl>
                         <SelectTrigger>
-                            <SelectValue placeholder={floors.length === 0 ? t('staff.noFloors') : t('staff.selectFloor')} />
+                          <SelectValue placeholder={floors.length === 0 ? t('staff.noFloors') : t('staff.selectFloor')} />
                         </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+                      </FormControl>
+                      <SelectContent>
                         {floors.map((floor) => (
-                            <SelectItem key={floor} value={floor}>{floor}</SelectItem>
+                          <SelectItem key={floor} value={floor}>{floor}</SelectItem>
                         ))}
-                        </SelectContent>
+                      </SelectContent>
                     </Select>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
+              />
             )}
 
             <div className="border-t pt-2 mt-2">
-                <h4 className="text-sm font-medium mb-3">Emergency Contact Information</h4>
-                <div className="grid gap-4">
-                    <FormField
+              <h4 className="text-sm font-medium mb-3">Emergency Contact Information</h4>
+              <div className="grid gap-4">
+                <FormField
+                  control={form.control}
+                  name="emergency_contact_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contact Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Next of Kin Name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
                     control={form.control}
-                    name="emergency_contact_name"
+                    name="emergency_contact_relationship"
                     render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Contact Name</FormLabel>
+                      <FormItem>
+                        <FormLabel>Relationship</FormLabel>
                         <FormControl>
-                            <Input placeholder="Next of Kin Name" {...field} />
+                          <Input placeholder="e.g. Spouse, Parent" {...field} />
                         </FormControl>
                         <FormMessage />
-                        </FormItem>
+                      </FormItem>
                     )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                        control={form.control}
-                        name="emergency_contact_relationship"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Relationship</FormLabel>
-                            <FormControl>
-                                <Input placeholder="e.g. Spouse, Parent" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                        <FormField
-                        control={form.control}
-                        name="emergency_contact_phone"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Contact Phone</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Phone Number" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                    </div>
+                  />
+                  <FormField
+                    control={form.control}
+                    name="emergency_contact_phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact Phone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Phone Number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
+              </div>
             </div>
 
             <DialogFooter>
-                <Button variant="outline" type="button" onClick={() => setOpen(false)}>{t('dialogs.cancel')}</Button>
+              <Button variant="outline" type="button" onClick={() => setOpen(false)}>{t('dialogs.cancel')}</Button>
               <Button type="submit">{t('staff.addStaff')}</Button>
             </DialogFooter>
           </form>
