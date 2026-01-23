@@ -15,6 +15,21 @@ const log = require("electron-log");
 const { autoUpdater } = require("electron-updater");
 const license = require("./license");
 const tunnel = require("./tunnel");
+const crypto = require("crypto");
+
+// Read version dynamically from package.json
+function getAppVersion() {
+  try {
+    const pkgPath = app.isPackaged
+      ? path.join(process.resourcesPath, 'app.asar', 'package.json')
+      : path.join(__dirname, '..', 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    return pkg.version || '1.0.0';
+  } catch (e) {
+    log.error('Failed to read version from package.json:', e.message);
+    return '1.0.0';
+  }
+}
 
 // Determine if running in development mode
 const isDev = !app.isPackaged;
@@ -206,14 +221,17 @@ function buildMenu() {
   Menu.setApplicationMenu(menu);
 }
 
-// Set About Panel Options
-app.setAboutPanelOptions({
-  applicationName: "LoungeOS",
-  applicationVersion: "1.2.0",
-  copyright: "© 2026 LoungeOS",
-  version: "1.2.0",
-  credits: "Developed by Sunyin Elisbrown",
-});
+// Set About Panel Options (done after app is ready to get dynamic version)
+function setupAboutPanel() {
+  const version = getAppVersion();
+  app.setAboutPanelOptions({
+    applicationName: "LoungeOS",
+    applicationVersion: version,
+    copyright: "© 2026 LoungeOS",
+    version: version,
+    credits: "Developed by Sunyin Elisbrown",
+  });
+}
 
 // ============================================
 // ACTIVATION WINDOW (Paywall)
@@ -475,7 +493,7 @@ function createDeviceInfoWindow() {
       </div>
       <div class="row">
         <span class="label">App Version</span>
-        <span class="value">1.2.0</span>
+        <span class="value">${getAppVersion()}</span>
       </div>
       <div class="row">
         <span class="label">License Status</span>
@@ -511,7 +529,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
       backgroundThrottling: false, // Allow audio and timers when window is inactive
     },
-    title: "LoungeOS v1.2",
+    title: `LoungeOS v${getAppVersion()}`,
     icon: path.join(__dirname, "../public/logo.png"),
   });
 
@@ -648,6 +666,93 @@ function waitForServer(url, timeout) {
   });
 }
 
+// ============================================
+// DATABASE INITIALIZATION
+// ============================================
+
+/**
+ * Hash password using bcrypt-compatible algorithm
+ * This creates a hash compatible with bcryptjs used in the web app
+ */
+function hashPassword(password) {
+  // Use a simpler approach - create a hash that bcryptjs can verify
+  // We'll use Node's crypto to create a bcrypt-like salt and hash
+  const bcrypt = require('bcryptjs');
+  return bcrypt.hashSync(password, 10);
+}
+
+/**
+ * Initialize database with schema and default super admin
+ */
+function initializeDatabase(dbPath, schemaPath) {
+  const Database = require('better-sqlite3');
+
+  log.info(`Initializing database at: ${dbPath}`);
+  log.info(`Reading schema from: ${schemaPath}`);
+
+  // Read the schema from database.md
+  if (!fs.existsSync(schemaPath)) {
+    throw new Error(`Schema file not found at: ${schemaPath}`);
+  }
+
+  const schemaContent = fs.readFileSync(schemaPath, 'utf8');
+
+  // Extract SQL from the markdown file (between ```sql and ```)
+  const sqlMatch = schemaContent.match(/```sql\n([\s\S]*?)```/);
+  if (!sqlMatch) {
+    throw new Error('Could not find SQL schema in database.md');
+  }
+
+  const sqlSchema = sqlMatch[1];
+  log.info('Extracted SQL schema from database.md');
+
+  // Create the database and run the schema
+  const db = new Database(dbPath);
+  try {
+    db.exec(sqlSchema);
+    log.info('Database schema checked/updated successfully');
+
+    // Check if super admin exists
+    const adminEmail = 'sunyinelisbrown@gmail.com';
+    const checkStmt = db.prepare('SELECT id FROM users WHERE email = ?');
+    const adminExists = checkStmt.get(adminEmail);
+
+    if (!adminExists) {
+      log.info('Super Admin not found. Creating default account...');
+
+      // Insert default super admin
+      const defaultPassword = '12345678';
+      const hashedPassword = hashPassword(defaultPassword);
+
+      const insertStmt = db.prepare(`
+        INSERT INTO users (name, email, password, role, status, phone, force_password_change)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      insertStmt.run(
+        'Sunyin Elisbrown Sigala',
+        adminEmail,
+        hashedPassword,
+        'Super Admin',
+        'Active',
+        '+237679690703',
+        1  // force_password_change = 1 (true)
+      );
+
+      log.info(`Default super admin created: ${adminEmail}`);
+      log.info('Password must be changed on first login');
+    } else {
+      log.info('Super Admin account already exists. Skipping creation.');
+    }
+  } catch (err) {
+    log.error(`Database initialization error: ${err.message}`);
+    throw err;
+  } finally {
+    db.close();
+  }
+  log.info('Database initialization complete');
+}
+
 function startServer() {
   log.info(`Starting Next.js server on port ${appPort}...`);
 
@@ -657,26 +762,23 @@ function startServer() {
   const backupDir = path.join(userDataPath, "backups");
 
   // In packaged app, use the unpacked directory (files extracted from asar)
-  // The asarUnpack config in package.json extracts .next and node_modules
   const appPath = app.isPackaged
     ? path.join(process.resourcesPath, "app.asar.unpacked")
     : path.join(__dirname, "..");
 
-  // For DB, it's still in the asar since it doesn't need to be executed
+  // For DB schema, read from docs/database.md in the asar
   const asarPath = app.isPackaged
     ? path.join(process.resourcesPath, "app.asar")
     : path.join(__dirname, "..");
-  const sourceDbPath = path.join(asarPath, "loungeos.db");
+  const schemaPath = path.join(asarPath, "docs", "database.md");
 
-  if (!fs.existsSync(dbPath) && fs.existsSync(sourceDbPath)) {
-    try {
-      fs.copyFileSync(sourceDbPath, dbPath);
-      log.info(`Migrated database to ${dbPath}`);
-    } catch (err) {
-      log.error(`Failed to migrate database: ${err.message}`);
-    }
-  } else {
-    log.info(`Using database at ${dbPath}`);
+  // Always attempt to initialize database (create schema if needed, ensure admin exists)
+  log.info("Checking database status...");
+  try {
+    initializeDatabase(dbPath, schemaPath);
+    log.info(`Database verification at ${dbPath} complete`);
+  } catch (err) {
+    log.error(`Failed to verify/initialize database: ${err.message}`);
   }
 
   // Ensure backup directory exists
@@ -754,6 +856,7 @@ function startServer() {
 app.on("ready", () => {
   loadConfig();
   buildMenu();
+  setupAboutPanel();
 
   // Check license before anything else
   const licenseResult = license.verifyLicense();

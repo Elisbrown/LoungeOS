@@ -47,7 +47,7 @@ export function getOrderById(id: string, db: Database.Database = getDb()): Order
         LEFT JOIN products p ON oi.product_id = p.id AND oi.item_type = 'product'
         WHERE oi.order_id = ?
     `);
-    
+
     const items = itemStmt.all(row.id) as any[];
 
     // If some items are inventory items, we might need to join with inventory_items table
@@ -180,7 +180,7 @@ export async function addOrder(order: Omit<Order, 'id' | 'timestamp'> & { id?: s
         // Calculate totals if not provided
         let subtotal = ord.subtotal || 0;
         let total = ord.total || 0;
-        
+
         if (subtotal === 0 && ord.items.length > 0) {
             subtotal = ord.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
         }
@@ -199,21 +199,21 @@ export async function addOrder(order: Omit<Order, 'id' | 'timestamp'> & { id?: s
             if (typeof item.id === 'string' && item.id.startsWith('inv_')) {
                 productId = parseInt(item.id.replace('inv_', ''), 10);
                 itemType = 'inventory_item';
-                
+
                 // Deduct from inventory_items
                 db.prepare('UPDATE inventory_items SET current_stock = current_stock - ? WHERE id = ?').run(item.quantity, productId);
             } else {
                 productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
-                
+
                 // Deduct from products
                 db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(item.quantity, productId);
             }
 
-            if(isNaN(productId)) throw new Error(`Invalid product ID: ${item.id}`);
+            if (isNaN(productId)) throw new Error(`Invalid product ID: ${item.id}`);
 
             itemStmt.run(orderId, productId, item.quantity, item.price, itemType);
         }
-        
+
         return getOrderById(orderId, db)!;
     });
 
@@ -226,10 +226,10 @@ export async function addOrder(order: Omit<Order, 'id' | 'timestamp'> & { id?: s
 
 
 export async function updateOrderStatus(
-    orderId: string, 
-    status: Order['status'], 
-    cancelled_by?: number, 
-    cancellation_reason?: string, 
+    orderId: string,
+    status: Order['status'],
+    cancelled_by?: number,
+    cancellation_reason?: string,
     cancelled_at?: string | Date
 ): Promise<Order> {
     const db = getDb();
@@ -244,14 +244,14 @@ export async function updateOrderStatus(
                 cancelled_at = COALESCE(?, cancelled_at)
             WHERE id = ?
         `).run(
-            newStatus, 
-            new Date().toISOString(), 
+            newStatus,
+            new Date().toISOString(),
             cb || null,
             cr || null,
             ca ? (ca instanceof Date ? ca.toISOString() : ca) : null,
             id
         );
-        
+
         return getOrderById(id, db)!;
     });
 
@@ -267,7 +267,7 @@ export async function updateOrder(updatedOrder: Order & { waiter_id?: number, ca
     const transaction = db.transaction((order) => {
         // Build update query dynamically based on what fields are provided
         const hasFinancials = order.subtotal !== undefined || order.discount !== undefined || order.tax !== undefined || order.total !== undefined;
-        
+
         if (hasFinancials) {
             let subtotal = order.subtotal || 0;
             let total = order.total || 0;
@@ -295,13 +295,13 @@ export async function updateOrder(updatedOrder: Order & { waiter_id?: number, ca
                     cancelled_at = COALESCE(?, cancelled_at)
                 WHERE id = ?
             `).run(
-                order.status, 
-                order.timestamp ? (order.timestamp instanceof Date ? order.timestamp.toISOString() : order.timestamp) : new Date().toISOString(), 
-                subtotal, 
-                order.discount || 0, 
-                order.discountName || null, 
-                order.tax || 0, 
-                total, 
+                order.status,
+                order.timestamp ? (order.timestamp instanceof Date ? order.timestamp.toISOString() : order.timestamp) : new Date().toISOString(),
+                subtotal,
+                order.discount || 0,
+                order.discountName || null,
+                order.tax || 0,
+                total,
                 order.waiter_id || null,
                 order.cancelled_by || null,
                 order.cancellation_reason || null,
@@ -320,8 +320,8 @@ export async function updateOrder(updatedOrder: Order & { waiter_id?: number, ca
                     cancelled_at = COALESCE(?, cancelled_at)
                 WHERE id = ?
             `).run(
-                order.status, 
-                order.timestamp ? (order.timestamp instanceof Date ? order.timestamp.toISOString() : order.timestamp) : new Date().toISOString(), 
+                order.status,
+                order.timestamp ? (order.timestamp instanceof Date ? order.timestamp.toISOString() : order.timestamp) : new Date().toISOString(),
                 order.waiter_id || null,
                 order.cancelled_by || null,
                 order.cancellation_reason || null,
@@ -334,7 +334,7 @@ export async function updateOrder(updatedOrder: Order & { waiter_id?: number, ca
         if (order.items && order.items.length > 0) {
             // Delete existing items
             db.prepare('DELETE FROM order_items WHERE order_id = ?').run(order.id);
-            
+
             const itemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price, item_type) VALUES (?, ?, ?, ?, ?)');
             for (const item of order.items) {
                 let productId: number;
@@ -347,7 +347,7 @@ export async function updateOrder(updatedOrder: Order & { waiter_id?: number, ca
                     productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
                 }
 
-                if(isNaN(productId)) throw new Error(`Invalid product ID: ${item.id}`);
+                if (isNaN(productId)) throw new Error(`Invalid product ID: ${item.id}`);
                 itemStmt.run(order.id, productId, item.quantity, item.price, itemType);
             }
         }
@@ -382,9 +382,25 @@ export async function splitOrder(orderId: string, itemsToSplit: OrderItem[]): Pr
         if (!originalOrder) {
             throw new Error("Original order not found");
         }
-        
+
         const newOrderId = `ORD-${Date.now()}-SPLIT`;
-        const remainingItems = originalOrder.items.filter(item => !items.find((splitItem: any) => splitItem.id === item.id));
+
+        // Calculate remaining items after split - properly reduce quantities
+        const remainingItems: OrderItem[] = [];
+        for (const originalItem of originalOrder.items) {
+            const splitItem = items.find((s: any) => s.id === originalItem.id);
+            if (splitItem) {
+                // Item is being split - calculate remaining quantity
+                const remainingQty = originalItem.quantity - splitItem.quantity;
+                if (remainingQty > 0) {
+                    remainingItems.push({ ...originalItem, quantity: remainingQty });
+                }
+                // If remainingQty <= 0, don't add to remaining (fully split)
+            } else {
+                // Item not being split - keep as is
+                remainingItems.push(originalItem);
+            }
+        }
 
         // Create the new order with the split items
         const newOrderData: Order = {
@@ -394,27 +410,59 @@ export async function splitOrder(orderId: string, itemsToSplit: OrderItem[]): Pr
             status: 'Pending',
             timestamp: new Date()
         };
-        const newOrderStmt = db.prepare('INSERT INTO orders (id, table_name, status, timestamp, subtotal, discount, discount_name, tax, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        // For split orders, we might need to recalculate totals, but for now initializing to 0 or carrying over proportional values is complex. 
-        // Initializing to 0 for safety, logic should ideally recalculate.
-        newOrderStmt.run(newOrderData.id, newOrderData.table, newOrderData.status, newOrderData.timestamp.toISOString(), 0, 0, null, 0, 0);
-        const newItemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
+
+        // Calculate subtotal for new order
+        const newSubtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+
+        const newOrderStmt = db.prepare('INSERT INTO orders (id, table_name, status, timestamp, subtotal, discount, discount_name, tax, total, waiter_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        newOrderStmt.run(newOrderData.id, newOrderData.table, newOrderData.status, newOrderData.timestamp.toISOString(), newSubtotal, 0, null, 0, newSubtotal, originalOrder.waiter_id || null);
+
+        const newItemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price, item_type) VALUES (?, ?, ?, ?, ?)');
         for (const item of newOrderData.items) {
-            const productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
-            newItemStmt.run(newOrderData.id, productId, item.quantity, item.price);
+            let productId: number;
+            let itemType = 'product';
+
+            if (typeof item.id === 'string' && item.id.startsWith('inv_')) {
+                productId = parseInt(item.id.replace('inv_', ''), 10);
+                itemType = 'inventory_item';
+            } else {
+                productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
+            }
+
+            newItemStmt.run(newOrderData.id, productId, item.quantity, item.price, itemType);
         }
 
 
         // Update the original order with the remaining items
-        originalOrder.items = remainingItems;
         if (remainingItems.length === 0) {
             // If no items left, delete original order
             db.prepare('DELETE FROM order_items WHERE order_id = ?').run(originalOrder.id);
             db.prepare('DELETE FROM orders WHERE id = ?').run(originalOrder.id);
         } else {
-            updateOrder(originalOrder);
+            // Delete old items and insert remaining items
+            db.prepare('DELETE FROM order_items WHERE order_id = ?').run(originalOrder.id);
+
+            const updateItemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price, item_type) VALUES (?, ?, ?, ?, ?)');
+            for (const item of remainingItems) {
+                let productId: number;
+                let itemType = 'product';
+
+                if (typeof item.id === 'string' && item.id.startsWith('inv_')) {
+                    productId = parseInt(item.id.replace('inv_', ''), 10);
+                    itemType = 'inventory_item';
+                } else {
+                    productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
+                }
+
+                updateItemStmt.run(originalOrder.id, productId, item.quantity, item.price, itemType);
+            }
+
+            // Recalculate subtotal and total for original order
+            const remainingSubtotal = remainingItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            db.prepare('UPDATE orders SET subtotal = ?, total = ? - discount + tax, timestamp = ? WHERE id = ?')
+                .run(remainingSubtotal, remainingSubtotal, new Date().toISOString(), originalOrder.id);
         }
-        
+
         const updatedOriginal = getOrderById(id, db);
         const newCreatedOrder = getOrderById(newOrderId, db);
 
@@ -439,15 +487,39 @@ export async function mergeOrders(fromOrderId: string, toOrderId: string): Promi
             throw new Error("One or both orders not found");
         }
 
-        // Move items from 'from' order to 'to' order
-        const itemMoveStmt = db.prepare('UPDATE order_items SET order_id = ? WHERE order_id = ?');
-        itemMoveStmt.run(toId, fromId);
+        // Get existing items in target order
+        const toItems = db.prepare('SELECT id, product_id, quantity, item_type FROM order_items WHERE order_id = ?').all(toId) as any[];
+        const fromItems = db.prepare('SELECT id, product_id, quantity, price, item_type FROM order_items WHERE order_id = ?').all(fromId) as any[];
+
+        // Consolidate items - combine quantities for same product_id
+        for (const fromItem of fromItems) {
+            const existingItem = toItems.find(ti => ti.product_id === fromItem.product_id && ti.item_type === fromItem.item_type);
+            if (existingItem) {
+                // Update quantity in existing item (consolidate)
+                db.prepare('UPDATE order_items SET quantity = quantity + ? WHERE id = ?')
+                    .run(fromItem.quantity, existingItem.id);
+                // Delete the from item
+                db.prepare('DELETE FROM order_items WHERE id = ?').run(fromItem.id);
+            } else {
+                // Move item to target order (no duplicate)
+                db.prepare('UPDATE order_items SET order_id = ? WHERE id = ?')
+                    .run(toId, fromItem.id);
+            }
+        }
 
         // Delete the now-empty 'from' order
         db.prepare('DELETE FROM orders WHERE id = ?').run(fromId);
-        
-        // Update the timestamp of the 'to' order
-        db.prepare('UPDATE orders SET timestamp = ? WHERE id = ?').run(new Date().toISOString(), toId);
+
+        // Recalculate subtotal and total for merged order
+        const mergedItems = db.prepare('SELECT quantity, price FROM order_items WHERE order_id = ?').all(toId) as any[];
+        const subtotal = mergedItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+
+        // Get current discount and tax to properly calculate total
+        const currentOrder = db.prepare('SELECT discount, tax FROM orders WHERE id = ?').get(toId) as any;
+        const total = subtotal - (currentOrder?.discount || 0) + (currentOrder?.tax || 0);
+
+        db.prepare('UPDATE orders SET subtotal = ?, total = ?, timestamp = ? WHERE id = ?')
+            .run(subtotal, total, new Date().toISOString(), toId);
 
         return getOrderById(toId, db)!;
     });
@@ -472,20 +544,20 @@ export async function getOrderStats(): Promise<{
     try {
         // Get total orders
         const totalOrders = db.prepare('SELECT COUNT(*) as count FROM orders').get() as any;
-        
+
         // Get completed orders
         const completedOrders = db.prepare('SELECT COUNT(*) as count FROM orders WHERE status = ?').get('Completed') as any;
-        
+
         // Get canceled orders (assuming 'Canceled' status exists, if not we'll use 0)
         const canceledOrders = db.prepare('SELECT COUNT(*) as count FROM orders WHERE status = ?').get('Canceled') as any;
-        
+
         // Get total revenue from completed orders
         const revenueResult = db.prepare(`
             SELECT SUM(total) as total
             FROM orders
             WHERE status = 'Completed'
         `).get() as any;
-        
+
         // Get recent sales (last 10 completed orders)
         const recentSales = db.prepare(`
             SELECT 
@@ -502,7 +574,7 @@ export async function getOrderStats(): Promise<{
             ORDER BY o.timestamp DESC
             LIMIT 10
         `).all() as any[];
-        
+
         // Get top selling products
         const topProducts = db.prepare(`
             SELECT 
@@ -520,10 +592,10 @@ export async function getOrderStats(): Promise<{
             ORDER BY total_sold DESC
             LIMIT 5
         `).all() as any[];
-        
+
         // For now, set total spending to 0 (this would come from inventory costs)
         const totalSpending = 0;
-        
+
         return {
             totalOrders: totalOrders.count,
             completedOrders: completedOrders.count,
@@ -562,7 +634,7 @@ export async function getTableStats(): Promise<{
         const totalTables = db.prepare('SELECT COUNT(*) as count FROM tables').get() as any;
         const occupiedTables = db.prepare('SELECT COUNT(*) as count FROM tables WHERE status = ?').get('Occupied') as any;
         const availableTables = db.prepare('SELECT COUNT(*) as count FROM tables WHERE status = ?').get('Available') as any;
-        
+
         return {
             totalTables: totalTables.count,
             occupiedTables: occupiedTables.count,
