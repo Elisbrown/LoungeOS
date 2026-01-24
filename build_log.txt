@@ -1,0 +1,474 @@
+
+> loungeos@1.3.2 build
+> next build
+
+▲ Next.js 16.1.1 (Turbopack)
+- Experiments (use with caution):
+  · serverActions
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 14 errors:
+./src/app/dashboard/settings/page.tsx:7:1
+Module not found: Can't resolve 'zod'
+[0m [90m  5 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+ [90m  6 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m"@/context/auth-context"[39m
+ [90m  9 |[39m [36mimport[39m { [33mHeader[39m } [36mfrom[39m [32m"@/components/dashboard/header"[39m
+ [90m 10 |[39m [36mimport[39m { [33mCard[39m[33m,[39m [33mCardContent[39m[33m,[39m [33mCardDescription[39m[33m,[39m [33mCardHeader[39m[33m,[39m [33mCardTitle[39m } [36mfrom[39m [32m"@/components/ui/card"[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/app/dashboard/settings/page.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/app/dashboard/settings/page.tsx [Client Component Browser]
+    ./src/app/dashboard/settings/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/dashboard/settings/page.tsx [Client Component SSR]
+    ./src/app/dashboard/settings/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/app/password-reset/page.tsx:6:1
+Module not found: Can't resolve 'zod'
+[0m [90m 4 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m'react-hook-form'[39m
+ [90m 5 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m'@hookform/resolvers/zod'[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m'zod'[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@/context/auth-context'[39m
+ [90m 8 |[39m [36mimport[39m { useToast } [36mfrom[39m [32m'@/hooks/use-toast'[39m
+ [90m 9 |[39m [36mimport[39m { useTranslation } [36mfrom[39m [32m'@/hooks/use-translation'[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/app/password-reset/page.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/app/password-reset/page.tsx [Client Component Browser]
+    ./src/app/password-reset/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/password-reset/page.tsx [Client Component SSR]
+    ./src/app/password-reset/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/auth/login-form.tsx:7:1
+Module not found: Can't resolve 'zod'
+[0m [90m  5 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m'react-hook-form'[39m
+ [90m  6 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m'@hookform/resolvers/zod'[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m'zod'[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m [33mLink[39m [36mfrom[39m [32m'next/link'[39m
+ [90m  9 |[39m [36mimport[39m { useStaff[33m,[39m [33mStaffProvider[39m } [36mfrom[39m [32m'@/context/staff-context'[39m
+ [90m 10 |[39m [36mimport[39m { useState } [36mfrom[39m [32m'react'[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/auth/login-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/auth/login-form.tsx [Client Component Browser]
+    ./src/app/login/page.tsx [Client Component Browser]
+    ./src/app/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/auth/login-form.tsx [Client Component SSR]
+    ./src/app/login/page.tsx [Client Component SSR]
+    ./src/app/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/auth/setup-form.tsx:7:1
+Module not found: Can't resolve 'zod'
+[0m [90m  5 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+ [90m  6 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { [33mButton[39m } [36mfrom[39m [32m"@/components/ui/button"[39m
+ [90m  9 |[39m [36mimport[39m {
+ [90m 10 |[39m   [33mForm[39m[33m,[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/auth/setup-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/auth/setup-form.tsx [Client Component Browser]
+    ./src/app/setup/page.tsx [Client Component Browser]
+    ./src/app/setup/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/auth/setup-form.tsx [Client Component SSR]
+    ./src/app/setup/page.tsx [Client Component SSR]
+    ./src/app/setup/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/dashboard/categories/add-category-form.tsx:6:1
+Module not found: Can't resolve 'zod'
+[0m [90m 4 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+ [90m 5 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { [33mPlusCircle[39m } [36mfrom[39m [32m"lucide-react"[39m
+ [90m 8 |[39m [36mimport[39m { useState } [36mfrom[39m [32m"react"[39m
+ [90m 9 |[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/dashboard/categories/add-category-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/dashboard/categories/add-category-form.tsx [Client Component Browser]
+    ./src/components/dashboard/categories/categories-table.tsx [Client Component Browser]
+    ./src/app/dashboard/categories/page.tsx [Client Component Browser]
+    ./src/app/dashboard/categories/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/dashboard/categories/add-category-form.tsx [Client Component SSR]
+    ./src/components/dashboard/categories/categories-table.tsx [Client Component SSR]
+    ./src/app/dashboard/categories/page.tsx [Client Component SSR]
+    ./src/app/dashboard/categories/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/dashboard/categories/edit-category-form.tsx:6:1
+Module not found: Can't resolve 'zod'
+[0m [90m 4 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+ [90m 5 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { useEffect } [36mfrom[39m [32m"react"[39m
+ [90m 8 |[39m
+ [90m 9 |[39m [36mimport[39m { [33mButton[39m } [36mfrom[39m [32m"@/components/ui/button"[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/dashboard/categories/edit-category-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/dashboard/categories/edit-category-form.tsx [Client Component Browser]
+    ./src/components/dashboard/categories/categories-table.tsx [Client Component Browser]
+    ./src/app/dashboard/categories/page.tsx [Client Component Browser]
+    ./src/app/dashboard/categories/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/dashboard/categories/edit-category-form.tsx [Client Component SSR]
+    ./src/components/dashboard/categories/categories-table.tsx [Client Component SSR]
+    ./src/app/dashboard/categories/page.tsx [Client Component SSR]
+    ./src/app/dashboard/categories/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/dashboard/meals/add-meal-form.tsx:7:1
+Module not found: Can't resolve 'zod'
+[0m [90m  5 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+ [90m  6 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { [33mPlusCircle[39m[33m,[39m [33mUpload[39m } [36mfrom[39m [32m"lucide-react"[39m
+ [90m  9 |[39m [36mimport[39m { useState } [36mfrom[39m [32m"react"[39m
+ [90m 10 |[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/dashboard/meals/add-meal-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/dashboard/meals/add-meal-form.tsx [Client Component Browser]
+    ./src/components/dashboard/meals/meals-table.tsx [Client Component Browser]
+    ./src/app/dashboard/meals/page.tsx [Client Component Browser]
+    ./src/app/dashboard/meals/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/dashboard/meals/add-meal-form.tsx [Client Component SSR]
+    ./src/components/dashboard/meals/meals-table.tsx [Client Component SSR]
+    ./src/app/dashboard/meals/page.tsx [Client Component SSR]
+    ./src/app/dashboard/meals/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/dashboard/meals/edit-meal-form.tsx:7:1
+Module not found: Can't resolve 'zod'
+[0m [90m  5 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+ [90m  6 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { useEffect } [36mfrom[39m [32m"react"[39m
+ [90m  9 |[39m [36mimport[39m [33mImage[39m [36mfrom[39m [32m"next/image"[39m
+ [90m 10 |[39m [36mimport[39m { [33mUpload[39m } [36mfrom[39m [32m"lucide-react"[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/dashboard/meals/edit-meal-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/dashboard/meals/edit-meal-form.tsx [Client Component Browser]
+    ./src/components/dashboard/meals/meals-table.tsx [Client Component Browser]
+    ./src/app/dashboard/meals/page.tsx [Client Component Browser]
+    ./src/app/dashboard/meals/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/dashboard/meals/edit-meal-form.tsx [Client Component SSR]
+    ./src/components/dashboard/meals/meals-table.tsx [Client Component SSR]
+    ./src/app/dashboard/meals/page.tsx [Client Component SSR]
+    ./src/app/dashboard/meals/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/dashboard/staff/add-staff-form.tsx:6:1
+Module not found: Can't resolve 'zod'
+[0m [90m 4 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+ [90m 5 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { [33mPlusCircle[39m[33m,[39m [33mCalendar[39m [36mas[39m [33mCalendarIcon[39m } [36mfrom[39m [32m"lucide-react"[39m
+ [90m 8 |[39m [36mimport[39m { useState } [36mfrom[39m [32m"react"[39m
+ [90m 9 |[39m [36mimport[39m type { [33mStaffMember[39m[33m,[39m [33mStaffRole[39m } [36mfrom[39m [32m"@/context/staff-context"[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/dashboard/staff/add-staff-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/dashboard/staff/add-staff-form.tsx [Client Component Browser]
+    ./src/components/dashboard/staff/staff-table.tsx [Client Component Browser]
+    ./src/app/dashboard/staff/page.tsx [Client Component Browser]
+    ./src/app/dashboard/staff/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/dashboard/staff/add-staff-form.tsx [Client Component SSR]
+    ./src/components/dashboard/staff/staff-table.tsx [Client Component SSR]
+    ./src/app/dashboard/staff/page.tsx [Client Component SSR]
+    ./src/app/dashboard/staff/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/dashboard/staff/edit-staff-form.tsx:6:1
+Module not found: Can't resolve 'zod'
+[0m [90m 4 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+ [90m 5 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { useEffect } [36mfrom[39m [32m"react"[39m
+ [90m 8 |[39m [36mimport[39m { useFloors } [36mfrom[39m [32m"@/context/floor-context"[39m
+ [90m 9 |[39m [36mimport[39m type { [33mStaffMember[39m[33m,[39m [33mStaffRole[39m } [36mfrom[39m [32m"@/context/staff-context"[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/dashboard/staff/edit-staff-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/dashboard/staff/edit-staff-form.tsx [Client Component Browser]
+    ./src/components/dashboard/staff/staff-table.tsx [Client Component Browser]
+    ./src/app/dashboard/staff/page.tsx [Client Component Browser]
+    ./src/app/dashboard/staff/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/dashboard/staff/edit-staff-form.tsx [Client Component SSR]
+    ./src/components/dashboard/staff/staff-table.tsx [Client Component SSR]
+    ./src/app/dashboard/staff/page.tsx [Client Component SSR]
+    ./src/app/dashboard/staff/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/dashboard/suppliers/add-supplier-form.tsx:6:1
+Module not found: Can't resolve 'zod'
+[0m [90m 4 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+ [90m 5 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { [33mPlusCircle[39m } [36mfrom[39m [32m"lucide-react"[39m
+ [90m 8 |[39m [36mimport[39m { useState } [36mfrom[39m [32m"react"[39m
+ [90m 9 |[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/dashboard/suppliers/add-supplier-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/dashboard/suppliers/add-supplier-form.tsx [Client Component Browser]
+    ./src/components/dashboard/suppliers/suppliers-table.tsx [Client Component Browser]
+    ./src/app/dashboard/inventory/suppliers/page.tsx [Client Component Browser]
+    ./src/app/dashboard/inventory/suppliers/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/dashboard/suppliers/add-supplier-form.tsx [Client Component SSR]
+    ./src/components/dashboard/suppliers/suppliers-table.tsx [Client Component SSR]
+    ./src/app/dashboard/inventory/suppliers/page.tsx [Client Component SSR]
+    ./src/app/dashboard/inventory/suppliers/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/dashboard/suppliers/edit-supplier-form.tsx:6:1
+Module not found: Can't resolve 'zod'
+[0m [90m 4 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+ [90m 5 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { useEffect } [36mfrom[39m [32m"react"[39m
+ [90m 8 |[39m
+ [90m 9 |[39m [36mimport[39m { [33mButton[39m } [36mfrom[39m [32m"@/components/ui/button"[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/dashboard/suppliers/edit-supplier-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/dashboard/suppliers/edit-supplier-form.tsx [Client Component Browser]
+    ./src/components/dashboard/suppliers/suppliers-table.tsx [Client Component Browser]
+    ./src/app/dashboard/inventory/suppliers/page.tsx [Client Component Browser]
+    ./src/app/dashboard/inventory/suppliers/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/dashboard/suppliers/edit-supplier-form.tsx [Client Component SSR]
+    ./src/components/dashboard/suppliers/suppliers-table.tsx [Client Component SSR]
+    ./src/app/dashboard/inventory/suppliers/page.tsx [Client Component SSR]
+    ./src/app/dashboard/inventory/suppliers/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/dashboard/tables/add-table-form.tsx:6:1
+Module not found: Can't resolve 'zod'
+[0m [90m 4 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+ [90m 5 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { [33mPlusCircle[39m } [36mfrom[39m [32m"lucide-react"[39m
+ [90m 8 |[39m [36mimport[39m { useState } [36mfrom[39m [32m"react"[39m
+ [90m 9 |[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/dashboard/tables/add-table-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/dashboard/tables/add-table-form.tsx [Client Component Browser]
+    ./src/components/dashboard/tables/tables-view.tsx [Client Component Browser]
+    ./src/app/dashboard/tables/page.tsx [Client Component Browser]
+    ./src/app/dashboard/tables/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/dashboard/tables/add-table-form.tsx [Client Component SSR]
+    ./src/components/dashboard/tables/tables-view.tsx [Client Component SSR]
+    ./src/app/dashboard/tables/page.tsx [Client Component SSR]
+    ./src/app/dashboard/tables/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./src/components/dashboard/ticketing/add-ticket-form.tsx:6:1
+Module not found: Can't resolve 'zod'
+[0m [90m 4 |[39m [36mimport[39m { useForm } [36mfrom[39m [32m"react-hook-form"[39m
+ [90m 5 |[39m [36mimport[39m { zodResolver } [36mfrom[39m [32m"@hookform/resolvers/zod"[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { [33mPlusCircle[39m } [36mfrom[39m [32m"lucide-react"[39m
+ [90m 8 |[39m [36mimport[39m { useState } [36mfrom[39m [32m"react"[39m
+ [90m 9 |[39m[0m
+
+
+
+Import traces:
+  App Route:
+    ./src/components/dashboard/ticketing/add-ticket-form.tsx
+    ./src/app/api/system-stats/route.ts
+
+  Client Component Browser:
+    ./src/components/dashboard/ticketing/add-ticket-form.tsx [Client Component Browser]
+    ./src/app/dashboard/support/page.tsx [Client Component Browser]
+    ./src/app/dashboard/support/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/dashboard/ticketing/add-ticket-form.tsx [Client Component SSR]
+    ./src/app/dashboard/support/page.tsx [Client Component SSR]
+    ./src/app/dashboard/support/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (./src/app/dashboard/settings/page.tsx:7:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/app/password-reset/page.tsx:6:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/auth/login-form.tsx:7:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/auth/setup-form.tsx:7:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/dashboard/categories/add-category-form.tsx:6:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/dashboard/categories/edit-category-form.tsx:6:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/dashboard/meals/add-meal-form.tsx:7:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/dashboard/meals/edit-meal-form.tsx:7:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/dashboard/staff/add-staff-form.tsx:6:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/dashboard/staff/edit-staff-form.tsx:6:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/dashboard/suppliers/add-supplier-form.tsx:6:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/dashboard/suppliers/edit-supplier-form.tsx:6:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/dashboard/tables/add-table-form.tsx:6:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./src/components/dashboard/ticketing/add-ticket-form.tsx:6:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)

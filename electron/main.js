@@ -671,87 +671,25 @@ function waitForServer(url, timeout) {
 // ============================================
 
 /**
- * Hash password using bcrypt-compatible algorithm
- * This creates a hash compatible with bcryptjs used in the web app
+ * Initialize database by copying a template database
  */
-function hashPassword(password) {
-  // Use a simpler approach - create a hash that bcryptjs can verify
-  // We'll use Node's crypto to create a bcrypt-like salt and hash
-  const bcrypt = require('bcryptjs');
-  return bcrypt.hashSync(password, 10);
-}
-
-/**
- * Initialize database with schema and default super admin
- */
-function initializeDatabase(dbPath, schemaPath) {
-  const Database = require('better-sqlite3');
-
+function initializeDatabase(dbPath, templatePath) {
   log.info(`Initializing database at: ${dbPath}`);
-  log.info(`Reading schema from: ${schemaPath}`);
+  log.info(`Using template from: ${templatePath}`);
 
-  // Read the schema from database.md
-  if (!fs.existsSync(schemaPath)) {
-    throw new Error(`Schema file not found at: ${schemaPath}`);
+  if (!fs.existsSync(templatePath)) {
+    throw new Error(`Template database not found at: ${templatePath}`);
   }
 
-  const schemaContent = fs.readFileSync(schemaPath, 'utf8');
-
-  // Extract SQL from the markdown file (between ```sql and ```)
-  const sqlMatch = schemaContent.match(/```sql\n([\s\S]*?)```/);
-  if (!sqlMatch) {
-    throw new Error('Could not find SQL schema in database.md');
-  }
-
-  const sqlSchema = sqlMatch[1];
-  log.info('Extracted SQL schema from database.md');
-
-  // Create the database and run the schema
-  const db = new Database(dbPath);
   try {
-    db.exec(sqlSchema);
-    log.info('Database schema checked/updated successfully');
-
-    // Check if super admin exists
-    const adminEmail = 'sunyinelisbrown@gmail.com';
-    const checkStmt = db.prepare('SELECT id FROM users WHERE email = ?');
-    const adminExists = checkStmt.get(adminEmail);
-
-    if (!adminExists) {
-      log.info('Super Admin not found. Creating default account...');
-
-      // Insert default super admin
-      const defaultPassword = '12345678';
-      const hashedPassword = hashPassword(defaultPassword);
-
-      const insertStmt = db.prepare(`
-        INSERT INTO users (name, email, password, role, status, phone, force_password_change)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      insertStmt.run(
-        'Sunyin Elisbrown Sigala',
-        adminEmail,
-        hashedPassword,
-        'Super Admin',
-        'Active',
-        '+237679690703',
-        1  // force_password_change = 1 (true)
-      );
-
-      log.info(`Default super admin created: ${adminEmail}`);
-      log.info('Password must be changed on first login');
-    } else {
-      log.info('Super Admin account already exists. Skipping creation.');
-    }
+    fs.copyFileSync(templatePath, dbPath);
+    log.info('Database template copied successfully');
   } catch (err) {
-    log.error(`Database initialization error: ${err.message}`);
-    throw err;
-  } finally {
-    db.close();
+    throw new Error(`Failed to copy template: ${err.message}`);
   }
-  log.info('Database initialization complete');
 }
+
+
 
 function startServer() {
   log.info(`Starting Next.js server on port ${appPort}...`);
@@ -762,23 +700,25 @@ function startServer() {
   const backupDir = path.join(userDataPath, "backups");
 
   // In packaged app, use the unpacked directory (files extracted from asar)
+  // The asarUnpack config in package.json extracts .next and node_modules
   const appPath = app.isPackaged
     ? path.join(process.resourcesPath, "app.asar.unpacked")
     : path.join(__dirname, "..");
 
-  // For DB schema, read from docs/database.md in the asar
-  const asarPath = app.isPackaged
-    ? path.join(process.resourcesPath, "app.asar")
-    : path.join(__dirname, "..");
-  const schemaPath = path.join(asarPath, "docs", "database.md");
+  // For DB template, read from template.db in the root
+  const templatePath = path.join(__dirname, "..", "template.db");
 
-  // Always attempt to initialize database (create schema if needed, ensure admin exists)
-  log.info("Checking database status...");
-  try {
-    initializeDatabase(dbPath, schemaPath);
-    log.info(`Database verification at ${dbPath} complete`);
-  } catch (err) {
-    log.error(`Failed to verify/initialize database: ${err.message}`);
+  // If database doesn't exist, create it from template
+  if (!fs.existsSync(dbPath)) {
+    log.info("Database not found. Initializing from template...");
+    try {
+      initializeDatabase(dbPath, templatePath);
+      log.info(`Initialized new database at ${dbPath}`);
+    } catch (err) {
+      log.error(`Failed to initialize database: ${err.message}`);
+    }
+  } else {
+    log.info(`Using existing database at ${dbPath}`);
   }
 
   // Ensure backup directory exists
