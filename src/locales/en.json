@@ -90,7 +90,9 @@
     "reason": "Reason",
     "time": "Time",
     "showLess": "Show Less",
-    "showMore": "Show All"
+    "showMore": "Show All",
+    "qty": "Qty",
+    "price": "Price"
   },
   "dashboard": {
     "title": "Dashboard",

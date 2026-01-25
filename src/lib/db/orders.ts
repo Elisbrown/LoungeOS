@@ -417,21 +417,37 @@ export async function splitOrder(orderId: string, itemsToSplit: OrderItem[]): Pr
         const newOrderStmt = db.prepare('INSERT INTO orders (id, table_name, status, timestamp, subtotal, discount, discount_name, tax, total, waiter_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         newOrderStmt.run(newOrderData.id, newOrderData.table, newOrderData.status, newOrderData.timestamp.toISOString(), newSubtotal, 0, null, 0, newSubtotal, originalOrder.waiter_id || null);
 
-        const newItemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price, item_type) VALUES (?, ?, ?, ?, ?)');
-        for (const item of newOrderData.items) {
-            let productId: number;
+        // Helper to safely parse IDs
+        const prepareItemValues = (item: OrderItem, orderId: string) => {
+            let productId: number | string;
             let itemType = 'product';
+            const idStr = String(item.id);
 
-            if (typeof item.id === 'string' && item.id.startsWith('inv_')) {
-                productId = parseInt(item.id.replace('inv_', ''), 10);
+            if (idStr.startsWith('inv_')) {
+                const rawId = idStr.replace('inv_', '');
+                const parsedId = parseInt(rawId, 10);
+                // If parsing fails (NaN), assume strictly string ID (alphanumeric inventory id)
+                productId = isNaN(parsedId) ? rawId : parsedId;
                 itemType = 'inventory_item';
             } else {
-                productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
+                const parsedId = parseInt(idStr, 10);
+                productId = isNaN(parsedId) ? idStr : parsedId;
             }
 
-            newItemStmt.run(newOrderData.id, productId, item.quantity, item.price, itemType);
-        }
+            if (productId === null || productId === undefined || (typeof productId === 'number' && isNaN(productId))) {
+                console.error(`Invalid Product ID for item: ${JSON.stringify(item)}`);
+                throw new Error(`Invalid Product ID encountered: ${item.id}`);
+            }
 
+            return { orderId, productId, quantity: item.quantity, price: item.price, itemType };
+        };
+
+        const insertItemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price, item_type) VALUES (@orderId, @productId, @quantity, @price, @itemType)');
+
+        // Insert new order items
+        for (const item of newOrderData.items) {
+            insertItemStmt.run(prepareItemValues(item, newOrderData.id));
+        }
 
         // Update the original order with the remaining items
         if (remainingItems.length === 0) {
@@ -442,19 +458,8 @@ export async function splitOrder(orderId: string, itemsToSplit: OrderItem[]): Pr
             // Delete old items and insert remaining items
             db.prepare('DELETE FROM order_items WHERE order_id = ?').run(originalOrder.id);
 
-            const updateItemStmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price, item_type) VALUES (?, ?, ?, ?, ?)');
             for (const item of remainingItems) {
-                let productId: number;
-                let itemType = 'product';
-
-                if (typeof item.id === 'string' && item.id.startsWith('inv_')) {
-                    productId = parseInt(item.id.replace('inv_', ''), 10);
-                    itemType = 'inventory_item';
-                } else {
-                    productId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
-                }
-
-                updateItemStmt.run(originalOrder.id, productId, item.quantity, item.price, itemType);
+                insertItemStmt.run(prepareItemValues(item, originalOrder.id));
             }
 
             // Recalculate subtotal and total for original order
@@ -466,7 +471,7 @@ export async function splitOrder(orderId: string, itemsToSplit: OrderItem[]): Pr
         const updatedOriginal = getOrderById(id, db);
         const newCreatedOrder = getOrderById(newOrderId, db);
 
-        return { updatedOrder: updatedOriginal, newOrder: newCreatedOrder };
+        return { updatedOrder: updatedOriginal!, newOrder: newCreatedOrder! };
     });
 
     try {

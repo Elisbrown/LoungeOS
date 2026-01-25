@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const unified = searchParams.get('unified');
-        
+
         if (unified === 'true') {
             const products = await getUnifiedProducts();
             return NextResponse.json(products);
@@ -61,17 +61,20 @@ export async function PUT(request: Request) {
         const updatedMeal = await updateMeal(mealData);
         const actorId = await getActorId(mealData.userEmail);
 
+        const changes: Record<string, { old: any, new: any }> = {};
+        if (oldMeal) {
+            if (oldMeal.price != updatedMeal.price) changes.price = { old: oldMeal.price, new: updatedMeal.price }; // Use != for loose equality if types drift
+            if (oldMeal.name !== updatedMeal.name) changes.name = { old: oldMeal.name, new: updatedMeal.name };
+            if (oldMeal.category !== updatedMeal.category) changes.category = { old: oldMeal.category, new: updatedMeal.category };
+            if (oldMeal.image !== updatedMeal.image) changes.image = { old: 'old_image', new: 'new_image' }; // Don't log full base64
+        }
+
         await addActivityLog(
             actorId,
             'MENU_ITEM_UPDATE',
             `Updated menu item: ${updatedMeal.name}`,
             updatedMeal.name,
-            { 
-                changes: {
-                    price: oldMeal?.price !== updatedMeal.price ? { old: oldMeal?.price, new: updatedMeal.price } : undefined,
-                    category: oldMeal?.category !== updatedMeal.category ? { old: oldMeal?.category, new: updatedMeal.category } : undefined
-                }
-            }
+            { changes }
         );
 
         return NextResponse.json(updatedMeal);

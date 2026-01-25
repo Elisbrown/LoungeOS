@@ -9,38 +9,38 @@ const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'loungeos.
 let dbInstance: Database.Database | null = null;
 
 function getDb(): Database.Database {
-    if (dbInstance && dbInstance.open) {
-        return dbInstance;
-    }
+  if (dbInstance && dbInstance.open) {
+    return dbInstance;
+  }
 
-    const dbExists = fs.existsSync(dbPath);
-    const db = new Database(dbPath, { verbose: console.log });
+  const dbExists = fs.existsSync(dbPath);
+  const db = new Database(dbPath, { verbose: console.log });
 
-    if (!dbExists) {
-        console.log("Database file not found, creating and initializing schema...");
-        const schema = fs.readFileSync(path.join(process.cwd(), 'docs', 'database.md'), 'utf8');
-        const sqlOnly = schema.split('```sql')[1].split('```')[0];
-        db.exec(sqlOnly);
-        console.log("Database schema initialized.");
-    }
+  if (!dbExists) {
+    console.log("Database file not found, creating and initializing schema...");
+    const schema = fs.readFileSync(path.join(process.cwd(), 'docs', 'database.md'), 'utf8');
+    const sqlOnly = schema.split('```sql')[1].split('```')[0];
+    db.exec(sqlOnly);
+    console.log("Database schema initialized.");
+  }
 
-    dbInstance = db;
-    return db;
+  dbInstance = db;
+  return db;
 }
 
 export async function getMealById(id: string): Promise<Meal | null> {
-    const db = getDb();
-    try {
-        const stmt = db.prepare('SELECT id, name, price, category, image, quantity FROM products WHERE id = ?');
-        const meal = stmt.get(id) as any;
-        if (!meal) return null;
-        return {
-            ...meal,
-            id: String(meal.id)
-        };
-    } finally {
-        // No close
-    }
+  const db = getDb();
+  try {
+    const stmt = db.prepare('SELECT id, name, price, category, image, quantity FROM products WHERE id = ?');
+    const meal = stmt.get(id) as any;
+    if (!meal) return null;
+    return {
+      ...meal,
+      id: String(meal.id)
+    };
+  } finally {
+    // No close
+  }
 }
 
 export async function getMeals(): Promise<Meal[]> {
@@ -49,8 +49,8 @@ export async function getMeals(): Promise<Meal[]> {
     const stmt = db.prepare('SELECT id, name, price, category, image, quantity FROM products');
     const meals = stmt.all() as any[];
     return meals.map(meal => ({
-        ...meal,
-        id: String(meal.id) // Ensure id is a string
+      ...meal,
+      id: String(meal.id) // Ensure id is a string
     }));
   } finally {
     // No close
@@ -62,11 +62,11 @@ export async function addMeal(mealData: Omit<Meal, 'id'>): Promise<Meal> {
   try {
     const stmt = db.prepare('INSERT INTO products (name, price, category, image, quantity) VALUES (@name, @price, @category, @image, @quantity)');
     const info = stmt.run({
-        name: mealData.name,
-        price: mealData.price,
-        category: mealData.category,
-        image: mealData.image || 'https://placehold.co/150x150.png',
-        quantity: mealData.quantity
+      name: mealData.name,
+      price: mealData.price,
+      category: mealData.category,
+      image: mealData.image || 'https://placehold.co/150x150.png',
+      quantity: mealData.quantity
     });
     return {
       id: String(info.lastInsertRowid),
@@ -82,12 +82,12 @@ export async function updateMeal(updatedMeal: Meal): Promise<Meal> {
   try {
     const stmt = db.prepare('UPDATE products SET name = @name, price = @price, category = @category, image = @image, quantity = @quantity WHERE id = @id');
     stmt.run({
-        name: updatedMeal.name,
-        price: updatedMeal.price,
-        category: updatedMeal.category,
-        image: updatedMeal.image,
-        quantity: updatedMeal.quantity,
-        id: updatedMeal.id
+      name: updatedMeal.name,
+      price: updatedMeal.price,
+      category: updatedMeal.category,
+      image: updatedMeal.image,
+      quantity: updatedMeal.quantity,
+      id: updatedMeal.id
     });
     return updatedMeal;
   } finally {
@@ -113,13 +113,13 @@ export async function getUnifiedProducts(): Promise<Meal[]> {
     // Get food items from products table
     const foodStmt = db.prepare('SELECT id, name, price, category, image, quantity FROM products');
     const foodItems = foodStmt.all() as any[];
-    
+
     // Get drink items from inventory_items table (beverages)
     const drinkStmt = db.prepare(`
       SELECT 
         'inv_' || id as id, 
         name, 
-        COALESCE(cost_per_unit * 2, 1000) as price, 
+        COALESCE(cost_per_unit, 1000) as price, 
         category, 
         image, 
         current_stock as quantity
@@ -127,13 +127,13 @@ export async function getUnifiedProducts(): Promise<Meal[]> {
       WHERE category LIKE '%Beverage%' OR category LIKE '%Drink%' OR category LIKE '%Beer%' OR category LIKE '%Wine%'
     `);
     const drinkItems = drinkStmt.all() as any[];
-    
+
     // Get packaging items from inventory_items table
     const packagingStmt = db.prepare(`
       SELECT 
         'inv_' || id as id, 
         name, 
-        COALESCE(cost_per_unit * 1.5, 100) as price, 
+        COALESCE(cost_per_unit, 100) as price, 
         category, 
         image, 
         current_stock as quantity
@@ -145,15 +145,15 @@ export async function getUnifiedProducts(): Promise<Meal[]> {
          OR category LIKE '%Utensil%' OR category LIKE '%Napkin%' OR category LIKE '%Tissue%'
     `);
     const packagingItems = packagingStmt.all() as any[];
-    
+
     // Combine and format all items
     const allItems = [...foodItems, ...drinkItems, ...packagingItems].map(item => ({
-        ...item,
-        id: String(item.id), // Ensure id is a string
-        price: Number(item.price) || 0,
-        quantity: Number(item.quantity) || 0
+      ...item,
+      id: String(item.id), // Ensure id is a string
+      price: Number(item.price) || 0,
+      quantity: Number(item.quantity) || 0
     }));
-    
+
     return allItems;
   } finally {
     // No close
@@ -166,7 +166,7 @@ export async function updateInventoryStockForSale(inventoryId: string, quantityS
   try {
     // Extract the actual inventory ID (remove 'inv_' prefix)
     const actualId = inventoryId.replace('inv_', '');
-    
+
     const stmt = db.prepare('UPDATE inventory_items SET current_stock = current_stock - ? WHERE id = ?');
     stmt.run(quantitySold, actualId);
   } finally {
