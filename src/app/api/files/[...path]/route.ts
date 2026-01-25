@@ -6,7 +6,7 @@ import path from 'path';
 // Simple MIME type detector
 function getMimeType(filename: string): string {
   const ext = path.extname(filename).toLowerCase();
-  const mimeTypes: {[key: string]: string} = {
+  const mimeTypes: { [key: string]: string } = {
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.png': 'image/png',
@@ -26,26 +26,28 @@ export async function GET(
 ) {
   const { path: pathSegments } = await params;
   try {
+    // Define uploads directory - use UPLOAD_DIR env var in production (set by Electron)
+    const uploadsDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+
     // Join the path segments
-    const filepath = path.join(process.cwd(), 'uploads', ...pathSegments);
-    
+    const filepath = path.join(uploadsDir, ...pathSegments);
+
     // Security check: Ensure the path is within uploads directory
-    const uploadsDir = path.join(process.cwd(), 'uploads');
     if (!filepath.startsWith(uploadsDir)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
-    
+
     // Check if file exists
     if (!existsSync(filepath)) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
-    
+
     // Read the file
     const file = await readFile(filepath);
-    
+
     // Determine content type
     const mimeType = getMimeType(filepath);
-    
+
     // Return the file with appropriate headers
     return new NextResponse(file as BodyInit, {
       headers: {

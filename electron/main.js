@@ -168,6 +168,12 @@ function buildMenu() {
           accelerator: "CmdOrCtrl+9",
           click: () => mainWindow?.loadURL(`${getBaseUrl()}/dashboard/staff`),
         },
+        {
+          label: "Notifications",
+          accelerator: "CmdOrCtrl+N",
+          click: () =>
+            mainWindow?.loadURL(`${getBaseUrl()}/dashboard/notifications`),
+        },
         { type: "separator" },
         {
           label: "Settings",
@@ -523,6 +529,8 @@ function createWindow() {
     width: 1200,
     height: 800,
     show: true, // Show immediately with loading screen
+    fullscreen: false, // Explicitly disable fullscreen
+    fullscreenable: true, // Allow user to toggle fullscreen manually
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -706,21 +714,21 @@ function startServer() {
       ? path.join(process.resourcesPath, "app.asar.unpacked")
       : path.join(__dirname, "..");
 
-  // For DB template, read from template.db in the root
-  const templatePath = path.join(__dirname, "..", "template.db");
+    // For DB template, read from template.db in the root
+    const templatePath = path.join(__dirname, "..", "template.db");
 
-  // If database doesn't exist, create it from template
-  if (!fs.existsSync(dbPath)) {
-    log.info("Database not found. Initializing from template...");
-    try {
-      initializeDatabase(dbPath, templatePath);
-      log.info(`Initialized new database at ${dbPath}`);
-    } catch (err) {
-      log.error(`Failed to initialize database: ${err.message}`);
+    // If database doesn't exist, create it from template
+    if (!fs.existsSync(dbPath)) {
+      log.info("Database not found. Initializing from template...");
+      try {
+        initializeDatabase(dbPath, templatePath);
+        log.info(`Initialized new database at ${dbPath}`);
+      } catch (err) {
+        log.error(`Failed to initialize database: ${err.message}`);
+      }
+    } else {
+      log.info(`Using existing database at ${dbPath}`);
     }
-  } else {
-    log.info(`Using existing database at ${dbPath}`);
-  }
 
     // Ensure backup directory exists
     if (!fs.existsSync(backupDir)) {
@@ -750,11 +758,11 @@ function startServer() {
     log.info(`Running: ${nodeExecutable} ${args.join(" ")}`);
     log.info(`Working directory: ${appPath}`);
 
-  // Check if script/bin exists
-  const targetScript = app.isPackaged ? serverScript : args[0];
-  if (!fs.existsSync(targetScript)) {
-    log.error(`Server script/binary not found at: ${targetScript}`);
-  }
+    // Check if script/bin exists
+    const targetScript = app.isPackaged ? serverScript : args[0];
+    if (!fs.existsSync(targetScript)) {
+      log.error(`Server script/binary not found at: ${targetScript}`);
+    }
 
     serverProcess = spawn(nodeExecutable, args, {
       cwd: appPath,
@@ -764,6 +772,7 @@ function startServer() {
         NODE_ENV: "production",
         SQLITE_DB_PATH: dbPath,
         BACKUP_DIR: backupDir,
+        UPLOAD_DIR: path.join(userDataPath, "uploads"), // Store uploads in userData for persistence
         ELECTRON_RUN_AS_NODE: "1", // Make Electron act as Node.js
       },
     });
@@ -806,8 +815,9 @@ function startServer() {
       }
     });
 
-  serverProcess.on("exit", (code) => {
-    log.info(`Server process exited with code ${code}`);
+    serverProcess.on("exit", (code) => {
+      log.info(`Server process exited with code ${code}`);
+    });
   });
 }
 
@@ -941,6 +951,10 @@ ipcMain.handle("get-machine-id", () => {
 
 ipcMain.handle("get-license-info", () => {
   return license.getLicenseInfo();
+});
+
+ipcMain.handle("deactivate-license", () => {
+  return license.deactivateLicense();
 });
 
 ipcMain.on("open-logs-window", () => {

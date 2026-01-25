@@ -3,7 +3,7 @@ import Database from 'better-sqlite3'
 import path from 'path'
 
 function getDb(): Database.Database {
-  const dbPath = path.join(process.cwd(), 'loungeos.db')
+  const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'loungeos.db')
   return new Database(dbPath)
 }
 
@@ -12,7 +12,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const db = getDb()
-  
+
   try {
     const { is_pinned } = await request.json()
     const { id } = await params
@@ -23,9 +23,9 @@ export async function PUT(
       SET is_pinned = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `)
-    
+
     const result = stmt.run(is_pinned ? 1 : 0, noteId)
-    
+
     if (result.changes === 0) {
       return Response.json(
         { error: 'Note not found' },
@@ -47,9 +47,9 @@ export async function PUT(
       FROM notes 
       WHERE id = ?
     `)
-    
+
     const note: any = getStmt.get(noteId)
-    
+
     if (!note) {
       return Response.json(
         { error: 'Note not found' },

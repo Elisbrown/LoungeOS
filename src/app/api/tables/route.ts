@@ -1,6 +1,6 @@
 // src/app/api/tables/route.ts
 import { NextResponse } from 'next/server';
-import { getTables, addTable, updateTable } from '@/lib/db/tables';
+import { getTables, addTable, updateTable, deleteTable } from '@/lib/db/tables';
 import { addActivityLog } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
 
@@ -63,5 +63,35 @@ export async function PUT(request: Request) {
         return NextResponse.json(updatedTable);
     } catch (error: any) {
         return NextResponse.json({ message: 'Failed to update table', error: error.message }, { status: 500 });
+    }
+}
+
+export async function DELETE(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+        const userEmail = searchParams.get('userEmail');
+
+        if (!id) {
+            return NextResponse.json({ message: 'ID query parameter is required' }, { status: 400 });
+        }
+
+        const deleted = await deleteTable(id);
+
+        if (!deleted) {
+            return NextResponse.json({ message: 'Table not found' }, { status: 404 });
+        }
+
+        const actorId = await getActorId(userEmail || undefined);
+        await addActivityLog(
+            actorId,
+            'TABLE_DELETE',
+            `Deleted table with ID: ${id}`,
+            id
+        );
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ message: 'Failed to delete table', error: error.message }, { status: 500 });
     }
 }

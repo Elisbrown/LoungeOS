@@ -24,6 +24,7 @@ import {
 import { AddTableForm } from "./add-table-form"
 import { ManageFloorsDialog } from "./manage-floors-dialog"
 import { ManageTablesDialog } from "./manage-tables-dialog"
+import { EditTableDialog } from "./edit-table-dialog"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { useAuth } from "@/context/auth-context"
 import type { Table } from "@/context/table-context"
@@ -39,6 +40,7 @@ export function TablesView() {
   const { toast } = useToast()
   const { t } = useTranslation()
   const [deletingTable, setDeletingTable] = useState<Table | null>(null)
+  const [editingTable, setEditingTable] = useState<Table | null>(null)
 
   const canManage = user?.role === "Manager" || user?.role === "Super Admin"
 
@@ -145,7 +147,10 @@ export function TablesView() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>{t('tables.tableActions')}</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem
+                        onClick={(e) => e.stopPropagation()}
+                        onSelect={() => setEditingTable(table)}
+                      >
                         <Edit className="mr-2 h-4 w-4" />
                         {t('dialogs.edit')}
                       </DropdownMenuItem>
@@ -188,6 +193,12 @@ export function TablesView() {
           </Card>
         ))}
       </div>
+
+      <EditTableDialog
+        table={editingTable}
+        open={!!editingTable}
+        onOpenChange={(isOpen) => !isOpen && setEditingTable(null)}
+      />
 
       <DeleteConfirmationDialog
         open={!!deletingTable}

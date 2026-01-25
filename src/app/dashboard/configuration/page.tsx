@@ -59,7 +59,7 @@ function GeneralSettings() {
         contactAddress: settings.contactAddress,
         contactPhone: settings.contactPhone,
     })
-    
+
     // Tunnel State
     const [tunnelStatus, setTunnelStatus] = React.useState<{ isRunning: boolean; url?: string }>({ isRunning: false })
     const [isTunnelLoading, setIsTunnelLoading] = React.useState(false)
@@ -72,7 +72,7 @@ function GeneralSettings() {
 
     const toggleTunnel = async () => {
         if (!((window as any).electron)) return
-        
+
         setIsTunnelLoading(true)
         try {
             if (tunnelStatus.isRunning) {
@@ -87,12 +87,12 @@ function GeneralSettings() {
                     setTunnelStatus({ isRunning: true, url: res.url })
                     toast({ title: "Public Access Enabled", description: "Your platform is now accessible publicly." })
                 } else {
-                     toast({ variant: "destructive", title: "Failed to start", description: res.error || "Unknown error" })
+                    toast({ variant: "destructive", title: "Failed to start", description: res.error || "Unknown error" })
                 }
             }
         } catch (error) {
             console.error(error)
-             toast({ variant: "destructive", title: "Error", description: "Tunnel operation failed" })
+            toast({ variant: "destructive", title: "Error", description: "Tunnel operation failed" })
         } finally {
             setIsTunnelLoading(false)
         }
@@ -104,7 +104,7 @@ function GeneralSettings() {
             toast({ title: "Copied!", description: "Public URL copied to clipboard." })
         }
     }
-    
+
     React.useEffect(() => {
         setLocalSettings({
             platformName: settings.platformName,
@@ -118,7 +118,7 @@ function GeneralSettings() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setLocalSettings(prev => ({...prev, [name]: value }))
+        setLocalSettings(prev => ({ ...prev, [name]: value }))
     }
 
     const handleSave = async (e: React.FormEvent) => {
@@ -129,9 +129,9 @@ function GeneralSettings() {
         if (localSettings.platformLogo !== settings.platformLogo) {
             await updateSetting('platformLogo', localSettings.platformLogo)
         }
-        toast({ title: t('toasts.settingsSaved'), description: t('toasts.generalSettingsDesc')})
+        toast({ title: t('toasts.settingsSaved'), description: t('toasts.generalSettingsDesc') })
     }
-    
+
     const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
         if (file) {
@@ -140,15 +140,15 @@ function GeneralSettings() {
                 formData.append('file', file)
                 formData.append('type', 'logo')
                 formData.append('userEmail', user?.email || 'system')
-                
+
                 const response = await fetch('/api/settings', {
                     method: 'POST',
                     body: formData
                 })
-                
+
                 if (response.ok) {
                     const result = await response.json()
-                    setLocalSettings(prev => ({...prev, platformLogo: result.imagePath }))
+                    setLocalSettings(prev => ({ ...prev, platformLogo: result.imagePath }))
                     // Immediately persist the logo path to settings
                     await updateSetting('platformLogo', result.imagePath)
                     toast({ title: t('toasts.logoUpdated'), description: t('toasts.logoUpdatedDesc') })
@@ -156,17 +156,17 @@ function GeneralSettings() {
                     throw new Error('Upload failed')
                 }
             } catch (error) {
-                toast({ 
+                toast({
                     variant: "destructive",
-                    title: t('toasts.error'), 
-                    description: t('toasts.logoUploadFailed') 
+                    title: t('toasts.error'),
+                    description: t('toasts.logoUploadFailed')
                 })
             }
         }
     }
-    
+
     const removeLogo = () => {
-        setLocalSettings(prev => ({...prev, platformLogo: ''}));
+        setLocalSettings(prev => ({ ...prev, platformLogo: '' }));
     }
 
     return (
@@ -177,7 +177,7 @@ function GeneralSettings() {
                     <Input id="platformName" name="platformName" value={localSettings.platformName} onChange={handleInputChange} />
                     <p className="text-sm text-muted-foreground">{t('config.general.platformNameDesc')}</p>
                 </div>
-                 <div className="space-y-2">
+                <div className="space-y-2">
                     <Label>{t('config.general.platformLogo')}</Label>
                     <div className="flex items-center gap-4">
                         <div className="relative group/logo">
@@ -206,13 +206,13 @@ function GeneralSettings() {
                     <Label htmlFor="organizationName">{t('config.general.orgName')}</Label>
                     <Input id="organizationName" name="organizationName" value={localSettings.organizationName} onChange={handleInputChange} />
                 </div>
-                
-              
-                 <div className="space-y-2">
+
+
+                <div className="space-y-2">
                     <Label htmlFor="contactAddress">{t('config.general.contactAddress')}</Label>
                     <Input id="contactAddress" name="contactAddress" value={localSettings.contactAddress} onChange={handleInputChange} />
                 </div>
-                 <div className="space-y-2">
+                <div className="space-y-2">
                     <Label htmlFor="contactPhone">{t('config.general.contactPhone')}</Label>
                     <Input id="contactPhone" name="contactPhone" value={localSettings.contactPhone} onChange={handleInputChange} />
                 </div>
@@ -231,8 +231,8 @@ function GeneralSettings() {
                                         <p className="font-medium">System Logs & Network</p>
                                         <p className="text-sm text-muted-foreground">Monitor terminal logs and view local network addresses.</p>
                                     </div>
-                                    <Button 
-                                        type="button" 
+                                    <Button
+                                        type="button"
                                         variant="outline"
                                         onClick={() => (window as any).electron.openLogs()}
                                     >
@@ -246,24 +246,24 @@ function GeneralSettings() {
                                         <p className="font-medium">Data & Backups</p>
                                         <p className="text-sm text-muted-foreground">Access your database files and local backups.</p>
                                     </div>
-                                    <Button 
-                                        type="button" 
+                                    <Button
+                                        type="button"
                                         variant="outline"
                                         onClick={() => (window as any).electron.openDataFolder()}
                                     >
-                                        <Database className="mr-2 h-4 w-4" /> 
+                                        <Database className="mr-2 h-4 w-4" />
                                         Open Data Folder
                                     </Button>
                                 </div>
                                 <Separator />
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-1">
-                                         <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2">
                                             <p className="font-medium">Public Access</p>
                                             {tunnelStatus.isRunning && <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Live</span>}
-                                         </div>
+                                        </div>
                                         <p className="text-sm text-muted-foreground">Generate a secure public URL for remote access.</p>
-                                        
+
                                         {tunnelStatus.isRunning && tunnelStatus.url && (
                                             <div className="flex items-center gap-2 mt-2 bg-background border p-2 rounded-md max-w-sm">
                                                 <Globe className="h-3 w-3 text-muted-foreground flex-shrink-0" />
@@ -275,12 +275,12 @@ function GeneralSettings() {
                                         )}
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
-                                         <Switch 
+                                        <Switch
                                             checked={tunnelStatus.isRunning}
                                             onCheckedChange={toggleTunnel}
                                             disabled={isTunnelLoading}
-                                         />
-                                         <span className="text-xs text-muted-foreground">{isTunnelLoading ? "Processing..." : (tunnelStatus.isRunning ? "Enabled" : "Disabled")}</span>
+                                        />
+                                        <span className="text-xs text-muted-foreground">{isTunnelLoading ? "Processing..." : (tunnelStatus.isRunning ? "Enabled" : "Disabled")}</span>
                                     </div>
                                 </div>
                             </div>
@@ -299,11 +299,13 @@ function AppearanceSettings() {
     const { settings, updateSetting, addTheme, deleteTheme, applyTheme } = useSettings()
     const { t } = useTranslation()
     const { toast } = useToast()
+    const { user } = useAuth()
     const [newThemeName, setNewThemeName] = React.useState("")
+    const canDelete = user?.role === 'Super Admin'
 
     const handleAddTheme = async () => {
         if (!newThemeName.trim()) {
-            toast({ variant: "destructive", title: t('toasts.invalidName'), description: t('toasts.themeNameEmpty')})
+            toast({ variant: "destructive", title: t('toasts.invalidName'), description: t('toasts.themeNameEmpty') })
             return
         }
         await addTheme({
@@ -315,12 +317,12 @@ function AppearanceSettings() {
             }
         })
         setNewThemeName("")
-        toast({ title: t('toasts.themeAdded'), description: t('toasts.themeAddedDesc', { name: newThemeName })})
+        toast({ title: t('toasts.themeAdded'), description: t('toasts.themeAddedDesc', { name: newThemeName }) })
     }
 
     const handleColorChange = async (themeName: string, colorType: 'primary' | 'background' | 'accent', value: string) => {
         const theme = settings.themes.find(t => t.name === themeName)
-        if(theme) {
+        if (theme) {
             const updatedTheme = {
                 ...theme,
                 colors: { ...theme.colors, [colorType]: value }
@@ -347,13 +349,13 @@ function AppearanceSettings() {
             </div>
             <Separator />
             <div>
-                 <h3 className="font-medium mb-4">{t('config.appearance.editThemes')}</h3>
-                 <div className="space-y-6">
+                <h3 className="font-medium mb-4">{t('config.appearance.editThemes')}</h3>
+                <div className="space-y-6">
                     {settings.themes.map(theme => (
                         <Card key={theme.name}>
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle className="text-lg">{theme.name}</CardTitle>
-                                {theme.name !== "Default" && (
+                                {theme.name !== "Default" && canDelete && (
                                     <Button variant="destructive" size="sm" onClick={() => deleteTheme(theme.name)}>{t('dialogs.delete')}</Button>
                                 )}
                             </CardHeader>
@@ -362,7 +364,7 @@ function AppearanceSettings() {
                                     <Label htmlFor={`primary-${theme.name}`}>{t('config.appearance.primaryColor')}</Label>
                                     <Input id={`primary-${theme.name}`} type="color" value={theme.colors.primary} onChange={(e) => handleColorChange(theme.name, 'primary', e.target.value)} className="h-10 p-1" />
                                 </div>
-                                 <div className="space-y-2">
+                                <div className="space-y-2">
                                     <Label htmlFor={`background-${theme.name}`}>{t('config.appearance.bgColor')}</Label>
                                     <Input id={`background-${theme.name}`} type="color" value={theme.colors.background} onChange={(e) => handleColorChange(theme.name, 'background', e.target.value)} className="h-10 p-1" />
                                 </div>
@@ -373,16 +375,16 @@ function AppearanceSettings() {
                             </CardContent>
                         </Card>
                     ))}
-                 </div>
+                </div>
             </div>
-             <Separator />
-             <div>
+            <Separator />
+            <div>
                 <h3 className="font-medium mb-2">{t('config.appearance.addNewTheme')}</h3>
                 <div className="flex items-center gap-2">
                     <Input placeholder={t('config.appearance.newThemeName')} value={newThemeName} onChange={e => setNewThemeName(e.target.value)} />
                     <Button onClick={handleAddTheme}>{t('config.appearance.addTheme')}</Button>
                 </div>
-             </div>
+            </div>
         </CardContent>
     )
 }
@@ -408,7 +410,7 @@ function ReceiptSettings() {
         receiptLineSpacing: settings.receiptLineSpacing,
         receiptFont: settings.receiptFont,
     })
-    
+
     React.useEffect(() => {
         setLocalSettings({
             receiptHeader: settings.receiptHeader,
@@ -423,23 +425,23 @@ function ReceiptSettings() {
     const handleFieldChange = (index: number, key: 'label' | 'value', value: string) => {
         const newFields = [...localSettings.receiptCustomFields];
         newFields[index][key] = value;
-        setLocalSettings(prev => ({...prev, receiptCustomFields: newFields}));
+        setLocalSettings(prev => ({ ...prev, receiptCustomFields: newFields }));
     }
 
     const addField = () => {
-        setLocalSettings(prev => ({...prev, receiptCustomFields: [...prev.receiptCustomFields, { label: 'New Field', value: 'Value' }]}));
+        setLocalSettings(prev => ({ ...prev, receiptCustomFields: [...prev.receiptCustomFields, { label: 'New Field', value: 'Value' }] }));
     }
 
     const removeField = (index: number) => {
-        setLocalSettings(prev => ({...prev, receiptCustomFields: prev.receiptCustomFields.filter((_, i) => i !== index)}));
+        setLocalSettings(prev => ({ ...prev, receiptCustomFields: prev.receiptCustomFields.filter((_, i) => i !== index) }));
     }
-    
+
     const handleSave = async () => {
         const newSettings = { ...settings, ...localSettings }
         await setSettings(newSettings)
-        toast({ title: t('toasts.settingsSaved'), description: t('toasts.receiptSettingsDesc')})
+        toast({ title: t('toasts.settingsSaved'), description: t('toasts.receiptSettingsDesc') })
     }
-    
+
     const receiptProps = {
         type: 'Receipt' as const,
         orderId: 'PAY-PREVIEW',
@@ -472,10 +474,10 @@ function ReceiptSettings() {
                 <div className="space-y-6">
                     <div className="space-y-2">
                         <Label htmlFor="receiptHeader">{t('config.receipt.header')}</Label>
-                        <Input id="receiptHeader" value={localSettings.receiptHeader} onChange={(e) => setLocalSettings(p => ({...p, receiptHeader: e.target.value}))} />
+                        <Input id="receiptHeader" value={localSettings.receiptHeader} onChange={(e) => setLocalSettings(p => ({ ...p, receiptHeader: e.target.value }))} />
                         <p className="text-sm text-muted-foreground">{t('config.receipt.headerDesc')}</p>
                     </div>
-                     <div className="space-y-4">
+                    <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <Label>{t('config.receipt.customFields')}</Label>
                             <Button variant="ghost" size="sm" onClick={addField}><PlusCircle className="mr-2 h-4 w-4" /> {t('config.receipt.addField')}</Button>
@@ -492,19 +494,19 @@ function ReceiptSettings() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="receiptFooter">{t('config.receipt.footer')}</Label>
-                        <Input id="receiptFooter" value={localSettings.receiptFooter} onChange={(e) => setLocalSettings(p => ({...p, receiptFooter: e.target.value}))} />
-                         <p className="text-sm text-muted-foreground">{t('config.receipt.footerDesc')}</p>
+                        <Input id="receiptFooter" value={localSettings.receiptFooter} onChange={(e) => setLocalSettings(p => ({ ...p, receiptFooter: e.target.value }))} />
+                        <p className="text-sm text-muted-foreground">{t('config.receipt.footerDesc')}</p>
                     </div>
                     <Separator />
                     <div className="space-y-4">
                         <Label>{t('config.receipt.styling')}</Label>
                         <div className="flex items-center space-x-2">
-                            <input type="checkbox" id="receiptShowWaiter" checked={localSettings.receiptShowWaiter} onChange={(e) => setLocalSettings(p => ({...p, receiptShowWaiter: e.target.checked}))} className="h-4 w-4" />
+                            <input type="checkbox" id="receiptShowWaiter" checked={localSettings.receiptShowWaiter} onChange={(e) => setLocalSettings(p => ({ ...p, receiptShowWaiter: e.target.checked }))} className="h-4 w-4" />
                             <Label htmlFor="receiptShowWaiter">{t('config.receipt.showWaiter')}</Label>
                         </div>
                         <div className="space-y-2">
                             <Label>{t('config.receipt.fontFamily')}</Label>
-                             <Select value={localSettings.receiptFont} onValueChange={(v) => setLocalSettings(p => ({...p, receiptFont: v as any}))}>
+                            <Select value={localSettings.receiptFont} onValueChange={(v) => setLocalSettings(p => ({ ...p, receiptFont: v as any }))}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -519,7 +521,7 @@ function ReceiptSettings() {
                             <Label>{t('config.receipt.lineSpacing')}</Label>
                             <Slider
                                 value={[localSettings.receiptLineSpacing]}
-                                onValueChange={([v]) => setLocalSettings(p => ({...p, receiptLineSpacing: v}))}
+                                onValueChange={([v]) => setLocalSettings(p => ({ ...p, receiptLineSpacing: v }))}
                                 max={2}
                                 min={1}
                                 step={0.1}
@@ -556,25 +558,25 @@ function LoginScreenSettings() {
                 formData.append('file', file)
                 formData.append('type', 'carousel')
                 formData.append('userEmail', user?.email || 'system')
-                
+
                 const response = await fetch('/api/settings', {
                     method: 'POST',
                     body: formData
                 })
-                
+
                 if (response.ok) {
                     const result = await response.json()
                     const newImages = [...(settings.loginCarouselImages || []), result.imagePath]
                     await updateSetting('loginCarouselImages', newImages)
-                    toast({ title: "Image Added", description: "New image added to the login screen carousel."})
+                    toast({ title: "Image Added", description: "New image added to the login screen carousel." })
                 } else {
                     throw new Error('Upload failed')
                 }
             } catch (error) {
-                toast({ 
+                toast({
                     variant: "destructive",
-                    title: t('toasts.error'), 
-                    description: "Failed to upload image" 
+                    title: t('toasts.error'),
+                    description: "Failed to upload image"
                 })
             }
         }
@@ -583,7 +585,7 @@ function LoginScreenSettings() {
     const removeImage = async (index: number) => {
         const imageToRemove = settings.loginCarouselImages?.[index]
         const newImages = (settings.loginCarouselImages || []).filter((_, i) => i !== index)
-        
+
         // Delete the image file if it's a local upload
         if (imageToRemove && imageToRemove.startsWith('/uploads/')) {
             try {
@@ -594,11 +596,11 @@ function LoginScreenSettings() {
                 console.error('Failed to delete image file:', error)
             }
         }
-        
+
         await updateSetting('loginCarouselImages', newImages)
-        toast({ title: "Image Removed", description: "Image removed from the login screen carousel."})
+        toast({ title: "Image Removed", description: "Image removed from the login screen carousel." })
     }
-    
+
     return (
         <CardContent className="space-y-6">
             <div className="space-y-2">
@@ -619,18 +621,18 @@ function LoginScreenSettings() {
                                     autoPlay
                                 />
                             ) : (
-                                <Image 
-                                    src={mediaSrc} 
-                                    alt={`Login Background ${index + 1}`} 
-                                    width={200} 
+                                <Image
+                                    src={mediaSrc}
+                                    alt={`Login Background ${index + 1}`}
+                                    width={200}
                                     height={200}
                                     className="rounded-lg object-cover aspect-video"
                                     unoptimized
                                 />
                             )}
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity">
-                                <Button 
-                                    variant="destructive" 
+                                <Button
+                                    variant="destructive"
                                     size="icon"
                                     onClick={() => removeImage(index)}
                                 >
@@ -640,7 +642,7 @@ function LoginScreenSettings() {
                         </div>
                     );
                 })}
-                <div 
+                <div
                     className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer aspect-video hover:bg-muted"
                     onClick={() => fileInputRef.current?.click()}
                 >
@@ -667,7 +669,7 @@ function FinancialSettings() {
             toast({ title: "Error", description: "Please fill in all currency fields", variant: "destructive" })
             return
         }
-        
+
         if (settings.availableCurrencies.some(c => c.code === newCurrency.code)) {
             toast({ title: "Error", description: "Currency code already exists", variant: "destructive" })
             return
@@ -898,9 +900,9 @@ function FinancialSettings() {
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <Switch 
-                                                    checked={rule.isActive} 
-                                                    onCheckedChange={(checked) => toggleDiscountRule(rule.id, checked)} 
+                                                <Switch
+                                                    checked={rule.isActive}
+                                                    onCheckedChange={(checked) => toggleDiscountRule(rule.id, checked)}
                                                 />
                                                 <Button variant="outline" size="sm" onClick={() => handleDeleteDiscountRule(rule.id)}>
                                                     <Trash2 className="h-4 w-4" />
@@ -927,24 +929,24 @@ function FinancialSettings() {
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label>{t('settings.currencyCode')}</Label>
-                            <Input 
-                                value={newCurrency.code} 
+                            <Input
+                                value={newCurrency.code}
                                 onChange={(e) => setNewCurrency({ ...newCurrency, code: e.target.value.toUpperCase() })}
                                 placeholder="USD"
                             />
                         </div>
                         <div className="space-y-2">
                             <Label>{t('settings.currencyName')}</Label>
-                            <Input 
-                                value={newCurrency.name} 
+                            <Input
+                                value={newCurrency.name}
                                 onChange={(e) => setNewCurrency({ ...newCurrency, name: e.target.value })}
                                 placeholder="United States Dollar"
                             />
                         </div>
                         <div className="space-y-2">
                             <Label>{t('settings.currencySymbol')}</Label>
-                            <Input 
-                                value={newCurrency.symbol} 
+                            <Input
+                                value={newCurrency.symbol}
                                 onChange={(e) => setNewCurrency({ ...newCurrency, symbol: e.target.value })}
                                 placeholder="$"
                             />
@@ -985,17 +987,17 @@ function FinancialSettings() {
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label>{t('settings.taxRateName')}</Label>
-                            <Input 
-                                value={newTaxRate.name} 
+                            <Input
+                                value={newTaxRate.name}
                                 onChange={(e) => setNewTaxRate({ ...newTaxRate, name: e.target.value })}
                                 placeholder="Value Added Tax (VAT)"
                             />
                         </div>
                         <div className="space-y-2">
                             <Label>{t('settings.taxRatePercentage')}</Label>
-                            <Input 
+                            <Input
                                 type="number"
-                                value={newTaxRate.rate} 
+                                value={newTaxRate.rate}
                                 onChange={(e) => setNewTaxRate({ ...newTaxRate, rate: parseFloat(e.target.value) || 0 })}
                                 placeholder="19"
                                 min="0"
@@ -1004,8 +1006,8 @@ function FinancialSettings() {
                             />
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Checkbox 
-                                id="isDefault" 
+                            <Checkbox
+                                id="isDefault"
                                 checked={newTaxRate.isDefault}
                                 onCheckedChange={(checked) => setNewTaxRate({ ...newTaxRate, isDefault: checked as boolean })}
                             />
@@ -1035,8 +1037,8 @@ function FinancialSettings() {
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label>{t('settings.discountRuleName')}</Label>
-                            <Input 
-                                value={newDiscountRule.name} 
+                            <Input
+                                value={newDiscountRule.name}
                                 onChange={(e) => setNewDiscountRule({ ...newDiscountRule, name: e.target.value })}
                                 placeholder="10% Student Discount"
                             />
@@ -1055,9 +1057,9 @@ function FinancialSettings() {
                         </div>
                         <div className="space-y-2">
                             <Label>{t('settings.discountValue')}</Label>
-                            <Input 
+                            <Input
                                 type="number"
-                                value={newDiscountRule.value} 
+                                value={newDiscountRule.value}
                                 onChange={(e) => setNewDiscountRule({ ...newDiscountRule, value: parseFloat(e.target.value) || 0 })}
                                 placeholder={newDiscountRule.type === 'percentage' ? "10" : "1000"}
                                 min="0"
@@ -1079,49 +1081,331 @@ function FinancialSettings() {
     )
 }
 
+// Database tables that can be reset (excluding users to protect super admin)
+const RESETTABLE_TABLES = [
+    { id: 'orders', name: 'Orders', description: 'All order history and transactions' },
+    { id: 'products', name: 'Menu Items', description: 'All menu products and meals' },
+    { id: 'inventory_items', name: 'Inventory Items', description: 'All inventory stock items' },
+    { id: 'inventory_movements', name: 'Inventory Movements', description: 'Stock movement history' },
+    { id: 'tables', name: 'Tables', description: 'All table configurations' },
+    { id: 'floors', name: 'Floors', description: 'All floor/section configurations' },
+    { id: 'categories', name: 'Categories', description: 'Product categories' },
+    { id: 'activity_logs', name: 'Activity Logs', description: 'System activity history' },
+    { id: 'notes', name: 'Notes', description: 'Dashboard notes' },
+    { id: 'events', name: 'Events', description: 'Calendar events' },
+    { id: 'accounting_entries', name: 'Accounting Entries', description: 'Journal entries and transactions' },
+]
+
+const MASTER_PIN = '2304'
+
+function SubscriptionSettings() {
+    const { t } = useTranslation()
+    const { toast } = useToast()
+    const { user } = useAuth()
+
+    // License info state
+    const [licenseInfo, setLicenseInfo] = React.useState<any>(null)
+    const [showCancelDialog, setShowCancelDialog] = React.useState(false)
+    const [isCancelling, setIsCancelling] = React.useState(false)
+
+    // Database reset state
+    const [selectedTables, setSelectedTables] = React.useState<string[]>([])
+    const [masterPin, setMasterPin] = React.useState('')
+    const [showResetDialog, setShowResetDialog] = React.useState(false)
+    const [isResetting, setIsResetting] = React.useState(false)
+
+    React.useEffect(() => {
+        if ((window as any).electron?.getLicenseInfo) {
+            (window as any).electron.getLicenseInfo().then((info: any) => {
+                setLicenseInfo(info)
+            })
+        }
+    }, [])
+
+    const handleCancelSubscription = async () => {
+        if (!(window as any).electron?.deactivateLicense) {
+            toast({ variant: "destructive", title: "Error", description: "This feature is only available in the desktop app." })
+            return
+        }
+
+        setIsCancelling(true)
+        try {
+            const result = await (window as any).electron.deactivateLicense()
+            if (result.success) {
+                toast({ title: "Subscription Cancelled", description: "Your license has been removed. The app will restart." })
+                // Restart the app
+                setTimeout(() => {
+                    if ((window as any).electron) {
+                        window.location.reload()
+                    }
+                }, 2000)
+            } else {
+                toast({ variant: "destructive", title: "Error", description: result.error || "Failed to cancel subscription" })
+            }
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "Failed to cancel subscription" })
+        } finally {
+            setIsCancelling(false)
+            setShowCancelDialog(false)
+        }
+    }
+
+    const handleDatabaseReset = async () => {
+        if (masterPin !== MASTER_PIN) {
+            toast({ variant: "destructive", title: "Invalid PIN", description: "The master PIN is incorrect." })
+            return
+        }
+
+        if (selectedTables.length === 0) {
+            toast({ variant: "destructive", title: "No Tables Selected", description: "Please select at least one table to reset." })
+            return
+        }
+
+        setIsResetting(true)
+        try {
+            const response = await fetch('/api/database-reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tables: selectedTables,
+                    masterPin,
+                    userEmail: user?.email
+                })
+            })
+
+            const result = await response.json()
+
+            if (response.ok) {
+                toast({ title: "Database Reset", description: `Successfully reset ${selectedTables.length} table(s).` })
+                setSelectedTables([])
+                setMasterPin('')
+                setShowResetDialog(false)
+            } else {
+                toast({ variant: "destructive", title: "Reset Failed", description: result.error || "Failed to reset database tables" })
+            }
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "Failed to reset database" })
+        } finally {
+            setIsResetting(false)
+        }
+    }
+
+    const toggleTable = (tableId: string) => {
+        setSelectedTables(prev =>
+            prev.includes(tableId)
+                ? prev.filter(t => t !== tableId)
+                : [...prev, tableId]
+        )
+    }
+
+    return (
+        <>
+            <CardContent className="space-y-6">
+                {/* License Info */}
+                {(typeof window !== 'undefined' && (window as any).electron) && (
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-medium">License Information</h3>
+                        {licenseInfo ? (
+                            <div className="bg-muted/50 p-4 rounded-lg border space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Licensee:</span>
+                                    <span className="font-medium">{licenseInfo.licensee}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Type:</span>
+                                    <Badge variant="secondary">{licenseInfo.type}</Badge>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Expires:</span>
+                                    <span className="font-medium">{new Date(licenseInfo.expiresAt).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Days Remaining:</span>
+                                    <span className={`font-medium ${licenseInfo.daysRemaining <= 30 ? 'text-yellow-500' : 'text-green-500'}`}>
+                                        {licenseInfo.daysRemaining} days
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground">License information not available.</p>
+                        )}
+
+                        <Separator />
+
+                        <div className="space-y-2">
+                            <h4 className="font-medium text-destructive">Danger Zone</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Cancelling your subscription will remove the license from this machine.
+                                The app will no longer be functional until a new license is activated.
+                            </p>
+                            <Button
+                                variant="destructive"
+                                onClick={() => setShowCancelDialog(true)}
+                            >
+                                Cancel Subscription
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                <Separator />
+
+                {/* Database Reset */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                        <Database className="h-5 w-5" />
+                        Database Reset
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                        Reset selected database tables to clear data. This action is irreversible.
+                        Your Super Admin account will be preserved.
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {RESETTABLE_TABLES.map(table => (
+                            <div
+                                key={table.id}
+                                className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedTables.includes(table.id)
+                                    ? 'border-destructive bg-destructive/10'
+                                    : 'hover:bg-muted/50'
+                                    }`}
+                                onClick={() => toggleTable(table.id)}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Checkbox
+                                        checked={selectedTables.includes(table.id)}
+                                        onCheckedChange={() => toggleTable(table.id)}
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                    <div>
+                                        <p className="font-medium">{table.name}</p>
+                                        <p className="text-xs text-muted-foreground">{table.description}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {selectedTables.length > 0 && (
+                        <div className="space-y-3">
+                            <div className="space-y-2">
+                                <Label>Master PIN</Label>
+                                <Input
+                                    type="password"
+                                    placeholder="Enter master PIN to confirm"
+                                    value={masterPin}
+                                    onChange={(e) => setMasterPin(e.target.value)}
+                                    maxLength={4}
+                                />
+                            </div>
+                            <Button
+                                variant="destructive"
+                                onClick={() => setShowResetDialog(true)}
+                                disabled={!masterPin || selectedTables.length === 0}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Reset {selectedTables.length} Table(s)
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </CardContent>
+
+            {/* Cancel Subscription Dialog */}
+            <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="text-destructive">Cancel Subscription?</DialogTitle>
+                        <DialogDescription>
+                            This will remove your license from this machine. The app will restart and require a new license to function.
+                            Are you absolutely sure?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+                            Keep Subscription
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleCancelSubscription}
+                            disabled={isCancelling}
+                        >
+                            {isCancelling ? "Cancelling..." : "Yes, Cancel Subscription"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Database Reset Dialog */}
+            <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="text-destructive">Confirm Database Reset</DialogTitle>
+                        <DialogDescription>
+                            You are about to permanently delete data from {selectedTables.length} table(s):
+                            <ul className="mt-2 list-disc list-inside">
+                                {selectedTables.map(t => (
+                                    <li key={t}>{RESETTABLE_TABLES.find(rt => rt.id === t)?.name}</li>
+                                ))}
+                            </ul>
+                            <p className="mt-2 font-medium text-destructive">This action cannot be undone!</p>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowResetDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDatabaseReset}
+                            disabled={isResetting}
+                        >
+                            {isResetting ? "Resetting..." : "Confirm Reset"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
+    )
+}
+
 function ConfigurationPageContent() {
     const { t } = useTranslation()
     const { user } = useAuth()
     const isSuperAdmin = user?.role === 'Super Admin'
 
     return (
-        <Tabs defaultValue={isSuperAdmin ? "general" : "appearance"} className="w-full">
+        <Tabs defaultValue="general" className="w-full">
             <TabsList className="grid w-full grid-cols-5">
-                {isSuperAdmin && (
-                    <TabsTrigger value="general">
-                        <ImageIcon className="mr-2 h-4 w-4" /> {t('config.tabs.general')}
-                    </TabsTrigger>
-                )}
+                <TabsTrigger value="general">
+                    <ImageIcon className="mr-2 h-4 w-4" /> {t('config.tabs.general')}
+                </TabsTrigger>
                 <TabsTrigger value="appearance">
                     <Palette className="mr-2 h-4 w-4" /> {t('config.tabs.appearance')}
                 </TabsTrigger>
                 <TabsTrigger value="receipt">
                     <FileText className="mr-2 h-4 w-4" /> {t('config.tabs.receipt')}
                 </TabsTrigger>
+                <TabsTrigger value="financial">
+                    <DollarSign className="mr-2 h-4 w-4" /> {t('settings.financial')}
+                </TabsTrigger>
                 {isSuperAdmin && (
-                    <TabsTrigger value="financial">
-                        <DollarSign className="mr-2 h-4 w-4" /> {t('settings.financial')}
-                    </TabsTrigger>
-                )}
-                {isSuperAdmin && (
-                    <TabsTrigger value="loginScreen">
-                        <Clapperboard className="mr-2 h-4 w-4" /> {t('config.tabs.loginScreen')}
+                    <TabsTrigger value="subscription">
+                        <Lock className="mr-2 h-4 w-4" /> Subscription
                     </TabsTrigger>
                 )}
             </TabsList>
-            
-            {isSuperAdmin && (
-                <TabsContent value="general">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{t('config.general.title')}</CardTitle>
-                            <CardDescription>{t('config.general.description')}</CardDescription>
-                        </CardHeader>
-                        <GeneralSettings />
-                    </Card>
-                </TabsContent>
-            )}
-            
+
+            <TabsContent value="general">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('config.general.title')}</CardTitle>
+                        <CardDescription>{t('config.general.description')}</CardDescription>
+                    </CardHeader>
+                    <GeneralSettings />
+                </Card>
+            </TabsContent>
+
             <TabsContent value="appearance">
                 <Card>
                     <CardHeader>
@@ -1131,7 +1415,7 @@ function ConfigurationPageContent() {
                     <AppearanceSettings />
                 </Card>
             </TabsContent>
-            
+
             <TabsContent value="receipt">
                 <Card>
                     <CardHeader>
@@ -1141,27 +1425,27 @@ function ConfigurationPageContent() {
                     <ReceiptSettings />
                 </Card>
             </TabsContent>
-            
+
+            <TabsContent value="financial">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('settings.financial')}</CardTitle>
+                        <CardDescription>{t('settings.financialDesc')}</CardDescription>
+                    </CardHeader>
+                    <FinancialSettings />
+                </Card>
+            </TabsContent>
+
+
+
             {isSuperAdmin && (
-                <TabsContent value="financial">
+                <TabsContent value="subscription">
                     <Card>
                         <CardHeader>
-                            <CardTitle>{t('settings.financial')}</CardTitle>
-                            <CardDescription>{t('settings.financialDesc')}</CardDescription>
+                            <CardTitle>Subscription & Database</CardTitle>
+                            <CardDescription>Manage your license and reset database tables.</CardDescription>
                         </CardHeader>
-                        <FinancialSettings />
-                    </Card>
-                </TabsContent>
-            )}
-            
-            {isSuperAdmin && (
-                <TabsContent value="loginScreen">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{t('config.loginScreen.title')}</CardTitle>
-                            <CardDescription>{t('config.loginScreen.description')}</CardDescription>
-                        </CardHeader>
-                        <LoginScreenSettings />
+                        <SubscriptionSettings />
                     </Card>
                 </TabsContent>
             )}

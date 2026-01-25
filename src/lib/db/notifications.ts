@@ -33,7 +33,7 @@ export async function createNotification(notification: { title: string, descript
     const createdAt = new Date().toISOString();
     try {
         db.prepare('INSERT INTO notifications (id, title, description, type, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-          .run(id, notification.title, notification.description, notification.type || 'info', notification.user_id || null, createdAt);
+            .run(id, notification.title, notification.description, notification.type || 'info', notification.user_id || null, createdAt);
         return { id, ...notification, is_read: 0, created_at: createdAt };
     } finally {
         db.close();
@@ -53,6 +53,15 @@ export async function markAllNotificationsAsRead() {
     const db = getDb();
     try {
         db.prepare('UPDATE notifications SET is_read = 1').run();
+    } finally {
+        db.close();
+    }
+}
+
+export async function clearAllNotifications() {
+    const db = getDb();
+    try {
+        db.prepare('DELETE FROM notifications').run();
     } finally {
         db.close();
     }

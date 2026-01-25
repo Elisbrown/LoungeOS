@@ -30,8 +30,9 @@ export async function POST(request: Request) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Define the upload directory
-        const uploadDir = path.join(process.cwd(), 'uploads', type);
+        // Define the upload directory - use UPLOAD_DIR env var in production (set by Electron)
+        const baseUploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+        const uploadDir = path.join(baseUploadDir, type);
         if (!existsSync(uploadDir)) {
             mkdirSync(uploadDir, { recursive: true });
         }
@@ -39,10 +40,10 @@ export async function POST(request: Request) {
         // Create a unique filename
         const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
         const filePath = path.join(uploadDir, filename);
-        
+
         // Write the file to the server
         await writeFile(filePath, buffer);
-        
+
         const actorId = await getActorId(userEmail || undefined);
         await addActivityLog(
             actorId,

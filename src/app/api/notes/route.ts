@@ -6,19 +6,19 @@ import { addActivityLog } from '@/lib/db/activity-logs';
 import { getStaffByEmail } from '@/lib/db/staff';
 
 function getDb(): Database.Database {
-  const dbPath = path.join(process.cwd(), 'loungeos.db')
+  const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'loungeos.db')
   return new Database(dbPath)
 }
 
 async function getActorId(email?: string) {
-    if (!email || email === "system") return null;
-    const user = await getStaffByEmail(email);
-    return user ? Number(user.id) : null;
+  if (!email || email === "system") return null;
+  const user = await getStaffByEmail(email);
+  return user ? Number(user.id) : null;
 }
 
 export async function GET() {
   const db = getDb()
-  
+
   try {
     // Create notes table if it doesn't exist
     db.exec(`
@@ -47,7 +47,7 @@ export async function GET() {
       FROM notes 
       ORDER BY is_pinned DESC, updated_at DESC
     `)
-    
+
     const notes = stmt.all().map((note: any) => ({
       ...note,
       tags: note.tags ? JSON.parse(note.tags) : [],
@@ -69,7 +69,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const db = getDb()
-  
+
   try {
     const body = await request.json()
     const { title, content, tags, userEmail } = body
@@ -101,9 +101,9 @@ export async function POST(request: NextRequest) {
       INSERT INTO notes (title, content, tags, user_id)
       VALUES (?, ?, ?, ?)
     `)
-    
+
     const result = stmt.run(title, content, JSON.stringify(tags || []), actorId || 1)
-    
+
     const newNote = {
       id: result.lastInsertRowid.toString(),
       title,
@@ -116,11 +116,11 @@ export async function POST(request: NextRequest) {
     }
 
     await addActivityLog(
-        actorId,
-        'NOTE_CREATE',
-        `Created note: ${title}`,
-        title,
-        { tags: tags || [] }
+      actorId,
+      'NOTE_CREATE',
+      `Created note: ${title}`,
+      title,
+      { tags: tags || [] }
     );
 
     return NextResponse.json(newNote)

@@ -20,7 +20,7 @@ function getDb(): Database.Database {
         const schema = fs.readFileSync(path.join(process.cwd(), 'docs', 'database.md'), 'utf8');
         const sqlOnly = schema.split('```sql')[1].split('```')[0];
         db.exec(sqlOnly);
-        
+
         // Create settings table if it doesn't exist
         db.exec(`
             CREATE TABLE IF NOT EXISTS settings (
@@ -30,7 +30,7 @@ function getDb(): Database.Database {
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
         `);
-        
+
         console.log("Database schema initialized.");
     }
 
@@ -98,14 +98,14 @@ export async function getSettings(): Promise<Settings> {
     try {
         const stmt = db.prepare('SELECT key, value FROM settings');
         const rows = stmt.all() as { key: string; value: string }[];
-        
+
         if (rows.length === 0) {
             // No settings found, initialize with defaults
             const initialSettings = getInitialSettings();
             await setSettings(initialSettings);
             return initialSettings;
         }
-        
+
         // Convert rows to settings object
         const settings: any = {};
         rows.forEach(row => {
@@ -115,11 +115,11 @@ export async function getSettings(): Promise<Settings> {
                 console.error(`Error parsing setting ${row.key}:`, e);
             }
         });
-        
+
         // Merge with defaults to ensure all required fields exist
         const defaultSettings = getInitialSettings();
         const mergedSettings = { ...defaultSettings, ...settings };
-        
+
         return mergedSettings;
     } finally {
         // No close
@@ -132,15 +132,15 @@ export async function setSettings(settings: Settings): Promise<void> {
         const transaction = db.transaction((settingsObj: Settings) => {
             // Clear existing settings
             db.prepare('DELETE FROM settings').run();
-            
+
             // Insert new settings
             const insertStmt = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)');
-            
+
             Object.entries(settingsObj).forEach(([key, value]) => {
                 insertStmt.run(key, JSON.stringify(value));
             });
         });
-        
+
         transaction(settings);
     } finally {
         // No close
@@ -159,9 +159,11 @@ export async function updateSetting<K extends keyof Settings>(key: K, value: Set
 
 // Helper function to save uploaded images
 export async function saveImage(file: Buffer, filename: string): Promise<string> {
-    const uploadsDir = path.join(process.cwd(), 'uploads');
+    // In production (Electron), we must use the userData path defined in main.js via process.env.UPLOAD_DIR
+    // In dev, we fallback to local uploads folder
+    const uploadsDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
     const imagesDir = path.join(uploadsDir, 'images');
-    
+
     // Create directories if they don't exist
     if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
@@ -169,13 +171,13 @@ export async function saveImage(file: Buffer, filename: string): Promise<string>
     if (!fs.existsSync(imagesDir)) {
         fs.mkdirSync(imagesDir, { recursive: true });
     }
-    
+
     const filePath = path.join(imagesDir, filename);
     fs.writeFileSync(filePath, file);
-    
+
     const returnPath = `/api/files/images/${filename}`;
     console.log(`[saveImage] Saved image to ${filePath}, returning path: ${returnPath}`);
-    
+
     // Return the API path (served via /api/files)
     return returnPath;
 }

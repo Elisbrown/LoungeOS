@@ -45,7 +45,9 @@ function startTunnel(localPort) {
       "tunnel",
       "--url",
       `http://localhost:${localPort}`,
-    ]);
+    ], {
+      cwd: path.dirname(binaryPath) // Ensure valid CWD
+    });
 
     let resolved = false;
 
@@ -55,19 +57,23 @@ function startTunnel(localPort) {
 
     tunnelProcess.stderr.on("data", (data) => {
       const output = data.toString();
-      // log.info(`[Cloudflared Stderr]: ${output}`); // It logs to stderr by default
+      log.info(`[Cloudflared Stderr]: ${output}`); // Log stderr to see errors
 
       // Look for the URL in the output
       // Example: https://random-name.trycloudflare.com
-      const match = output.match(
-        /https?:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/
-      );
-      if (match && !resolved) {
-        resolved = true;
+      // We explicitly ignore api.trycloudflare.com which sometimes appears in logs
+      const regex = /https?:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/g;
+      let match;
+
+      while ((match = regex.exec(output)) !== null) {
         const url = match[0];
-        currentUrl = url; // Store the URL
-        log.info(`Tunnel started at: ${url}`);
-        resolve(url);
+        if (!url.includes('api.trycloudflare.com') && !resolved) {
+          resolved = true;
+          currentUrl = url; // Store the URL
+          log.info(`Tunnel started at: ${url}`);
+          resolve(url);
+          break;
+        }
       }
     });
 

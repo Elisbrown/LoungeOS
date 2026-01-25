@@ -36,7 +36,7 @@ interface ChartOfAccount {
 }
 
 function getDb(): Database.Database {
-  const dbPath = path.join(process.cwd(), 'loungeos.db');
+  const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'loungeos.db');
   return new Database(dbPath);
 }
 

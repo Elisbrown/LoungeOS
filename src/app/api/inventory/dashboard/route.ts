@@ -2,15 +2,49 @@ import { NextRequest, NextResponse } from 'next/server'
 import Database from 'better-sqlite3'
 import path from 'path'
 
+// Type definitions for database query results
+interface StockMovementRow {
+    month: string
+    year: string
+    movement_type: string
+    quantity: number
+}
+
+interface CategoryRow {
+    category: string
+    item_count: number
+    total_value: number
+}
+
+interface ActivityRow {
+    id: number
+    movement_type: string
+    quantity: number
+    movement_date: string
+    notes: string | null
+    item_name: string
+    item_sku: string
+    user_name: string | null
+}
+
+interface LowStockRow {
+    id: number
+    name: string
+    sku: string
+    current_stock: number
+    min_stock_level: number
+    category: string
+}
+
 function getDb(): Database.Database {
-    const dbPath = path.join(process.cwd(), 'loungeos.db')
+    const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'loungeos.db')
     return new Database(dbPath)
 }
 
 export async function GET() {
     try {
         const db = getDb()
-        
+
         // Get current month and previous month for comparisons
         const now = new Date()
         const currentMonth = now.getMonth() + 1
@@ -27,7 +61,7 @@ export async function GET() {
             WHERE m.movement_date >= date('now', '-6 months')
             GROUP BY strftime('%Y-%m', m.movement_date), m.movement_type
             ORDER BY year, month
-        `).all()
+        `).all() as StockMovementRow[]
 
         // Get category distribution
         const categoryDistribution = db.prepare(`
@@ -38,7 +72,7 @@ export async function GET() {
             FROM inventory_items i
             GROUP BY i.category
             ORDER BY total_value DESC
-        `).all()
+        `).all() as CategoryRow[]
 
         // Get recent activities (last 10 movements)
         const recentActivities = db.prepare(`
@@ -56,7 +90,7 @@ export async function GET() {
             LEFT JOIN users u ON m.user_id = u.id
             ORDER BY m.movement_date DESC
             LIMIT 10
-        `).all()
+        `).all() as ActivityRow[]
 
         // Get low stock alerts
         const lowStockAlerts = db.prepare(`
@@ -71,33 +105,33 @@ export async function GET() {
             WHERE i.current_stock < i.min_stock_level
             ORDER BY (i.min_stock_level - i.current_stock) DESC
             LIMIT 5
-        `).all()
+        `).all() as LowStockRow[]
 
         // Prepare chart data
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-        
+
         const chartData = monthNames.slice(-6).map((month, index) => {
             const monthNum = (now.getMonth() - 5 + index + 12) % 12 + 1
             const year = now.getMonth() - 5 + index < 0 ? now.getFullYear() - 1 : now.getFullYear()
-            
-            const stockIn = stockMovements.find(m => 
-                parseInt(m.month) === monthNum && 
-                parseInt(m.year) === year && 
+
+            const stockIn = stockMovements.find(m =>
+                parseInt(m.month) === monthNum &&
+                parseInt(m.year) === year &&
                 m.movement_type === 'IN'
             )?.quantity || 0
-            
-            const stockOut = stockMovements.find(m => 
-                parseInt(m.month) === monthNum && 
-                parseInt(m.year) === year && 
+
+            const stockOut = stockMovements.find(m =>
+                parseInt(m.month) === monthNum &&
+                parseInt(m.year) === year &&
                 m.movement_type === 'OUT'
             )?.quantity || 0
-            
-            const waste = stockMovements.find(m => 
-                parseInt(m.month) === monthNum && 
-                parseInt(m.year) === year && 
+
+            const waste = stockMovements.find(m =>
+                parseInt(m.month) === monthNum &&
+                parseInt(m.year) === year &&
                 m.movement_type === 'WASTE'
             )?.quantity || 0
-            
+
             return {
                 month,
                 stockIn: Math.round(stockIn),
@@ -107,9 +141,10 @@ export async function GET() {
         })
 
         // Prepare category data for bar chart
+        const totalCategoryValue = categoryDistribution.reduce((sum, c) => sum + c.total_value, 0)
         const categoryData = categoryDistribution.map(cat => ({
             category: cat.category,
-            value: Math.round((cat.total_value / categoryDistribution.reduce((sum, c) => sum + c.total_value, 0)) * 100),
+            value: totalCategoryValue > 0 ? Math.round((cat.total_value / totalCategoryValue) * 100) : 0,
             color: "hsl(var(--chart-1))"
         }))
 
@@ -117,10 +152,10 @@ export async function GET() {
         const formattedActivities = recentActivities.map(activity => {
             const activityDate = new Date(activity.movement_date)
             const timeAgo = getTimeAgo(activityDate)
-            
+
             let activityText = ''
             let activityType = ''
-            
+
             switch (activity.movement_type) {
                 case 'IN':
                     activityText = `${activity.quantity} units of ${activity.item_name} received`
@@ -142,7 +177,7 @@ export async function GET() {
                     activityText = `${activity.movement_type} movement for ${activity.item_name}`
                     activityType = 'stockMovement'
             }
-            
+
             return {
                 id: activity.id,
                 type: activityType,
@@ -186,7 +221,7 @@ export async function GET() {
 function getTimeAgo(date: Date): string {
     const now = new Date()
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-    
+
     if (diffInSeconds < 60) return `${diffInSeconds}s ago`
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`

@@ -23,7 +23,7 @@ interface EventInput {
 }
 
 function getDb(): Database.Database {
-  const dbPath = path.join(process.cwd(), 'loungeos.db');
+  const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'loungeos.db');
   return new Database(dbPath);
 }
 
@@ -77,7 +77,7 @@ export function createEvent(event: EventInput): Event {
       INSERT INTO events (title, description, start_date, end_date, location, capacity)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
-    
+
     const result = stmt.run(
       event.title,
       event.description,
@@ -86,7 +86,7 @@ export function createEvent(event: EventInput): Event {
       event.location,
       event.capacity
     );
-    
+
     return getEventById(Number(result.lastInsertRowid))!;
   } finally {
     db.close();
@@ -98,7 +98,7 @@ export function updateEvent(id: number, event: Partial<EventInput>): Event | nul
   try {
     const updates: string[] = [];
     const values: any[] = [];
-    
+
     if (event.title !== undefined) {
       updates.push('title = ?');
       values.push(event.title);
@@ -123,16 +123,16 @@ export function updateEvent(id: number, event: Partial<EventInput>): Event | nul
       updates.push('capacity = ?');
       values.push(event.capacity);
     }
-    
+
     updates.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
-    
+
     const stmt = db.prepare(`
       UPDATE events 
       SET ${updates.join(', ')}
       WHERE id = ?
     `);
-    
+
     stmt.run(...values);
     return getEventById(id);
   } finally {

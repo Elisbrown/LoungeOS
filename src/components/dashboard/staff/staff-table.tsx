@@ -419,7 +419,7 @@ export function StaffTable() {
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             onSelect={() => handleResetPassword(member)}
-                                                            disabled={member.role === 'Super Admin'}
+                                                            disabled={member.role === 'Super Admin' && user?.role !== 'Super Admin'}
                                                         >
                                                             <KeyRound className="mr-2 h-4 w-4" />
                                                             {t('staff.resetPassword')}

@@ -2,15 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import Database from 'better-sqlite3'
 import path from 'path'
 
+// Type definitions for database query results
+interface TotalResult {
+    total: number
+}
+
+interface MonthlyRevenueRow {
+    month: string
+    year: string
+    revenue: number
+}
+
+interface MonthlyExpensesRow {
+    month: string
+    year: string
+    expenses: number
+}
+
 function getDb(): Database.Database {
-    const dbPath = path.join(process.cwd(), 'loungeos.db')
+    const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'loungeos.db')
     return new Database(dbPath)
 }
 
 export async function GET() {
     try {
         const db = getDb()
-        
+
         // Get current month and previous month for comparisons
         const now = new Date()
         const currentMonth = now.getMonth() + 1
@@ -26,7 +43,7 @@ export async function GET() {
             WHERE o.status = 'Completed'
             AND strftime('%m', o.timestamp) = ?
             AND strftime('%Y', o.timestamp) = ?
-        `).get(currentMonth.toString().padStart(2, '0'), currentYear.toString())
+        `).get(currentMonth.toString().padStart(2, '0'), currentYear.toString()) as TotalResult
 
         const previousMonthRevenue = db.prepare(`
             SELECT COALESCE(SUM(oi.quantity * oi.price), 0) as total
@@ -35,7 +52,7 @@ export async function GET() {
             WHERE o.status = 'Completed'
             AND strftime('%m', o.timestamp) = ?
             AND strftime('%Y', o.timestamp) = ?
-        `).get(previousMonth.toString().padStart(2, '0'), previousYear.toString())
+        `).get(previousMonth.toString().padStart(2, '0'), previousYear.toString()) as TotalResult
 
         // Calculate expenses from inventory movements (cost of goods sold)
         const currentMonthExpenses = db.prepare(`
@@ -44,7 +61,7 @@ export async function GET() {
             WHERE m.movement_type = 'OUT'
             AND strftime('%m', m.movement_date) = ?
             AND strftime('%Y', m.movement_date) = ?
-        `).get(currentMonth.toString().padStart(2, '0'), currentYear.toString())
+        `).get(currentMonth.toString().padStart(2, '0'), currentYear.toString()) as TotalResult
 
         const previousMonthExpenses = db.prepare(`
             SELECT COALESCE(SUM(m.quantity * COALESCE(m.unit_cost, 0)), 0) as total
@@ -52,7 +69,7 @@ export async function GET() {
             WHERE m.movement_type = 'OUT'
             AND strftime('%m', m.movement_date) = ?
             AND strftime('%Y', m.movement_date) = ?
-        `).get(previousMonth.toString().padStart(2, '0'), previousYear.toString())
+        `).get(previousMonth.toString().padStart(2, '0'), previousYear.toString()) as TotalResult
 
         // Calculate monthly revenue for the last 6 months
         const monthlyRevenue = db.prepare(`
@@ -66,7 +83,7 @@ export async function GET() {
             AND o.timestamp >= date('now', '-6 months')
             GROUP BY strftime('%Y-%m', o.timestamp)
             ORDER BY year, month
-        `).all()
+        `).all() as MonthlyRevenueRow[]
 
         // Calculate monthly expenses for the last 6 months
         const monthlyExpenses = db.prepare(`
@@ -79,16 +96,16 @@ export async function GET() {
             AND m.movement_date >= date('now', '-6 months')
             GROUP BY strftime('%Y-%m', m.movement_date)
             ORDER BY year, month
-        `).all()
+        `).all() as MonthlyExpensesRow[]
 
         // Calculate current month profit
-        const currentRevenue = currentMonthRevenue.total || 0
-        const currentExpenses = currentMonthExpenses.total || 0
+        const currentRevenue = currentMonthRevenue?.total || 0
+        const currentExpenses = currentMonthExpenses?.total || 0
         const currentProfit = currentRevenue - currentExpenses
 
         // Calculate previous month profit
-        const previousRevenue = previousMonthRevenue.total || 0
-        const previousExpenses = previousMonthExpenses.total || 0
+        const previousRevenue = previousMonthRevenue?.total || 0
+        const previousExpenses = previousMonthExpenses?.total || 0
         const previousProfit = previousRevenue - previousExpenses
 
         // Calculate percentage changes
@@ -103,19 +120,19 @@ export async function GET() {
 
         // Prepare chart data
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-        
+
         const chartData = monthNames.slice(-6).map((month, index) => {
             const monthNum = (now.getMonth() - 5 + index + 12) % 12 + 1
             const year = now.getMonth() - 5 + index < 0 ? now.getFullYear() - 1 : now.getFullYear()
-            
-            const revenue = monthlyRevenue.find(r => 
+
+            const revenue = monthlyRevenue.find(r =>
                 parseInt(r.month) === monthNum && parseInt(r.year) === year
             )?.revenue || 0
-            
-            const expenses = monthlyExpenses.find(e => 
+
+            const expenses = monthlyExpenses.find(e =>
                 parseInt(e.month) === monthNum && parseInt(e.year) === year
             )?.expenses || 0
-            
+
             return {
                 month,
                 revenue: Math.round(revenue),

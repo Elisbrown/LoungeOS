@@ -271,12 +271,31 @@ function activateLicense(licenseKey) {
 }
 
 // ============================================
+// LICENSE DEACTIVATION
+// ============================================
+function deactivateLicense() {
+  try {
+    const licensePath = getLicensePath();
+    if (fs.existsSync(licensePath)) {
+      fs.unlinkSync(licensePath);
+      log.info("License deactivated successfully");
+      return { success: true };
+    }
+    return { success: false, error: "No license found to deactivate" };
+  } catch (error) {
+    log.error("License deactivation error:", error);
+    return { success: false, error: "Deactivation failed: " + error.message };
+  }
+}
+
+// ============================================
 // EXPORTS
 // ============================================
 module.exports = {
   getMachineId,
   verifyLicense,
   activateLicense,
+  deactivateLicense,
   getLicenseInfo: () => {
     const result = verifyLicense();
     return result.valid ? result.info : null;

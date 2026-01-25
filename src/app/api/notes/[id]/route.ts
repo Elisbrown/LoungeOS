@@ -3,7 +3,7 @@ import Database from 'better-sqlite3'
 import path from 'path'
 
 function getDb(): Database.Database {
-  const dbPath = path.join(process.cwd(), 'loungeos.db')
+  const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'loungeos.db')
   return new Database(dbPath)
 }
 
@@ -12,7 +12,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const db = getDb()
-  
+
   try {
     const { title, content, tags } = await request.json()
     const { id } = await params
@@ -30,9 +30,9 @@ export async function PUT(
       SET title = ?, content = ?, tags = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `)
-    
+
     const result = stmt.run(title, content, JSON.stringify(tags || []), noteId)
-    
+
     if (result.changes === 0) {
       return Response.json(
         { error: 'Note not found' },
@@ -65,14 +65,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const db = getDb()
-  
+
   try {
     const { id } = await params
     const noteId = parseInt(id)
 
     const stmt = db.prepare('DELETE FROM notes WHERE id = ?')
     const result = stmt.run(noteId)
-    
+
     if (result.changes === 0) {
       return Response.json(
         { error: 'Note not found' },

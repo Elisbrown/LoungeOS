@@ -335,7 +335,10 @@
       "available": "Disponible",
       "occupied": "Occupée",
       "reserved": "Réservée"
-    }
+    },
+    "editTable": "Modifier la Table",
+    "editTableDesc": "Modifier les détails d'une table existante.",
+    "tableActions": "Actions"
   },
   "floors": {
     "title": "Gestion des Salles",
@@ -1178,7 +1181,8 @@
     "cancelOrderTitle": "Annuler la Commande",
     "cancelOrderDesc": "Êtes-vous sûr de vouloir annuler la commande {{orderId}} pour la table {{table}} ? Cette action est irréversible.",
     "restoreOrderTitle": "Restaurer la Commande",
-    "restoreOrderDesc": "Êtes-vous sûr de vouloir restaurer cette commande annulée ? Ceci n'est possible que dans les 24 heures suivant l'annulation."
+    "restoreOrderDesc": "Êtes-vous sûr de vouloir restaurer cette commande annulée ? Ceci n'est possible que dans les 24 heures suivant l'annulation.",
+    "confirmResetPassword": "Êtes-vous sûr de vouloir réinitialiser le mot de passe de {{name}} ? Il devra définir un nouveau mot de passe à sa prochaine connexion."
   },
   "toasts": {
     "success": "Succès",
@@ -1345,7 +1349,19 @@
   },
   "forgotPassword": {
     "title": "Mot de Passe Oublié ?",
-    "description": "Veuillez contacter votre administrateur système ou votre manager pour demander une réinitialisation de mot de passe.",
     "backToLogin": "Retour à la Connexion"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Consultez et gérez les notifications du système.",
+    "allNotifications": "Toutes les Notifications",
+    "total": "Total",
+    "new": "Nouveau",
+    "unread": "Non lu",
+    "clearAll": "Tout Effacer",
+    "viewAll": "Tout Voir",
+    "noNotifications": "Vous n'avez aucune notification",
+    "empty": "Aucune notification pour le moment",
+    "emptyHint": "Les notifications concernant vos commandes, stocks et plus apparaîtront ici"
   }
 }
