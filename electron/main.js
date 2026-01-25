@@ -15,6 +15,21 @@ const log = require("electron-log");
 const { autoUpdater } = require("electron-updater");
 const license = require("./license");
 const tunnel = require("./tunnel");
+const crypto = require("crypto");
+
+// Read version dynamically from package.json
+function getAppVersion() {
+  try {
+    const pkgPath = app.isPackaged
+      ? path.join(process.resourcesPath, 'app.asar', 'package.json')
+      : path.join(__dirname, '..', 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    return pkg.version || '1.0.0';
+  } catch (e) {
+    log.error('Failed to read version from package.json:', e.message);
+    return '1.0.0';
+  }
+}
 
 // Determine if running in development mode
 const isDev = !app.isPackaged;
@@ -206,14 +221,17 @@ function buildMenu() {
   Menu.setApplicationMenu(menu);
 }
 
-// Set About Panel Options
-app.setAboutPanelOptions({
-  applicationName: "LoungeOS",
-  applicationVersion: "1.2.0",
-  copyright: "© 2026 LoungeOS",
-  version: "1.2.0",
-  credits: "Developed by Sunyin Elisbrown",
-});
+// Set About Panel Options (done after app is ready to get dynamic version)
+function setupAboutPanel() {
+  const version = getAppVersion();
+  app.setAboutPanelOptions({
+    applicationName: "LoungeOS",
+    applicationVersion: version,
+    copyright: "© 2026 LoungeOS",
+    version: version,
+    credits: "Developed by Sunyin Elisbrown",
+  });
+}
 
 // ============================================
 // ACTIVATION WINDOW (Paywall)
@@ -475,7 +493,7 @@ function createDeviceInfoWindow() {
       </div>
       <div class="row">
         <span class="label">App Version</span>
-        <span class="value">1.2.0</span>
+        <span class="value">${getAppVersion()}</span>
       </div>
       <div class="row">
         <span class="label">License Status</span>
@@ -511,7 +529,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
       backgroundThrottling: false, // Allow audio and timers when window is inactive
     },
-    title: "LoungeOS v1.2",
+    title: `LoungeOS v${getAppVersion()}`,
     icon: path.join(__dirname, "../public/logo.png"),
   });
 
@@ -648,6 +666,31 @@ function waitForServer(url, timeout) {
   });
 }
 
+// ============================================
+// DATABASE INITIALIZATION
+// ============================================
+
+/**
+ * Initialize database by copying a template database
+ */
+function initializeDatabase(dbPath, templatePath) {
+  log.info(`Initializing database at: ${dbPath}`);
+  log.info(`Using template from: ${templatePath}`);
+
+  if (!fs.existsSync(templatePath)) {
+    throw new Error(`Template database not found at: ${templatePath}`);
+  }
+
+  try {
+    fs.copyFileSync(templatePath, dbPath);
+    log.info('Database template copied successfully');
+  } catch (err) {
+    throw new Error(`Failed to copy template: ${err.message}`);
+  }
+}
+
+
+
 function startServer() {
   return new Promise((resolve, reject) => {
     log.info(`Starting Next.js server on port ${appPort}...`);
@@ -663,22 +706,21 @@ function startServer() {
       ? path.join(process.resourcesPath, "app.asar.unpacked")
       : path.join(__dirname, "..");
 
-    // For DB, it's still in the asar since it doesn't need to be executed
-    const asarPath = app.isPackaged
-      ? path.join(process.resourcesPath, "app.asar")
-      : path.join(__dirname, "..");
-    const sourceDbPath = path.join(asarPath, "loungeos.db");
+  // For DB template, read from template.db in the root
+  const templatePath = path.join(__dirname, "..", "template.db");
 
-    if (!fs.existsSync(dbPath) && fs.existsSync(sourceDbPath)) {
-      try {
-        fs.copyFileSync(sourceDbPath, dbPath);
-        log.info(`Migrated database to ${dbPath}`);
-      } catch (err) {
-        log.error(`Failed to migrate database: ${err.message}`);
-      }
-    } else {
-      log.info(`Using database at ${dbPath}`);
+  // If database doesn't exist, create it from template
+  if (!fs.existsSync(dbPath)) {
+    log.info("Database not found. Initializing from template...");
+    try {
+      initializeDatabase(dbPath, templatePath);
+      log.info(`Initialized new database at ${dbPath}`);
+    } catch (err) {
+      log.error(`Failed to initialize database: ${err.message}`);
     }
+  } else {
+    log.info(`Using existing database at ${dbPath}`);
+  }
 
     // Ensure backup directory exists
     if (!fs.existsSync(backupDir)) {
@@ -772,6 +814,7 @@ function startServer() {
 app.on("ready", async () => {
   loadConfig();
   buildMenu();
+  setupAboutPanel();
 
   // Check license before anything else
   const licenseResult = license.verifyLicense();
